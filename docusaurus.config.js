@@ -151,8 +151,18 @@ const config = {
           // Default wiki page
           { from: '/index', to: '/docs/intro', },
         ]
-      }
-    ]
+      },
+    ],[
+      '@docusaurus/plugin-ideal-image',
+      {
+        quality: 70,
+        max: 1030, // max resized image's size.
+        min: 640, // min resized image's size. if original is lower, use that size.
+        steps: 2, // the max number of images generated between min and max (inclusive)
+        disableInDev: false,
+      },
+    ],
+    require.resolve('docusaurus-plugin-image-zoom')
   ],
    themes: [
       require.resolve("@easyops-cn/docusaurus-search-local"),
