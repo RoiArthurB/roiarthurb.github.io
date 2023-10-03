@@ -140,14 +140,6 @@ const config = {
    */
   "plugins": [
     [
-      '@docusaurus/plugin-client-redirects',
-      {
-        redirects: [
-          // Default wiki page
-          { from: '/index', to: '/docs/intro', },
-        ]
-      },
-    ],[
       '@docusaurus/plugin-ideal-image',
       {
         quality: 70,
