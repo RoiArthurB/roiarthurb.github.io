@@ -1,8 +1,9 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const {themes} = require('prism-react-renderer');
+const lightTheme = themes.github;
+const darkTheme = themes.dracula;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -131,10 +132,10 @@ const config = {
         defaultMode: 'dark',
         respectPrefersColorScheme: false,
       },
-      prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
-      },
+      // prism: {
+      //   theme: themes.github,
+      //   darkTheme: themes.dracula,
+      // },
     }),
 
   /*
@@ -150,8 +151,7 @@ const config = {
         steps: 2, // the max number of images generated between min and max (inclusive)
         disableInDev: false,
       },
-    ],
-    require.resolve('docusaurus-plugin-image-zoom')
+    ]
   ],
    themes: [
       require.resolve("@easyops-cn/docusaurus-search-local"),
