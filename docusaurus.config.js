@@ -132,10 +132,12 @@ const config = {
         defaultMode: 'dark',
         respectPrefersColorScheme: false,
       },
-      // prism: {
+      prism: {
+        additionalLanguages: ["diff", "java", "javascript", "python"],
+        defaultLanguage: "bash",
       //   theme: themes.github,
       //   darkTheme: themes.dracula,
-      // },
+      },
     }),
 
   /*
