@@ -6,15 +6,15 @@
 	--font-serif: "Georgia", "Times New Roman", Times, serif;
 
 	/* --- LIGHT THEME (Default) --- */
-	--color-bg: #ffffff;
+	--color-bg: #faf8f4;        /* warm paper instead of stark white */
 	--color-bg-offset: #ffffff;
 	/* Clean white for premium feel */
 	--color-bg-header: rgba(255, 255, 255, 0.85);
 	--color-text-main: #1a1a1a;
 	--color-text-muted: #555555;
-	--color-accent: #003366;
-	/* Oxford Blue */
-	--color-accent-light: #e6f0fa;
+	--color-accent: #c47f00;    /* amber darkened for light bg legibility */
+	/* Custom amber */
+	--color-accent-light: #fff3cc;
 	--color-border: #eaeaea;
 	--color-header-border: rgba(0, 0, 0, 0.08);
 	--color-bg-mobile-menu: rgba(255, 255, 255, 0.95);
@@ -27,21 +27,19 @@
 	--shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* --- DARK THEME --- */
+/* --- DARK THEME (main one for me) --- */
 [data-theme="dark"] {
-	--color-bg: #0f172a;
-	/* Deep Slate (Slate-900) */
-	--color-bg-offset: #0f172a;
-	/* Seamless: Same as main BG for a unified, infinite canvas look */
-	--color-bg-header: rgba(15, 23, 42, 0.8);
-	--color-text-main: #e2e8f0;
-	--color-text-muted: #94a3b8;
-	--color-accent: #60a5fa;
-	/* Electric Blue */
-	--color-accent-light: #1e3a8a;
-	--color-border: #334155;
-	--color-header-border: rgba(255, 255, 255, 0.1);
-	--color-bg-mobile-menu: rgba(15, 23, 42, 0.95);
+	/* === Claude Code recoloring === */
+    --color-bg: #1f1f1e;              /* was #0f172a — warmer true black */
+    --color-bg-offset: #272726;       /* was same as bg — give cards slight lift */
+    --color-bg-header: rgba(31, 31, 30, 0.85);
+    --color-text-main: #ddd4c0;       /* was #e2e8f0 — warmer white, less clinical */
+    --color-text-muted: #6b6358;      /* was #94a3b8 — matches warm bg */
+    --color-accent: #ffab00;          /* was #60a5fa — your amber */
+    --color-accent-light: #261a00;    /* was #1e3a8a — dark amber tint for hover states */
+    --color-border: #242424;          /* was #334155 — subtler borders */
+    --color-header-border: rgba(255, 171, 0, 0.08); /* faint amber glow on header */
+    --color-bg-mobile-menu: rgba(12, 12, 12, 0.95);
 
 	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
 	--shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
