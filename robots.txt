@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shravangoswami.com/astro-scholarsitemap-index.xml
