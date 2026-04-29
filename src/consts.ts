@@ -1,22 +1,22 @@
 // Place any global data in this file.
 // You can import this data from anywhere in your site by using the `import` keyword.
 
-export const SITE_TITLE = 'Friedrich Nietzsche';
-export const SITE_DESCRIPTION = 'The academic portfolio of Friedrich Nietzsche.';
+export const SITE_TITLE = 'Arthur Brugière';
+export const SITE_DESCRIPTION = 'Computer Researcher / IT Nerd';
 
-export const CV_URL = 'https://shravangoswami.com/resume.pdf';
+export const CV_URL = 'https://arthurbrugiere.fr/resume.pdf';
 
 export const CONTACT = {
-  organization: 'Shravan Goswami',
+  organization: 'Arthur Brugière',
   addressLines: [
-    'Creator of Astro Scholar',
+    'Hanoi, Vietnam',
   ],
   emails: [
-    'contact@shravangoswami.com',
+    'arthur.brugiere@ird.fr',
   ],
 };
 
-export type SocialIcon = 'website' | 'scholar' | 'email' | 'github' | 'linkedin' | 'twitter';
+export type SocialIcon = 'website' | 'scholar' | 'email' | 'github' | 'linkedin';
 
 export const SOCIAL_LINKS: ReadonlyArray<{
   label: string;
@@ -24,24 +24,24 @@ export const SOCIAL_LINKS: ReadonlyArray<{
   icon: SocialIcon;
 }> = [
   {
-    label: 'GitHub',
-    href: 'https://github.com/shravanngoswamii/astro-scholar',
-    icon: 'github',
-  },
-  {
     label: 'Email',
-    href: 'mailto:contact@shravangoswami.com',
+    href: 'mailto:contact@arthurbrugiere.fr',
     icon: 'email',
   },
   {
-    label: 'LinkedIn',
-    href: 'https://www.linkedin.com/in/shravangoswami/',
-    icon: 'linkedin',
+    label: 'GitHub',
+    href: 'https://github.com/RoiArthurB',
+    icon: 'github',
   },
   {
-    label: 'X',
-    href: 'https://x.com/shravangoswamii',
-    icon: 'twitter',
+    label: 'Google Scholar',
+    href: 'https://scholar.google.com/citations?user=Zk8mYXoAAAAJ',
+    icon: 'scholar',
+  },
+  {
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/in/arthurbrugiere/',
+    icon: 'linkedin',
   },
 ];
 
