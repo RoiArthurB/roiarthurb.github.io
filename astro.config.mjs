@@ -9,7 +9,7 @@ import rehypeKatex from 'rehype-katex';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://shravangoswami.com',
-	base: process.env.BASE_PATH || '/astro-scholar',
+	base: process.env.BASE_PATH || '/',
 	integrations: [
 		mdx(),
 		sitemap()
