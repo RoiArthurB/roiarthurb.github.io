@@ -4,7 +4,7 @@
     "title": "TAngible iNterface thought Gama Orchestration (TANGO)",
     "description": "Lorem ipsum.",
     "year": [2026, 2027],
-    "status": "Coming soon",
+    "status": "Coming Soon",
     "authors": ["arthur-brugiere"],
     "heroImage": "/src/assets/blog-placeholder-3.jpg"
   },
@@ -24,19 +24,9 @@
     "description": "The overall objective of the STAR-FARM project is to facilitate smart agro-ecological transformation of agri-food farming systems of the Viet Nam’s Mekong Delta (VMD) and strengthen resilience to climate change, environmental degradation, and other external shocks.",
     "year": [2025, 2026],
     "status": "Current",
-    "authors": ["alexis-drogoul"],
+    "authors": [],
     "heroImage": "/src/assets/blog-placeholder-5.jpg",
     "link": "https://capacity4dev.europa.eu/projects/desira/info/star-farm_en"
-  },
-  {
-    "id": "project-gemmes",
-    "title": "General Monetary and Multisectoral Macrodynamics for the Ecological Shift (GEMMES)",
-    "description": "The GEMMES Vietnam project is a research project in response to the strong political demand in Vietnam for better assessing the socio-economic impacts of future climate changes and developing a prospective view of possible adaptation actions.",
-    "year": 2020,
-    "status": "Completed",
-    "authors": ["alexis-drogoul", "arthur-brugiere"],
-    "heroImage": "/src/assets/blog-placeholder-4.jpg",
-    "link": "https://gemmes-project.github.io/gemmes_vn/"
   },
   {
     "id": "project-comokit",
@@ -44,7 +34,7 @@
     "description": "Building a modeling kit written in GAMA for analyzing and comparing interventions against the COVID-19 epidemic at the scale of a city.",
     "year": [2020,2023],
     "status": "Completed",
-    "authors": ["alexis-drogoul", "arthur-brugiere"],
+    "authors": ["alexis-drogoul"],
     "heroImage": "/src/assets/blog-placeholder-3.jpg",
     "link": "https://comokit.org"
   },
@@ -57,17 +47,5 @@
     "authors": [],
     "heroImage": "/src/assets/blog-placeholder-2.jpg",
     "link": "https://anr.fr/Projet-ANR-16-CE39-0011"
-  },
-
-
-  {
-    "id": "gama-platform",
-    "title": "GAMA Platform",
-    "description": "GAMA is a simulation platform, which aims at providing field experts, modellers, and computer scientists with a complete modelling and simulation development environment for building spatially explicit multi-agent simulations.",
-    "year": [2019,2026],
-    "status": "Current",
-    "authors": ["alexis-drogoul"],
-    "heroImage": "/src/assets/blog-placeholder-5.jpg",
-    "link": "https://gama-platform.org"
   }
 ]

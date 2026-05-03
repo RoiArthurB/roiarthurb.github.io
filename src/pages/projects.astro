@@ -13,6 +13,17 @@ const formatYear = (year) =>
 const sortYear = (year) => Array.isArray(year) ? Math.max(...year) : year;
 
 const projects = projectsData.sort((a, b) => sortYear(b.year) - sortYear(a.year));
+
+const statusOrder = ['Current', 'Coming Soon', 'Completed'];
+
+const groupedProjects = statusOrder.map(status => ({
+  status,
+  projects: projectsData
+    .filter(p => status === 'Completed'
+      ? !['Current', 'Coming Soon'].includes(p.status)
+      : p.status === status)
+    .sort((a, b) => sortYear(b.year) - sortYear(a.year))
+})).filter(group => group.projects.length > 0);
 ---
 
 <!doctype html>
@@ -174,56 +185,61 @@ const projects = projectsData.sort((a, b) => sortYear(b.year) - sortYear(a.year)
 				<p>Landmark philosophical investigations that have fundamentally shaped the course of Western intellectual history.</p>
 			</div>
 			
-			<div class="projects-grid">
-				{projects.length > 0 ? projects.map((project) => (
-					<article class="project-card">
-						<div class="project-image">
-							<img
-								src={url(`/projects/${project.id}.png`)}
-								alt={project.title}
-							/>
-							<span class="project-badge">{project.status}</span>
-						</div>
+{groupedProjects.length > 0 ? groupedProjects.map((group) => (
+    <section class="project-group">
+        <h2 class="project-group-title">{group.status}</h2>
+        <div class="projects-grid">
+            {group.projects.map((project) => (
+                <article class="project-card">
+                    <div class="project-image">
+                        <img
+                            src={url(`/projects/${project.id}.png`)}
+                            alt={project.title}
+                        />
+                        <span class="project-badge">{project.status}</span>
+                    </div>
 
-						<div class="project-content-wrapper">
-							<div class="project-header">
-								<span class="project-year">{formatYear(project.year)}</span>
-								<h3>
-									{project.link ? (
-										<a href={project.link} target="_blank">{project.title}</a>
-									) : (
-										project.title
-									)}
-								</h3>
-							</div>
-							
-							<p class="project-description">{project.description}</p>
-							
-							{project.authors && project.authors.length > 0 && (
-								<div class="project-meta">
-									<span class="meta-label">By:</span>
-									<span class="author-names">
-										{project.authors.map((authorId, i) => (
-											<span>
-												<AuthorLink nameOrSlug={authorId} />
-												{i < project.authors!.length - 1 ? ', ' : ''}
-											</span>
-										))}
-									</span>
-								</div>
-							)}
+                    <div class="project-content-wrapper">
+                        <div class="project-header">
+                            <span class="project-year">{formatYear(project.year)}</span>
+                            <h3>
+                                {project.link ? (
+                                    <a href={project.link} target="_blank">{project.title}</a>
+                                ) : (
+                                    project.title
+                                )}
+                            </h3>
+                        </div>
 
-							{project.link && (
-								<a href={project.link} target="_blank" class="read-more">
-									Read More &rarr;
-								</a>
-							)}
-						</div>
-					</article>
-				)) : (
-                    <p>No projects found in <code>src/data/projects.json</code>.</p>
-                )}
-			</div>
+                        <p class="project-description">{project.description}</p>
+
+                        {project.authors && project.authors.length > 0 && (
+                            <div class="project-meta">
+                                <span class="meta-label">By:</span>
+                                <span class="author-names">
+                                    {project.authors.map((authorId, i) => (
+                                        <span>
+                                            <AuthorLink nameOrSlug={authorId} />
+                                            {i < project.authors!.length - 1 ? ', ' : ''}
+                                        </span>
+                                    ))}
+                                </span>
+                            </div>
+                        )}
+
+                        {project.link && (
+                            <a href={project.link} target="_blank" class="read-more">
+                                Read More &rarr;
+                            </a>
+                        )}
+                    </div>
+                </article>
+            ))}
+        </div>
+    </section>
+)) : (
+    <p>No projects found in <code>src/data/projects.json</code>.</p>
+)}
 		</main>
 		<Footer />
 	</body>
