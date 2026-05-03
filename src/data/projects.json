@@ -1,22 +1,51 @@
 [
   {
-    "id": "critique-morality",
-    "title": "Critique of Morality and the Revaluation of Values",
-    "description": "A comprehensive philosophical investigation challenging conventional Judeo-Christian moral frameworks and exploring the genealogy of moral concepts. This work proposes a fundamental reevaluation of all values through the lens of the will to power.",
-    "year": 1887,
-    "status": "Completed",
-    "authors": ["friedrich-nietzsche"],
+    "id": "project-tango",
+    "title": "TAngible iNterface thought Gama Orchestration (TANGO)",
+    "description": "Lorem ipsum.",
+    "year": 2026,
+    "status": "Coming soon",
+    "authors": ["arthur-brugiere"],
+    "heroImage": "/src/assets/blog-placeholder-3.jpg"
+  },
+  {
+    "id": "project-simple",
+    "title": "Sustainability Issues Metaverse for building Participatory Learning Environments (SIMPLE)",
+    "description": "Lorem ipsum.",
+    "year": 2023,
+    "status": "Current",
+    "authors": ["alexis-drogoul"],
     "heroImage": "/src/assets/blog-placeholder-2.jpg",
-    "link": "https://en.wikipedia.org/wiki/On_the_Genealogy_of_Morality"
+    "link": "https://project-simple.eu"
+  },
+  {
+    "id": "project-star-farm",
+    "title": "Smart Agro-ecological Transformation of Farming Systems towards Resilience and Sustainability in Middle and Coastal Zones of the Viet Nam Mekong Delta (STAR-FARM)",
+    "description": "Lorem ipsum.",
+    "year": 2022,
+    "status": "Current",
+    "authors": ["alexis-drogoul"],
+    "heroImage": "/src/assets/blog-placeholder-5.jpg",
+    "link": "https://capacity4dev.europa.eu/projects/desira/info/star-farm_en"
+  },
+  {
+    "id": "project-gemmes",
+    "title": "General Monetary and Multisectoral Macrodynamics for the Ecological Shift (GEMMES)",
+    "description": "Lorem ipsum",
+    "year": 2020,
+    "status": "Completed",
+    "authors": ["alexis-drogoul", "arthur-brugiere"],
+    "heroImage": "/src/assets/blog-placeholder-4.jpg",
+    "link": "https://gemmes-project.github.io/gemmes_vn/"
   },
   {
     "id": "project-comokit",
     "title": "COvid19 MOdeling KIT (COMOKIT)",
-    "description": "Lorem ipsum.",
+    "description": "a modeling kit written in GAMA for analyzing and comparing interventions against the COVID-19 epidemic at the scale of a city.",
     "year": 2020,
     "status": "Completed",
     "authors": ["alexis-drogoul", "arthur-brugiere"],
-    "heroImage": "/src/assets/blog-placeholder-2.jpg",
+    "heroImage": "/src/assets/blog-placeholder-3.jpg",
     "link": "https://comokit.org"
   },
   {
@@ -26,7 +55,19 @@
     "year": 2019,
     "status": "Completed",
     "authors": [],
-    "heroImage": "/src/assets/blog-placeholder-3.jpg",
+    "heroImage": "/src/assets/blog-placeholder-2.jpg",
     "link": "https://anr.fr/Projet-ANR-16-CE39-0011"
+  },
+
+
+  {
+    "id": "gama-platform",
+    "title": "GAMA Platform",
+    "description": "Lorem ipsum.",
+    "year": 2019,
+    "status": "Current",
+    "authors": ["alexis-drogoul"],
+    "heroImage": "/src/assets/blog-placeholder-5.jpg",
+    "link": "https://gama-platform.org"
   }
 ]
