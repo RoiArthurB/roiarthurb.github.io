@@ -3,7 +3,7 @@
     "id": "project-tango",
     "title": "TAngible iNterface thought Gama Orchestration (TANGO)",
     "description": "Lorem ipsum.",
-    "year": 2026,
+    "year": [2026, 2027],
     "status": "Coming soon",
     "authors": ["arthur-brugiere"],
     "heroImage": "/src/assets/blog-placeholder-3.jpg"
@@ -11,8 +11,8 @@
   {
     "id": "project-simple",
     "title": "Sustainability Issues Metaverse for building Participatory Learning Environments (SIMPLE)",
-    "description": "Lorem ipsum.",
-    "year": 2023,
+    "description": "The general objective of SIMPLE is to raise awareness of young audiences on the challenges of finding sustainable solutions to environmental problems by developing, testing, and delivering a “sustainability metaverse”, i.e., an infrastructure and a set of pedagogical methods based on immersive virtual reality environments, serious games, and scientific simulations.",
+    "year": [2023, 2027],
     "status": "Current",
     "authors": ["alexis-drogoul"],
     "heroImage": "/src/assets/blog-placeholder-2.jpg",
@@ -21,8 +21,8 @@
   {
     "id": "project-star-farm",
     "title": "Smart Agro-ecological Transformation of Farming Systems towards Resilience and Sustainability in Middle and Coastal Zones of the Viet Nam Mekong Delta (STAR-FARM)",
-    "description": "Lorem ipsum.",
-    "year": 2022,
+    "description": "The overall objective of the STAR-FARM project is to facilitate smart agro-ecological transformation of agri-food farming systems of the Viet Nam’s Mekong Delta (VMD) and strengthen resilience to climate change, environmental degradation, and other external shocks.",
+    "year": [2025, 2026],
     "status": "Current",
     "authors": ["alexis-drogoul"],
     "heroImage": "/src/assets/blog-placeholder-5.jpg",
@@ -31,7 +31,7 @@
   {
     "id": "project-gemmes",
     "title": "General Monetary and Multisectoral Macrodynamics for the Ecological Shift (GEMMES)",
-    "description": "Lorem ipsum",
+    "description": "The GEMMES Vietnam project is a research project in response to the strong political demand in Vietnam for better assessing the socio-economic impacts of future climate changes and developing a prospective view of possible adaptation actions.",
     "year": 2020,
     "status": "Completed",
     "authors": ["alexis-drogoul", "arthur-brugiere"],
@@ -41,8 +41,8 @@
   {
     "id": "project-comokit",
     "title": "COvid19 MOdeling KIT (COMOKIT)",
-    "description": "a modeling kit written in GAMA for analyzing and comparing interventions against the COVID-19 epidemic at the scale of a city.",
-    "year": 2020,
+    "description": "Building a modeling kit written in GAMA for analyzing and comparing interventions against the COVID-19 epidemic at the scale of a city.",
+    "year": [2020,2023],
     "status": "Completed",
     "authors": ["alexis-drogoul", "arthur-brugiere"],
     "heroImage": "/src/assets/blog-placeholder-3.jpg",
@@ -51,8 +51,8 @@
   {
     "id": "project-escape",
     "title": "Exploring by Simulation Cities Awareness on Population Evacuation (ESCAPE)",
-    "description": "Lorem ipsum.",
-    "year": 2019,
+    "description": "ESCAPE is a research project developing agent-based simulation tools to help decision-makers design and evaluate mass evacuation strategies in urban areas facing natural or technological disasters.",
+    "year": [2019,2020],
     "status": "Completed",
     "authors": [],
     "heroImage": "/src/assets/blog-placeholder-2.jpg",
@@ -63,8 +63,8 @@
   {
     "id": "gama-platform",
     "title": "GAMA Platform",
-    "description": "Lorem ipsum.",
-    "year": 2019,
+    "description": "GAMA is a simulation platform, which aims at providing field experts, modellers, and computer scientists with a complete modelling and simulation development environment for building spatially explicit multi-agent simulations.",
+    "year": [2019,2026],
     "status": "Current",
     "authors": ["alexis-drogoul"],
     "heroImage": "/src/assets/blog-placeholder-5.jpg",
