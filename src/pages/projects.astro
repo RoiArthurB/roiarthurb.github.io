@@ -7,7 +7,12 @@ import AuthorLink from '../components/AuthorLink.astro';
 import projectsData from '../data/projects.json';
 import { url } from '../utils/paths';
 
-const projects = projectsData.sort((a, b) => b.year - a.year);
+const formatYear = (year) =>
+  Array.isArray(year) ? `${year[0]}–${year[1]}` : (year > 0 ? year : 'Classical');
+
+const sortYear = (year) => Array.isArray(year) ? Math.max(...year) : year;
+
+const projects = projectsData.sort((a, b) => sortYear(b.year) - sortYear(a.year));
 ---
 
 <!doctype html>
@@ -182,7 +187,7 @@ const projects = projectsData.sort((a, b) => b.year - a.year);
 
 						<div class="project-content-wrapper">
 							<div class="project-header">
-								<span class="project-year">{project.year > 0 ? project.year : 'Classical'}</span>
+								<span class="project-year">{formatYear(project.year)}</span>
 								<h3>
 									{project.link ? (
 										<a href={project.link} target="_blank">{project.title}</a>
