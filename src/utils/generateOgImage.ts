@@ -42,7 +42,7 @@ export async function generateOgImage(title: string, subtitle: string) {
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         <span style="color: #94a3b8; font-size: 28px; font-weight: 400;">Academic Portfolio</span>
-                        <span style="color: #cbd5e1; font-size: 32px; font-weight: 700;">Friedrich Nietzsche</span>
+                        <span style="color: #cbd5e1; font-size: 32px; font-weight: 700;">Arthur Brugiere</span>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; background-color: #ffffff; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
