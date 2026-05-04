@@ -13,6 +13,7 @@ export async function getStaticPaths() {
         { params: { route: 'about' }, props: { title: 'About', subtitle: SITE_TITLE } },
         { params: { route: 'projects' }, props: { title: 'Projects', subtitle: SITE_TITLE } },
         { params: { route: 'publications' }, props: { title: 'Publications', subtitle: SITE_TITLE } },
+        { params: { route: 'software' }, props: { title: 'Software', subtitle: SITE_TITLE } },
         { params: { route: 'team' }, props: { title: 'Team', subtitle: SITE_TITLE } },
         { params: { route: 'blog' }, props: { title: 'Blog', subtitle: SITE_TITLE } },
     ];

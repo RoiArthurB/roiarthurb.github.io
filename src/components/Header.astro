@@ -12,14 +12,14 @@ const cvHref = CV_URL ? url(CV_URL) : null;
         
 		<div class="internal-links">
 			<HeaderLink href={url('/')}>Home</HeaderLink>
-			<HeaderLink href={url('/publications')}>Publications</HeaderLink>
 			<HeaderLink href={url('/projects')}>Projects</HeaderLink>
-			<HeaderLink href={url('/team')}>Team</HeaderLink>
+			<HeaderLink href={url('/software')}>Software</HeaderLink>
+            <HeaderLink href={url('/publications')}>Publications</HeaderLink>
 			<div class="dropdown">
-				<button class="dropbtn" style="padding-top: 0.7em;">Blog</button>
+                <HeaderLink href={url('/blog')}>Blog</HeaderLink>
 				<div class="dropdown-content">
-					<HeaderLink href={url('/blog')}>News</HeaderLink>
-					<HeaderLink href={url('/tags')}>Tags</HeaderLink>
+					<!-- <HeaderLink href={url('/blog')}>News</HeaderLink> -->
+					<!-- <HeaderLink href={url('/tags')}>Tags</HeaderLink> -->
 					<HeaderLink href={url('/archive')}>Archive</HeaderLink>
 				</div>
 			</div>
@@ -54,6 +54,7 @@ const cvHref = CV_URL ? url(CV_URL) : null;
         <a href={url('/')}>Home</a>
         <a href={url('/publications')}>Publications</a>
         <a href={url('/projects')}>Projects</a>
+        <a href={url('/software')}>Software</a>
         <a href={url('/team')}>Team</a>
         <span class="mobile-menu-section">Blog</span>
         <div class="mobile-submenu">

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "gama-platform",
+    "title": "GAMA Platform",
+    "description": "GAMA is an open-source, spatially explicit multi-agent simulation platform designed for modelling and simulating complex systems. I contribute to its core development, including agent-based modelling features, simulation infrastructure, and tooling for large-scale epidemiological and environmental simulations.",
+    "since": 2019,
+    "logo": "https://github.com/gama-platform.png",
+    "role": "Core Contributor",
+    "tags": ["Java", "agent-based", "simulation", "GIS"],
+    "link": "https://gama-platform.org",
+    "github": "https://github.com/gama-platform/gama"
+  },
+  {
+    "id": "auto-scihub",
+    "title": "Auto Sci-Hub",
+    "description": "Cross-Browser Plugin to open Sci-Hub page with the article from your current tab.",
+    "since": [2019, 2022],
+    "role": "Lead Developer",
+    "tags": ["JavaScript", "browser extension", "science"],
+    "github": "https://github.com/RoiArthurB/Side-Auto_Sci-Hub"
+  }
+]
