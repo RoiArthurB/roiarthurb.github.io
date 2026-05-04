@@ -19,10 +19,10 @@ export async function generateOgImage(title: string, subtitle: string) {
     const fontDataBold = await loadGoogleFont("Inter:wght@700", textToLoad);
 
     const markup = html`
-        <div style="background-color: #0f172a; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; font-family: 'Inter';">
-            
-            <div style="display: flex; position: absolute; top: -150px; right: -50px; width: 600px; height: 600px; background-image: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(49, 46, 129, 0)); border-radius: 50%;"></div>
-            <div style="display: flex; position: absolute; bottom: -150px; left: -50px; width: 600px; height: 600px; background-image: linear-gradient(45deg, rgba(167, 139, 250, 0.4), rgba(88, 28, 135, 0)); border-radius: 50%;"></div>
+        <div style="background-color: #1f1f1e; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; font-family: 'Inter';">
+
+            <div style="display: flex; position: absolute; top: -150px; right: -50px; width: 600px; height: 600px; background-image: linear-gradient(135deg, rgba(255, 171, 0, 0.35), rgba(255, 171, 0, 0)); border-radius: 50%;"></div>
+            <div style="display: flex; position: absolute; bottom: -150px; left: -50px; width: 600px; height: 600px; background-image: linear-gradient(45deg, rgba(196, 127, 0, 0.25), rgba(196, 127, 0, 0)); border-radius: 50%;"></div>
 
             <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 80px; width: 100%; height: 100%;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
