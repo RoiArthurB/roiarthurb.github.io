@@ -52,5 +52,15 @@
     "heroImage": "/src/assets/blog-placeholder-2.jpg",
     "ogLabel": "ESCAPE",
     "link": "https://anr.fr/Projet-ANR-16-CE39-0011"
+  },
+  {
+    "id": "project-hka",
+    "title": "Hoan Kiem Air",
+    "description": "Simulating traffic and air pollution in Hanoi's Hoan Kiem district using an agent-based model on the GAMA platform, helping authorities and the public evaluate the impact of pedestrianization on air quality.",
+    "year": [2019,2020],
+    "status": "Completed",
+    "authors": [],
+    "heroImage": "/src/assets/blog-placeholder-2.jpg",
+    "link": "https://anr.fr/Projet-ANR-16-CE39-0011"
   }
 ]
