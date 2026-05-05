@@ -8,9 +8,10 @@ import { getCollection } from 'astro:content';
 import bibFileRaw from '../data/publications.bib?raw';
 import { url } from '../utils/paths';
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-).slice(0, 3);
+const posts = (await getCollection('blog'))
+	.filter((post) => post.data.publish === true)
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, 3);
 
 interface Author {
 	first: string;

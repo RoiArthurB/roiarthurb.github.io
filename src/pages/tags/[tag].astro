@@ -10,7 +10,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import { url } from '../../utils/paths';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
+	const posts = (await getCollection('blog')).filter((post) => post.data.publish === true);
 	const tags = [...new Set(posts.flatMap((post) => post.data.tags || []))];
 
 	return tags.map((tag) => ({

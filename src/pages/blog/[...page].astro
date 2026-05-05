@@ -10,12 +10,12 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 import { url } from '../../utils/paths';
 
 export async function getStaticPaths() {
-    const posts = (await getCollection('blog')).sort(
-        (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-    );
+    const posts = (await getCollection('blog'))
+        .filter((post) => post.data.publish === true)
+        .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
     const pageSize = 4;
-    const totalPages = Math.ceil(posts.length / pageSize);
+    const totalPages = Math.max(1, Math.ceil(posts.length / pageSize));
     const paths = [];
 
     for (let i = 1; i <= totalPages; i++) {
@@ -219,8 +219,8 @@ const { posts, currentPage, totalPages, nextPage, prevPage } = Astro.props;
                 }
 
                 {posts.length === 0 && (
-                    <p style="text-align: center; color: var(--color-text-muted);">
-                        No blog posts found.
+                    <p style="text-align: center; color: var(--color-text-muted); font-size: 1.25rem;">
+                        Coming soon...
                     </p>
                 )}
             </div>
