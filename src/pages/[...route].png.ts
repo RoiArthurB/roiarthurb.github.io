@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
-import { generateOgImage } from "../utils/generateOgImage";
+import { generateOgImage, type OgOptions } from "../utils/generateOgImage";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import projectsData from "../data/projects.json";
 
@@ -9,24 +9,24 @@ export async function getStaticPaths() {
 
     // Base static pages
     const staticPages = [
-        { params: { route: 'og' }, props: { title: SITE_TITLE, subtitle: SITE_DESCRIPTION } },
-        { params: { route: 'about' }, props: { title: 'About', subtitle: SITE_TITLE } },
-        { params: { route: 'projects' }, props: { title: 'Projects', subtitle: SITE_TITLE } },
-        { params: { route: 'publications' }, props: { title: 'Publications', subtitle: SITE_TITLE } },
-        { params: { route: 'software' }, props: { title: 'Software', subtitle: SITE_TITLE } },
-        { params: { route: 'team' }, props: { title: 'Team', subtitle: SITE_TITLE } },
-        { params: { route: 'blog' }, props: { title: 'Blog', subtitle: SITE_TITLE } },
+        { params: { route: 'og' }, props: { title: SITE_TITLE, subtitle: 'EXPLORE', author: SITE_TITLE } },
+        { params: { route: 'about' }, props: { title: 'About', subtitle: 'EXPLORE', author: SITE_TITLE } },
+        { params: { route: 'projects' }, props: { title: 'Projects', subtitle: 'EXPLORE', author: SITE_TITLE, icon: 'flask' } },
+        { params: { route: 'publications' }, props: { title: 'Publications', subtitle: 'EXPLORE', author: SITE_TITLE, icon: 'book' } },
+        { params: { route: 'software' }, props: { title: 'Software', subtitle: 'EXPLORE', author: SITE_TITLE, icon: 'code' } },
+        { params: { route: 'team' }, props: { title: 'Team', subtitle: 'EXPLORE', author: SITE_TITLE } },
+        { params: { route: 'blog' }, props: { title: 'Blog', subtitle: 'EXPLORE', author: SITE_TITLE, icon: 'book' } },
     ];
 
     // Dynamic blog posts
     const blogPages = posts.map((post) => ({
         params: { route: `blog/${post.id}` },
-        props: { title: post.data.title, subtitle: 'Blog Post' },
+        props: { title: post.data.title, subtitle: 'Blog Post', author: SITE_TITLE, icon: 'book' },
     }));
 
-    const projectPages = projectsData.map((project) => ({
+    const projectPages = (projectsData as any[]).map((project) => ({
         params: { route: `projects/${project.id}` },
-        props: { title: project.title, subtitle: 'Research Project' },
+        props: { title: project.ogLabel ?? project.title, subtitle: 'Research Project', author: SITE_TITLE, icon: 'flask' },
     }));
 
     return [...staticPages, ...blogPages, ...projectPages];
@@ -34,7 +34,12 @@ export async function getStaticPaths() {
 
 export const GET: APIRoute = async ({ props }) => {
     const safeTitle = (props.title as string).replace(/&/g, 'and');
-    return new Response(await generateOgImage(safeTitle, props.subtitle as string), {
-        headers: { "Content-Type": "image/png" },
-    });
+    return new Response(
+        await generateOgImage(safeTitle, props.subtitle as string, {
+            tagline: props.tagline as string | undefined,
+            author: props.author as string | undefined,
+            icon: props.icon as OgOptions['icon'],
+        }),
+        { headers: { "Content-Type": "image/png" } }
+    );
 };
