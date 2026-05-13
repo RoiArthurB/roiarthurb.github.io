@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://shravangoswami.com/sitemap-index.xml
+Sitemap: https://arthurbrugiere.fr/sitemap-index.xml
