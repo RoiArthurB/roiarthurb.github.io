@@ -16,7 +16,7 @@ export const CONTACT = {
   ],
 };
 
-export type SocialIcon = 'website' | 'scholar' | 'email' | 'github' | 'linkedin';
+export type SocialIcon = 'website' | 'scholar' | 'email' | 'github' | 'linkedin' | 'orcid';
 
 export const SOCIAL_LINKS: ReadonlyArray<{
   label: string;
@@ -24,14 +24,14 @@ export const SOCIAL_LINKS: ReadonlyArray<{
   icon: SocialIcon;
 }> = [
   {
-    label: 'Email',
-    href: 'mailto:contact@arthurbrugiere.fr',
-    icon: 'email',
-  },
-  {
     label: 'GitHub',
     href: 'https://github.com/RoiArthurB',
     icon: 'github',
+  },
+  {
+    label: 'Orcid',
+    href: 'https://orcid.org/0000-0001-7220-449X',
+    icon: 'orcid',
   },
   {
     label: 'Google Scholar',
