@@ -16,14 +16,61 @@
   {
     "id": "alexis-drogoul",
     "name": "Alexis Drogoul",
-    "title": "Professor of Metaphysics",
     "role": "Senior Researcher",
-    "bio": "Alexis holds a Ph.D. in Computer Science. He is a Senior Researcher at IRD and his work concerns the development of software tools (such as GAMA, http://gama-platform.org) for modeling and simulating socio-environmental systems for environmental decision support, particularly in Vietnam, where he has been working since 1999 with numerous partners.",
     "avatar": "https://github.com/alexisdrogoul.png",
     "github": "https://github.com/alexisdrogoul",
     "linkedin": "https://www.linkedin.com/in/alexisdrogoul/",
     "google_scholar": "https://scholar.google.com/citations?user=xCUL8IwAAAAJ",
-    "sortOrder": 2,
+    "alumni": false
+  },
+  {
+    "id": "patrick-taillandier",
+    "name": "Patrick Taillandier",
+    "role": "Senior Researcher",
+    "bio": "",
+    "avatar": "https://github.com/ptaillandier.png",
+    "github": "https://github.com/ptaillandier",
+    "google_scholar": "https://scholar.google.com/citations?user=Z_lxQLEAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "baptiste-lesquoy",
+    "name": "Baptiste Lesquoy",
+    "role": "Research engineer",
+    "avatar": "https://github.com/lesquoyb.png",
+    "github": "https://github.com/lesquoyb",
+    "linkedin": "https://www.linkedin.com/in/baptiste-lesquoy-9270b0217/",
+    "google_scholar": "https://scholar.google.com/citations?user=jqfefHMAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "benoit-gaudou",
+    "name": "Benoit Gaudou",
+    "role": "Senior Researcher",
+    "avatar": "https://github.com/benoitgaudou.png",
+    "github": "https://github.com/benoitgaudou",
+    "linkedin": "https://www.linkedin.com/in/benoit-gaudou-a6806a20/",
+    "google_scholar": "https://scholar.google.com/citations?user=-hv1aHYAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "kevin-chapuis",
+    "name": "Kevin Chapuis",
+    "role": "Researcher",
+    "avatar": "https://github.com/chapuisk.png",
+    "github": "https://github.com/chapuisk",
+    "linkedin": "https://www.linkedin.com/in/kevin-chapuis-089b17190/",
+    "google_scholar": "https://scholar.google.com/citations?user=_fbPeNwAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "huynh-quang-nghi",
+    "name": "Huynh Quang Nghi",
+    "role": "Researcher",
+    "avatar": "https://github.com/hqnghi88.png",
+    "github": "https://github.com/hqnghi88",
+    "linkedin": "https://www.linkedin.com/in/huynh-quang-nghi-612b524a/",
+    "google_scholar": "https://scholar.google.com/citations?user=3EeulPcAAAAJ",
     "alumni": false
   }
 ]
