@@ -2,7 +2,7 @@
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
-import { SITE_TITLE } from '../consts';
+import { SITE_TITLE, CV_URL } from '../consts';
 import { url } from '../utils/paths';
 ---
 
@@ -196,7 +196,7 @@ import { url } from '../utils/paths';
               <li><a href={url('/software')}>Software</a></li>
               <li><a href={url('/publications')}>Publications</a></li>
               <li><a href={url('/blog')}>News</a></li>
-              <li><a href={url('https://shravangoswami.com/resume.pdf')}>CV</a></li>
+              <li><a href={`${CV_URL}`}>CV</a></li>
             </ul>
           </aside>
         </div>

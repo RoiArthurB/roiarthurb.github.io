@@ -4,7 +4,7 @@
 export const SITE_TITLE = 'Arthur Brugière';
 export const SITE_DESCRIPTION = 'Computer Researcher / IT Nerd';
 
-export const CV_URL = 'https://arthurbrugiere.fr/resume.pdf';
+export const CV_URL = '/resume.pdf';
 
 export const CONTACT = {
   organization: 'Arthur Brugière',
