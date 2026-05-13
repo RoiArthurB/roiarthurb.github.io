@@ -8,7 +8,7 @@ import rehypeKatex from 'rehype-katex';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://shravangoswami.com',
+	site: 'https://arthurbrugiere.fr',
 	base: process.env.BASE_PATH || '/',
 	integrations: [
 		mdx(),
