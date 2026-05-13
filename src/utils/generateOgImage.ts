@@ -1,16 +1,12 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import satori from 'satori';
 import { html } from 'satori-html';
 import { Resvg } from '@resvg/resvg-js';
 
-async function loadGoogleFont(font: string, text: string) {
-    const API = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(text)}`;
-    const css = await (await fetch(API, {
-        headers: { "User-Agent": "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1" }
-    })).text();
-    const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/);
-    if (!resource) throw new Error("Failed to download dynamic font");
-    const res = await fetch(resource[1]);
-    return res.arrayBuffer();
+async function loadLocalFont(filename: string) {
+    const buf = await readFile(resolve(process.cwd(), 'public/fonts/inter', filename));
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 }
 
 export interface OgOptions {
@@ -28,10 +24,8 @@ const iconPaths: Record<string, string> = {
 };
 
 export async function generateOgImage(title: string, subtitle: string, options: OgOptions = {}) {
-    const textToLoad = title + subtitle + (options.author ?? '') + (options.tagline ?? '')
-        + "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    const fontDataRegular = await loadGoogleFont("Inter", textToLoad);
-    const fontDataBold = await loadGoogleFont("Inter:wght@700", textToLoad);
+    const fontDataRegular = await loadLocalFont('Inter-Regular.ttf');
+    const fontDataBold = await loadLocalFont('Inter-Bold.ttf');
 
     const baseFontSize = options.fontSize || (title.length > 40 ? 64 : 84);
     const titleStyle = `font-size: ${baseFontSize}px; flex-wrap: wrap; text-align: center; justify-content: center;`;
