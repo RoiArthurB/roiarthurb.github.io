@@ -125,6 +125,7 @@ const cvHref = CV_URL ? url(CV_URL) : null;
     ];
 
     type Member = {
+        id?: string;
         name: string;
         title?: string;
         role?: string;
@@ -197,7 +198,9 @@ const cvHref = CV_URL ? url(CV_URL) : null;
                         modalAvatar.onerror = null;
                         modalAvatar.src = fallbackAvatar;
                     };
-                    modalAvatar.src = member.avatar || fallbackAvatar;
+                    modalAvatar.src = member.id
+                        ? `${import.meta.env.BASE_URL}avatars/${member.id}.png`
+                        : (member.avatar || fallbackAvatar);
                     modalAvatar.style.display = 'block';
                 }
 

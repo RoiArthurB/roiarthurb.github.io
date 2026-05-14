@@ -1,5 +1,16 @@
 [
   {
+    "id": "simple-webplatform",
+    "title": "SIMPLE WebPlatform and Middleware",
+    "description": "Web Application for monitoring and managing multiplayer connections to Gama Server simulation.",
+    "since": 2023,
+    "logo": "https://github.com/project-simple.png",
+    "role": "Lead Developer",
+    "tags": ["TypeScript", "network", "integration", "science"],
+    "link": "https://project-simple.eu",
+    "github": "https://github.com/project-SIMPLE/simple.webplatform/"
+  },
+  {
     "id": "gama-platform",
     "title": "GAMA Platform",
     "description": "GAMA is an open-source, spatially explicit multi-agent simulation platform designed for modelling and simulating complex systems. I contribute to its core development, including agent-based modelling features, simulation infrastructure, and tooling for large-scale epidemiological and environmental simulations.",

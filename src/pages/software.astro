@@ -200,7 +200,7 @@ const software = [...softwareData].sort((a, b) => startYear(b.since) - startYear
 						<article class="software-card">
 							<div class={`software-icon${item.logo ? ' software-icon--image' : ''}`} aria-hidden="true">
 								{item.logo
-									? <img src={item.logo} alt={item.title} />
+									? <img src={`${import.meta.env.BASE_URL}avatars/${item.id}.png`} alt={item.title} onerror={`this.onerror=null;this.src='${item.logo}'`} />
 									: item.title.charAt(0)
 								}
 							</div>
