@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import satori from 'satori';
 import { html } from 'satori-html';
 import { Resvg } from '@resvg/resvg-js';
+import sharp from 'sharp';
 
 async function loadLocalFont(filename: string) {
     const buf = await readFile(resolve(process.cwd(), 'public/fonts/inter', filename));
@@ -14,6 +15,25 @@ export interface OgOptions {
     author?: string;    // primary footer line  — hidden if absent
     icon?: 'book' | 'folder' | 'code' | 'flask';  // bottom-right icon — hidden if absent
     fontSize?: number;  // title font size override — if absent keeps 84px + overflow:hidden + max-height
+    bgImage?: string;   // absolute path to a background image — falls back to dark CSS background if absent or unreadable
+}
+
+async function encodeImageAsDataUri(source: string): Promise<string | null> {
+    try {
+        if (source.startsWith('http://') || source.startsWith('https://')) {
+            const res = await fetch(source);
+            if (!res.ok) return null;
+            const buf = Buffer.from(await res.arrayBuffer());
+            const mime = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim();
+            return `data:${mime};base64,${buf.toString('base64')}`;
+        }
+        const data = await readFile(source);
+        const ext = source.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+        return `data:${mime};base64,${data.toString('base64')}`;
+    } catch {
+        return null;
+    }
 }
 
 const iconPaths: Record<string, string> = {
@@ -26,6 +46,7 @@ const iconPaths: Record<string, string> = {
 export async function generateOgImage(title: string, subtitle: string, options: OgOptions = {}) {
     const fontDataRegular = await loadLocalFont('Inter-Regular.ttf');
     const fontDataBold = await loadLocalFont('Inter-Bold.ttf');
+    const bgDataUri = options.bgImage ? await encodeImageAsDataUri(options.bgImage) : null;
 
     const baseFontSize = options.fontSize || (title.length > 40 ? 64 : 84);
     const titleStyle = `font-size: ${baseFontSize}px; flex-wrap: wrap; text-align: center; justify-content: center;`;
@@ -61,8 +82,14 @@ export async function generateOgImage(title: string, subtitle: string, options: 
     const markup = html(`
         <div style="background-color: #1f1f1e; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; font-family: 'Inter';">
 
-            <div style="display: flex; position: absolute; top: -150px; right: -50px; width: 600px; height: 600px; background-image: linear-gradient(135deg, rgba(255, 171, 0, 0.35), rgba(255, 171, 0, 0)); border-radius: 50%;"></div>
-            <div style="display: flex; position: absolute; bottom: -150px; left: -50px; width: 600px; height: 600px; background-image: linear-gradient(45deg, rgba(196, 127, 0, 0.25), rgba(196, 127, 0, 0)); border-radius: 50%;"></div>
+            ${bgDataUri ? `<img src="${bgDataUri}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" />` : ''}
+            ${bgDataUri 
+            ? 
+                `<div style="display: flex; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.65);"></div>`
+            :
+                `<div style="display: flex; position: absolute; top: -150px; right: -50px; width: 600px; height: 600px; background-image: linear-gradient(135deg, rgba(255, 171, 0, 0.35), rgba(255, 171, 0, 0)); border-radius: 50%;"></div>
+                <div style="display: flex; position: absolute; bottom: -150px; left: -50px; width: 600px; height: 600px; background-image: linear-gradient(45deg, rgba(196, 127, 0, 0.25), rgba(196, 127, 0, 0)); border-radius: 50%;"></div>` 
+            }
 
             <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 80px; width: 100%; height: 100%;">
                 ${badgeHtml}
@@ -89,5 +116,8 @@ export async function generateOgImage(title: string, subtitle: string, options: 
 
     const resvg = new Resvg(svg);
     const pngData = resvg.render();
-    return new Uint8Array(pngData.asPng());
+    const compressed = await sharp(pngData.asPng())
+        .png({ compressionLevel: 9, effort: 10 })
+        .toBuffer();
+    return new Uint8Array(compressed);
 }

@@ -6,8 +6,7 @@
     "ogLabel": "TANGO",
     "year": [2026, 2027],
     "status": "Coming Soon",
-    "authors": ["arthur-brugiere", "baptiste-lesquoy"],
-    "heroImage": "/src/assets/blog-placeholder-3.jpg"
+    "authors": ["arthur-brugiere", "baptiste-lesquoy"]
   },
   {
     "id": "project-simple",
@@ -16,9 +15,9 @@
     "year": [2023, 2027],
     "status": "Current",
     "authors": [],
-    "heroImage": "/src/assets/blog-placeholder-2.jpg",
     "ogLabel": "SIMPLE",
-    "link": "https://project-simple.eu"
+    "link": "https://project-simple.eu",
+    "heroImage": "/src/assets/projects/simple.png"
   },
   {
     "id": "project-star-farm",
@@ -28,7 +27,6 @@
     "status": "Current",
     "authors": [],
     "ogLabel": "STAR-FARM",
-    "heroImage": "/src/assets/blog-placeholder-5.jpg",
     "link": "https://capacity4dev.europa.eu/projects/desira/info/star-farm_en"
   },
   {
@@ -38,9 +36,9 @@
     "year": [2020,2023],
     "status": "Completed",
     "authors": [],
-    "heroImage": "/src/assets/blog-placeholder-3.jpg",
     "ogLabel": "COMOKIT",
-    "link": "https://comokit.org"
+    "link": "https://comokit.org",
+    "heroImage": "https://comokit.org/assets/img/COMOKIT2.png"
   },
   {
     "id": "project-escape",
@@ -49,7 +47,6 @@
     "year": [2019,2020],
     "status": "Completed",
     "authors": [],
-    "heroImage": "/src/assets/blog-placeholder-2.jpg",
     "ogLabel": "ESCAPE",
     "link": "https://anr.fr/Projet-ANR-16-CE39-0011"
   },
@@ -60,7 +57,7 @@
     "year": [2019,2020],
     "status": "Completed",
     "authors": [],
-    "heroImage": "/src/assets/blog-placeholder-2.jpg",
-    "link": "https://anr.fr/Projet-ANR-16-CE39-0011"
+    "link": "https://anr.fr/Projet-ANR-16-CE39-0011",
+    "heroImage": "/src/assets/projects/HKA.jpg"
   }
 ]
