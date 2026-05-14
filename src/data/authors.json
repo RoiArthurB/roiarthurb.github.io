@@ -2,7 +2,7 @@
   {
     "id": "arthur-brugiere",
     "name": "Arthur Brugière",
-    "title": "Professor of Philosophy",
+    "title": "Research/Software Engineering",
     "role": "Principal Investigator",
     "bio": "Arthur holds a a Ph.D. in Computer Science since 2025. He has been working on modeling and simulating complex socio-environmental systems' project at the IRD Vietnam since 2019. Currently, Arthur is working on several lab's project as the SIMPLE project, the STAR FARM project and is a core developer of the GAMA Platform.",
     "avatar": "https://github.com/RoiArthurB.png",
@@ -27,7 +27,6 @@
     "id": "patrick-taillandier",
     "name": "Patrick Taillandier",
     "role": "Senior Researcher",
-    "bio": "",
     "avatar": "https://github.com/ptaillandier.png",
     "github": "https://github.com/ptaillandier",
     "google_scholar": "https://scholar.google.com/citations?user=Z_lxQLEAAAAJ",
@@ -39,6 +38,7 @@
     "role": "Research engineer",
     "avatar": "https://github.com/lesquoyb.png",
     "github": "https://github.com/lesquoyb",
+    "website": "https://blog.baptistel.xyz/",
     "linkedin": "https://www.linkedin.com/in/baptiste-lesquoy-9270b0217/",
     "google_scholar": "https://scholar.google.com/citations?user=jqfefHMAAAAJ",
     "alumni": false
@@ -71,6 +71,93 @@
     "github": "https://github.com/hqnghi88",
     "linkedin": "https://www.linkedin.com/in/huynh-quang-nghi-612b524a/",
     "google_scholar": "https://scholar.google.com/citations?user=3EeulPcAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "nguyen-ngoc-doanh",
+    "name": "Doanh Nguyen-Ngoc",
+    "role": "Researcher",
+    "linkedin": "https://www.linkedin.com/in/nguyen-doanh-77a75420/",
+    "google_scholar": "https://scholar.google.com/citations?user=IakvVIoAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "arnaud-grignard",
+    "name": "Arnaud Grignard",
+    "role": "Researcher",
+    "avatar": "https://github.com/agrignard.png",
+    "github": "https://github.com/agrignard",
+    "linkedin": "https://www.linkedin.com/in/arnaud-grignard-18520313/",
+    "google_scholar": "https://scholar.google.com/citations?user=nvqR2P8AAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "lucas-grosjean",
+    "name": "Lucas Grosjean",
+    "role": "Researcher",
+    "avatar": "https://github.com/lucasgrjs.png",
+    "github": "https://github.com/lucasgrjs",
+    "linkedin": "https://www.linkedin.com/in/lucas-grosjean-7b3642173/",
+    "google_scholar": "https://scholar.google.com/citations?user=B3PFQT0AAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "romain-reuillon",
+    "name": "Romain Reuillon",
+    "role": "Researcher",
+    "avatar": "https://github.com/romainreuillon.png",
+    "github": "https://github.com/romainreuillon",
+    "google_scholar": "https://scholar.google.com/citations?user=b9ivvIAAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "marc-choisy",
+    "name": "Marc Choisy",
+    "role": "Senior Researcher",
+    "avatar": "https://github.com/choisy.png",
+    "github": "https://github.com/choisy",
+    "website": "http://marcchoisy.free.fr/index.html",
+    "linkedin": "https://www.linkedin.com/in/marc-choisy-4180a9241/",
+    "google_scholar": "https://scholar.google.com/citations?user=PvviNu8AAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "jean-daniel-zucker",
+    "name": "Jean-Daniel Zucker",
+    "role": "Senior Researcher",
+    "avatar": "https://github.com/jdzucker.png",
+    "github": "https://github.com/jdzucker",
+    "website": "https://scai.sorbonne-universite.fr/researchers/zucker-jean-daniel",
+    "linkedin": "https://www.linkedin.com/in/jean-daniel-zucker-7273a58/",
+    "google_scholar": "https://scholar.google.com/citations?user=bcrbZrEAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "leo-bire",
+    "name": "Léo Biré",
+    "role": "Ph.D. Student",
+    "avatar": "https://github.com/LBIRE.png",
+    "github": "https://github.com/LBIRE",
+    "google_scholar": "https://scholar.google.com/citations?user=JX98ADUAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "damien-philippon",
+    "name": "Damien Philippon",
+    "role": "Researcher",
+    "avatar": "https://github.com/DAM-Philippon.png",
+    "github": "https://github.com/DAM-Philippon",
+    "google_scholar": "https://scholar.google.com/citations?user=9ngPh4kAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "pierre-larmande",
+    "name": "Pierre Larmande",
+    "role": "Senior Researcher",
+    "avatar": "https://github.com/pierrelarmande.png",
+    "github": "https://github.com/pierrelarmande",
+    "linkedin": "https://www.linkedin.com/in/pierre-larmande-5110b91a/",
+    "google_scholar": "https://scholar.google.com/citations?user=BjYnqe8AAAAJ",
     "alumni": false
   }
 ]

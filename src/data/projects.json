@@ -2,11 +2,11 @@
   {
     "id": "project-tango",
     "title": "TAngible iNterface thought Gama Orchestration (TANGO)",
-    "description": "Lorem ipsum.",
+    "description": "An open-source research framework designed to bridge the gap between digital and physical simulations by using the GAMA platform to orchestrate a fleet of modular, low-cost robots that embody complex agent-based models in real time.",
     "ogLabel": "TANGO",
     "year": [2026, 2027],
     "status": "Coming Soon",
-    "authors": ["arthur-brugiere"],
+    "authors": ["arthur-brugiere", "baptiste-lesquoy"],
     "heroImage": "/src/assets/blog-placeholder-3.jpg"
   },
   {
@@ -15,7 +15,7 @@
     "description": "The general objective of SIMPLE is to raise awareness of young audiences on the challenges of finding sustainable solutions to environmental problems by developing, testing, and delivering a “sustainability metaverse”, i.e., an infrastructure and a set of pedagogical methods based on immersive virtual reality environments, serious games, and scientific simulations.",
     "year": [2023, 2027],
     "status": "Current",
-    "authors": ["alexis-drogoul"],
+    "authors": [],
     "heroImage": "/src/assets/blog-placeholder-2.jpg",
     "ogLabel": "SIMPLE",
     "link": "https://project-simple.eu"
@@ -37,7 +37,7 @@
     "description": "Building a modeling kit written in GAMA for analyzing and comparing interventions against the COVID-19 epidemic at the scale of a city.",
     "year": [2020,2023],
     "status": "Completed",
-    "authors": ["alexis-drogoul"],
+    "authors": [],
     "heroImage": "/src/assets/blog-placeholder-3.jpg",
     "ogLabel": "COMOKIT",
     "link": "https://comokit.org"
