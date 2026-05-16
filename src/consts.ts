@@ -45,6 +45,19 @@ export const SOCIAL_LINKS: ReadonlyArray<{
   },
 ];
 
+export const GISCUS = {
+  repo: 'RoiArthurB/roiarthurb.github.io' as `${string}/${string}`,
+  repoId: 'R_kgDOSPu0kw',
+  category: 'General',
+  categoryId: 'DIC_kwDOSPu0k84C8QdB',
+  mapping: 'pathname' as const,
+  strict: '0' as const,
+  reactionsEnabled: '1' as const,
+  emitMetadata: '0' as const,
+  inputPosition: 'top' as const,
+  lang: 'en' as const,
+};
+
 export const FOOTER_CREDIT = {
   designerName: 'Shravan Goswami',
   designerUrl: 'https://shravangoswami.com',
