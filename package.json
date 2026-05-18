@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "postbuild": "pagefind --site dist",
-    "preview": "astro preview",
+    "preview": "astro preview --host",
     "astro": "astro"
   },
   "dependencies": {
