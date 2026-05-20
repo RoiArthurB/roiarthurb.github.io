@@ -80,11 +80,12 @@ Here's the code of the accessibility service:
 ```java
 private void performBlindSequence() {
     lastActionTime = System.currentTimeMillis();
-    Log.d(TAG, "TAB x2, ENTER");
+    Log.d(TAG, "TAB x3, ENTER");
     
-    sendKey(KeyEvent.KEYCODE_TAB);
+    handler.postDelayed(() -> sendKey(KeyEvent.KEYCODE_TAB),   0);
     handler.postDelayed(() -> sendKey(KeyEvent.KEYCODE_TAB), 100);
     handler.postDelayed(() -> sendKey(KeyEvent.KEYCODE_TAB), 200);
+
     handler.postDelayed(() -> sendKey(KeyEvent.KEYCODE_ENTER), 300);
 }
 
@@ -95,7 +96,7 @@ private void sendKey(int keyCode) {
 }
 ```
 
-Two Tabs move focus from "Allow" to "Deny" to "Always allow on this network". Enter activates. The 100ms spacing between each keypress is the minimum I found that the shell reliably registers — any faster and keys get dropped.
+First Tab put focus on the *VrUsb* window, then two extra Tabs move focus from "Allow" to "Deny" to "Always allow on this network". Enter activates. The 100ms spacing between each keypress is the minimum I found that the shell reliably registers — any faster and keys get dropped.
 
 The window detection is equally *dumber*:
 
