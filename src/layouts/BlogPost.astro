@@ -10,9 +10,9 @@ import TableOfContents from '../components/TableOfContents.astro';
 import Giscus from '../components/Giscus.astro';
 import { url } from '../utils/paths';
 
-type Props = CollectionEntry<'blog'>['data'] & { id?: string, headings?: { depth: number; slug: string; text: string }[], toc?: boolean, comments?: boolean };
+type Props = CollectionEntry<'blog'>['data'] & { id?: string, headings?: { depth: number; slug: string; text: string }[], toc?: boolean, comments?: boolean, readingTime?: number };
 
-const { title, description, pubDate, updatedDate, heroImage, authors, tags, id, headings = [], toc, comments = true } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, authors, tags, id, headings = [], toc, comments = true, readingTime } = Astro.props;
 const fallbackHero = id ? url(`/blog/${id}.png`) : url('/og.png');
 ---
 
@@ -433,6 +433,9 @@ const fallbackHero = id ? url(`/blog/${id}.png`) : url('/og.png');
 				margin-bottom: 0.5em;
 				color: var(--color-text-muted);
 			}
+			.reading-time {
+				color: var(--color-text-muted);
+			}
 			.last-updated-on {
 				font-style: italic;
 			}
@@ -511,6 +514,7 @@ const fallbackHero = id ? url(`/blog/${id}.png`) : url('/og.png');
 							<div class="title">
 								<div class="date">
 									<FormattedDate date={pubDate} />
+									{readingTime && <span class="reading-time"> · {readingTime} min read</span>}
 									{
 										updatedDate && (
 											<div class="last-updated-on">
