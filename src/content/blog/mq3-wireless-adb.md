@@ -11,7 +11,10 @@ publish: false
 
 Meta Quest headsets have a nasty habit of forgetting your wireless ADB trust relationship every time they reboot. For a research project deploying ten headsets to a classroom of teachers who've never touched a terminal, *"just run `adb tcpip 5555` again"* isn't a solution, it's a support ticket generator at best. I spent weeks trying to automate the "Allow wireless debugging?" popup out of existence. The path involved dead ends, Android security walls, and finally a brute-force accessibility hack that actually works.
 
-![ADB Wireless Popup visible in a Meta Quest 3 headset](./images/adbWirelessPopup.jpg)
+<figure>
+    <img src="/images/mq3-wireless-adb.webp" alt="ADB Wireless Popup visible in a Meta Quest 3 headset" />
+    <figcaption>The "Allow wireless debugging?" popup on a Meta Quest 3.<br/>Credit: Image from <a href="https://www.quest-games-optimizer.com/how-to-enable-adb-from-your-meta-quest">QGO</a></figcaption>
+</figure>
 
 ## The Problem That Shouldn't Exist
 
@@ -138,10 +141,13 @@ The app is a single APK, granted `WRITE_SECURE_SETTINGS` once via ADB after inst
 
 Repository is here if you're fighting the same fight: [https://github.com/project-SIMPLE/adb-auto-enable](https://github.com/project-SIMPLE/adb-auto-enable)
 
-![https://v.redd.it/ipa5pnt04owg1](https://v.redd.it/ipa5pnt04owg1)
+<figure>
+    <video controls style="width:100%">
+        <source src="/videos/mq3-wireless-adb.mp4" type="video/mp4">
+    </video>
+    <figcaption>Demo: headset auto-enabling/accepting the ADB Wireless popup.</figcaption>
+</figure>
 
 ## Conclusion
 
 If Meta ever exposes a system property or hidden API to persist wireless debugging trust, this whole accessibility dance becomes unnecessary. Some developers already filed feedback through their developer channels for, maybe, years, but I'm not holding my breath. For now, abusing the accessibility framework for input injection is the least-worst option.
-
-The real lesson is that VR platforms pretend to be Android but aren't. Standard automation tools fail because the assumptions they rely on — visible view hierarchies, standard input injection, persistent secure settings — don't hold in a compositor-driven environment.

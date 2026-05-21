@@ -314,6 +314,21 @@ const fallbackHero = id ? url(`/blog/${id}.png`) : url('/og.png');
 				border-radius: 12px;
 				box-shadow: var(--shadow-sm);
 			}
+			.prose :global(figure) {
+				margin: 1.75rem 0;
+				text-align: center;
+			}
+			.prose :global(figure img),
+			.prose :global(figure video) {
+				margin: 0 auto;
+				display: block;
+			}
+			.prose :global(figcaption) {
+				margin-top: 0.5rem;
+				font-size: 0.85rem;
+				color: var(--color-text-muted);
+				font-style: italic;
+			}
 			.prose :global(details) {
 				margin: 1.5rem 0;
 				padding: 1rem 1.25rem;
