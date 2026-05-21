@@ -1,12 +1,13 @@
 ---
 title: 'Making ADB Wireless more *accessible* on Meta Quest headsets'
 description: "How I've been able to enable ADB Wireless without user interaction."
-pubDate: '2026-04-01'
+#pubDate: '2026-04-01'
+pubDate: '2026-05-21'
 toc: true
 tags:
   - meta quest
   - adb
-publish: false
+publish: true
 ---
 
 Meta Quest headsets have a nasty habit of forgetting your wireless ADB trust relationship every time they reboot. For a research project deploying ten headsets to a classroom of teachers who've never touched a terminal, *"just run `adb tcpip 5555` again"* isn't a solution, it's a support ticket generator at best. I spent weeks trying to automate the "Allow wireless debugging?" popup out of existence. The path involved dead ends, Android security walls, and finally a brute-force accessibility hack that actually works.
