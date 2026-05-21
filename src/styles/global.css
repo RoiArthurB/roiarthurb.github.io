@@ -85,6 +85,9 @@ body {
 	margin: 0;
 	font-size: 18px;
 	transition: background-color 0.3s ease, color 0.3s ease;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
 }
 
 main {
@@ -92,6 +95,7 @@ main {
 	max-width: var(--max-width);
 	margin: 0 auto;
 	padding: 3rem 1rem;
+	flex: 1;
 }
 
 h1,
