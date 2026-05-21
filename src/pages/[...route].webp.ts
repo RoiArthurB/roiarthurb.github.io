@@ -65,6 +65,6 @@ export const GET: APIRoute = async ({ props }) => {
             icon: props.icon as OgOptions['icon'],
             bgImage: props.bgImage as string | undefined,
         }),
-        { headers: { "Content-Type": "image/png" } }
+        { headers: { "Content-Type": "image/webp" } }
     );
 };

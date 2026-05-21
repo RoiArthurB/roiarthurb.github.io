@@ -211,7 +211,7 @@ const { posts, currentPage, totalPages, nextPage, prevPage } = Astro.props;
                                 {post.data.heroImage ? (
                                     <Image width={560} height={315} src={post.data.heroImage} alt={post.data.title} />
                                 ) : (
-                                    <img src={url(`/blog/${post.id}.png`)} alt={post.data.title} />
+                                    <img src={url(`/blog/${post.id}.webp`)} alt={post.data.title} />
                                 )}
                             </a>
                         </article>

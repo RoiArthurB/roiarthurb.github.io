@@ -18,13 +18,13 @@ function fetchAvatarsIntegration() {
 
                 const downloadImage = async (id, url) => {
                     if (!url?.startsWith('http')) return;
-                    const dest = resolve(avatarsDir, `${id}.png`);
+                    const dest = resolve(avatarsDir, `${id}.webp`);
                     if (existsSync(dest)) return;
                     try {
                         const res = await fetch(url);
                         if (!res.ok) { logger.warn(`Failed to fetch image for ${id}: HTTP ${res.status}`); return; }
                         const buf = Buffer.from(await res.arrayBuffer());
-                        await writeFile(dest, await sharp(buf).png({ compressionLevel: 9 }).toBuffer());
+                        await writeFile(dest, await sharp(buf).webp({ quality: 85 }).toBuffer());
                         logger.info(`Cached image for ${id}`);
                     } catch (e) {
                         logger.warn(`Failed to fetch image for ${id}: ${e.message}`);

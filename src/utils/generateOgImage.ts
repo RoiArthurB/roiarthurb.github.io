@@ -117,7 +117,7 @@ export async function generateOgImage(title: string, subtitle: string, options: 
     const resvg = new Resvg(svg);
     const pngData = resvg.render();
     const compressed = await sharp(pngData.asPng())
-        .png({ compressionLevel: 9, effort: 10 })
+        .webp({ quality: 85 })
         .toBuffer();
     return new Uint8Array(compressed);
 }

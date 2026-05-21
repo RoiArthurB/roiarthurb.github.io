@@ -13,7 +13,7 @@ import { url } from '../utils/paths';
 type Props = CollectionEntry<'blog'>['data'] & { id?: string, headings?: { depth: number; slug: string; text: string }[], toc?: boolean, comments?: boolean, readingTime?: number };
 
 const { title, description, pubDate, updatedDate, heroImage, authors, tags, id, headings = [], toc, comments = true, readingTime } = Astro.props;
-const fallbackHero = id ? url(`/blog/${id}.png`) : url('/og.png');
+const fallbackHero = id ? url(`/blog/${id}.webp`) : url('/og.webp');
 ---
 
 <html lang="en">
