@@ -202,7 +202,6 @@ const cvHref = CV_URL ? url(CV_URL) : null;
                 if (modalName) modalName.textContent = member.name;
                 if (modalTitle) modalTitle.textContent = member.title || '';
                 if (modalRole) modalRole.textContent = member.role || '';
-                if (modalBio) modalBio.textContent = member.bio || 'No description available.';
 
                 if (modalAvatar) {
                     const fallbackAvatar = generateFallbackAvatar(member.name);
