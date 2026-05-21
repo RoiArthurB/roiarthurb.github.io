@@ -20,11 +20,11 @@ Meta Quest headsets have a nasty habit of forgetting your wireless ADB trust rel
 
 Wireless ADB on stock Android is straightforward: enable it once, pair your machine, and the phone remembers. Meta's Quest OS, built on Android but heavily modified, treats this differently: On every reboot, the system clears its in-memory list of trusted wireless debugging fingerprints. The `adb_wifi_enabled` setting flips to 0 (which is normal). Reconnect, and you're greeted with the same permission dialog asking if you trust this network.
 
-For the [SIMPLE project](https://project-simple.eu) — a swarm of six Meta Quest 3 headsets streaming video via [`scrcpy`](https://github.com/Genymobile/scrcpy) and receiving commands from a central controller — this was a deployment blocker. We can't send a technician to every school every morning to click one popup in each headset...
+For the [SIMPLE project](https://project-simple.eu) — a swarm of six [Meta Quest 3](https://www.meta.com/quest/quest-3/) headsets streaming video via [scrcpy](https://github.com/Genymobile/scrcpy) and receiving commands from a central controller — this was a deployment blocker. We can't send a technician to every school every morning to click one popup in each headset...
 
 ## Attempt 1: Off-the-Shelf Automation
 
-Before writing a single line of Java, I tried the obvious tools [Automate](https://llamalab.com/automate/), [Tasker](https://tasker.joaoapps.com/), ie. the usual Android automation workhorses. Set up a simple flow: when the system shows the ADB popup, click "Allow" or "Always allow." Should be trivial.
+Before writing a single line of Java, I tried the obvious tools [Automate](https://llamalab.com/automate/), [Tasker](https://tasker.joaoapps.com/) (ie. the usual Android automation workhorses). Set up a simple flow: when the system shows the ADB popup, click "Allow" or "Always allow." Should be trivial.
 
 It isn't. The moment those apps trigger `adb tcpip 5555` (toggle the wireless debugging setting), the system popup appears and **pauses the automation engine**. 
 
