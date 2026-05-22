@@ -49,14 +49,11 @@ const cvHref = CV_URL ? url(CV_URL) : null;
             </button>
         </div>
         <a href={url('/')}>Home</a>
-        <a href={url('/publications')}>Publications</a>
         <a href={url('/projects')}>Projects</a>
         <a href={url('/software')}>Software</a>
-        <a href={url('/team')}>Team</a>
+        <a href={url('/publications')}>Publications</a>
         <span class="mobile-menu-section">Blog</span>
         <div class="mobile-submenu">
-            <a href={url('/blog')}>News</a>
-            <a href={url('/tags')}>Tags</a>
             <a href={url('/archive')}>Archive</a>
         </div>
         {cvHref && <a href={cvHref} target="_blank">CV</a>}
