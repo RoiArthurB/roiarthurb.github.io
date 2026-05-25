@@ -1,0 +1,18 @@
+{
+  "subject": "acct:me@arthurbrugiere.fr",
+  "aliases": [
+    "https://arthurbrugiere.fr/"
+  ],
+  "links": [
+    {
+      "rel": "self",
+      "type": "application/activity+json",
+      "href": "https://arthurbrugiere.fr/activitypub/actor.json"
+    },
+    {
+      "rel": "http://webfinger.net/rel/profile-page",
+      "type": "text/html",
+      "href": "https://arthurbrugiere.fr/"
+    }
+  ]
+}
