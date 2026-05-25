@@ -52,6 +52,7 @@ const fallbackHero = id ? url(`/blog/${id}.webp`) : url('/og.webp');
 			.prose-wrapper {
 				position: relative;
 				max-width: 100%;
+				min-width: 0;
 			}
 
 			.prose {
@@ -195,8 +196,13 @@ const fallbackHero = id ? url(`/blog/${id}.webp`) : url('/og.webp');
 				outline: 2px solid var(--color-accent);
 				outline-offset: 3px;
 			}
+			.prose :global(pre.astro-code) {
+				max-width: 100%;
+			}
 			.prose :global(pre.astro-code code) {
-				min-width: max-content;
+				display: block;
+				width: fit-content;
+				min-width: 100%;
 			}
 			.prose :global(pre.astro-code .line) {
 				display: inline-block;
