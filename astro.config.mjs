@@ -3,10 +3,24 @@
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
+import { rehypeGithubAlerts } from 'rehype-github-alerts';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import sharp from 'sharp';
+
+/** @type {import('rehype-github-alerts').DefaultBuildType} */
+const calloutBuild = (alertOptions, originalChildren) => {
+    return {
+        type: 'element',
+        tagName: 'div',
+        properties: {
+            className: ['callout'],
+            dataCallout: alertOptions.keyword.toLowerCase(),
+        },
+        children: originalChildren,
+    };
+};
 
 function fetchAvatarsIntegration() {
     return {
@@ -61,6 +75,9 @@ export default defineConfig({
 				dark: 'gruvbox-dark-medium',
 			},
 		},
+		rehypePlugins: [
+			[rehypeGithubAlerts, { build: calloutBuild }],
+		],
 	},
 	build: {
 		inlineStylesheets: 'always',

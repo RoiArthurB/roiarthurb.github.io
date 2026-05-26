@@ -71,7 +71,7 @@ sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -
 
 After running these and restarting Internet Sharing, connected devices received IPs in the `192.168.68.x` range — exactly what I needed.
 
-> [!note]
+> [!TIP]
 > Settings seems to cache these parameters. Quit the Settings application before applying them, then reactivate Internet Sharing.
 
 ## Wrapping Up

@@ -424,6 +424,14 @@ const fallbackHero = id ? url(`/blog/${id}.webp`) : url('/og.webp');
 				--callout-accent: #dc2626;
 				--callout-surface: rgba(220, 38, 38, 0.12);
 			}
+			.prose :global(.callout[data-callout='important']) {
+				--callout-accent: #2563eb;
+				--callout-surface: rgba(37, 99, 235, 0.12);
+			}
+			.prose :global(.callout[data-callout='caution']) {
+				--callout-accent: #dc2626;
+				--callout-surface: rgba(220, 38, 38, 0.12);
+			}
 
 			.title {
 				margin-bottom: 1em;
