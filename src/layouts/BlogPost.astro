@@ -509,9 +509,9 @@ const fallbackHero = id ? url(`/blog/${id}.webp`) : url('/og.webp');
 			<article>
 				<div class="hero-image">
 					{heroImage ? (
-						<Image width={1020} height={510} src={heroImage} alt={title} />
+						<Image width={1020} height={510} src={heroImage} alt={title} loading="eager" fetchpriority="high" />
 					) : (
-						<img width={1020} height={510} src={fallbackHero} alt={title} />
+						<img width={1020} height={510} src={fallbackHero} alt={title} loading="eager" fetchpriority="high" />
 					)}
 				</div>
 				<div class="blog-container">
