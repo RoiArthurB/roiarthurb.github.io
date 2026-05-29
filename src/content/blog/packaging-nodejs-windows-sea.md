@@ -8,7 +8,7 @@ tags:
   - nodejs
   - sea
   - packaging
-publish: false
+publish: true
 ---
 
 Packaging a Node.js application into a single executable sounds like a solved problem. Tools exist. You build your JavaScript, bundle your assets, point a packager at your entry file, and you get a binary. On macOS and Linux, this workflow delivers. On Windows, with a native WebSocket module in your dependency tree, the same workflow produces a file that crashes before it prints a single log line.
@@ -112,6 +112,11 @@ The CI pipeline now has three parallel jobs: `ubuntu-latest` for Linux, `macos-l
 ## Summary
 
 The SIMPLE Webplatform now ships as a single executable on all three platforms. Windows uses a Go self-extracting launcher that bundles a SEA-built `node.exe` and extracts it to temp on first run. Linux and macOS use native SEA binaries without wrappers. The packaging pipeline relies on Node.js built-in tools plus `postject` and Go. No deprecated third-party packagers, no emulation layers, no platform-specific native module patching.
+
+<figure>
+    <img src="/images/packaging-nodejs-windows-sea-compilation.webp" alt="Compilation logs of the windows binary" />
+    <figcaption>Compilation logs of the windows binary on Github Actions</figcaption>
+</figure>
 
 If you are packaging a Node.js application with native modules for Windows, use *Node.js SEA* (it's been in beta for very long time, but it really works fine nowadays), name your binary `node.exe`, and wrap it with a launcher if your users need a branded filename. Those three things would have saved me days of debugging.
 
