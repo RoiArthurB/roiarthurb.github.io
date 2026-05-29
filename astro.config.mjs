@@ -4,6 +4,7 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
 import { rehypeGithubAlerts } from 'rehype-github-alerts';
+import { visit } from 'unist-util-visit';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -21,6 +22,20 @@ const calloutBuild = (alertOptions, originalChildren) => {
         children: originalChildren,
     };
 };
+
+function rehypeTargetBlank() {
+	return (tree) => {
+		visit(tree, 'element', (node) => {
+			if (node.tagName === 'a') {
+				const href = node.properties?.href;
+				if (typeof href === 'string' && !href.startsWith('#') && !node.properties?.target) {
+					node.properties.target = '_blank';
+					node.properties.rel = 'noopener noreferrer';
+				}
+			}
+		});
+	};
+}
 
 function fetchAvatarsIntegration() {
     return {
@@ -77,6 +92,7 @@ export default defineConfig({
 		},
 		rehypePlugins: [
 			[rehypeGithubAlerts, { build: calloutBuild }],
+			rehypeTargetBlank,
 		],
 	},
 	build: {
