@@ -34,7 +34,7 @@ The reason: macOS Internet Sharing is built to share an *existing* (i.e. activat
 
 ## The Hack: Faking a Connection with a Loopback Interface
 
-The solution came from a gist by `@zhuhuilin`: **[macOS Internet Sharing Without Internet Connection](https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2)**.
+The solution came from a gist by `@zhuhuilin`: **<a href="https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2" target="_blank">macOS Internet Sharing Without Internet Connection</a>**.
 
 The trick is to create a new network service on the loopback interface (`lo0`). macOS only checks that the network service has an IP address (which is apparently how it determines whether a connection is active) before allowing Internet Sharing. It doesn't verify that the connection reaches the real internet. By assigning a static IP to `lo0` and registering it as a network service, macOS happily accepts it as a valid source.
 
@@ -52,6 +52,10 @@ This will automatically:
 
 Then you can select this `AdHoc` service as your source in Internet Sharing. Once configured, macOS actually brings up the WiFi access point, and devices can see and connect to it.
 
+> [!CAUTION]
+> The WiFi should be enabled on MacOS to have the beacon activated. But it should not be connected to any networks.
+> ![WIFI activated by disabled]()
+> ![WIFI detailed sharing internet]()
 
 ## The DHCP Range Fix
 
@@ -74,6 +78,5 @@ After running these and restarting Internet Sharing, connected devices received 
 > [!TIP]
 > Settings seems to cache these parameters. Quit the Settings application before applying them, then reactivate Internet Sharing.
 
-## Wrapping Up
 
 The whole thing works reliably once the loopback trick is in place. The `AdHoc` service survives reboots, and the DHCP range sticks as long as you don't reset the NAT preferences. The one thing to keep in mind: if you do have an actual upstream connection available (Ethernet, USB tethering), you can use that directly as the Internet Sharing source and skip the loopback hack entirely, it's only needed when you want to have an access point from macOS without internet.
