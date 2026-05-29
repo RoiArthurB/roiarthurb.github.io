@@ -17,7 +17,7 @@ macOS has a built-in **Internet Sharing** feature ([documentation](https://suppo
 
 On a MacBook with only a WiFi card and no wired connection, creating a *standalone* access point is not straightforward.
 
-## Attempt 1: Native Internet Sharing (Silent Failure)
+## Attempt 1: Native Internet Sharing (Silent failure)
 
 So I did follow the documentation and the internet's recommendations. I went to **`System Settings` → `General` → `Sharing` → `Internet Sharing`** and enabled everything:
 
@@ -37,9 +37,9 @@ Everything appeared enabled. No error messages. No warnings. But **the WiFi netw
 
 The reason: macOS Internet Sharing is built to share an *existing* (i.e. activated, up) connection, not blindly bridge one network stack to another. Without an active upstream connection that the system recognizes as active, the underlying service doesn't actually bring up the access point, even though the UI lets you enable everything.
 
-## The Hack: Faking a Connection with a Loopback Interface
+## The hack: Faking a connection with a loopback interface
 
-The solution came from a gist by `@zhuhuilin`: **<a href="https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2" target="_blank">macOS Internet Sharing Without Internet Connection</a>**.
+The solution came from a gist by `@zhuhuilin`: **<a href="https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2" target="_blank">macOS Internet Sharing Without Internet Connection</a>**[^note].
 
 The trick is to create a new network service on the loopback interface (`lo0`). macOS only checks that the network service has an IP address (which is apparently how it determines whether a connection is active) before allowing Internet Sharing. It doesn't verify that the connection reaches the real internet. By assigning a static IP to `lo0` and registering it as a network service, macOS happily accepts it as a valid source.
 
@@ -76,7 +76,7 @@ Then you can select this `AdHoc` service as your source in Internet Sharing. Onc
 >    <figcaption>WiFi is enabled, and is showing the "Internet Sharing" on Channel 11</figcaption>
 > </figure>
 
-## The DHCP Range Fix
+## Changing the DHCP range
 
 By default, macOS Internet Sharing assigns connected devices to the `192.168.2.0/24` range. I needed mine to be `192.168.68.0/24` to match my existing setup.
 
@@ -99,3 +99,6 @@ After running these and restarting Internet Sharing, connected devices received 
 
 
 The whole thing works reliably once the loopback trick is in place. The `AdHoc` service survives reboots, and the DHCP range sticks as long as you don't reset the NAT preferences. The one thing to keep in mind: if you do have an actual upstream connection available (Ethernet, USB tethering), you can use that directly as the Internet Sharing source and skip the loopback hack entirely, it's only needed when you want to have an access point from macOS without internet.
+
+
+[^note]: I made a backup of *Zhuhuilin*'s scripts [here](https://git.arthurbrugiere.fr/roiarthurb/macOS_Internet-Sharing_Without_Internet-Connection)
