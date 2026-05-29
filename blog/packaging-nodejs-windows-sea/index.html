@@ -168,6 +168,10 @@ Table of Contents
 <p>The CI pipeline now has three parallel jobs: <code>ubuntu-latest</code> for Linux, <code>macos-latest</code> for macOS, and <code>windows-latest</code> for Windows. Each produces one binary using the same Node.js SEA mechanism. No more QEMU. No more <code>ldid</code>. No more <code>pkg</code>.</p>
 <h2 id="summary">Summary</h2>
 <p>The SIMPLE Webplatform now ships as a single executable on all three platforms. Windows uses a Go self-extracting launcher that bundles a SEA-built <code>node.exe</code> and extracts it to temp on first run. Linux and macOS use native SEA binaries without wrappers. The packaging pipeline relies on Node.js built-in tools plus <code>postject</code> and Go. No deprecated third-party packagers, no emulation layers, no platform-specific native module patching.</p>
+<figure>
+    <img src="/images/packaging-nodejs-windows-sea-compilation.webp" alt="Compilation logs of the windows binary">
+    <figcaption>Compilation logs of the windows binary on Github Actions</figcaption>
+</figure>
 <p>If you are packaging a Node.js application with native modules for Windows, use <em>Node.js SEA</em> (it’s been in beta for very long time, but it really works fine nowadays), name your binary <code>node.exe</code>, and wrap it with a launcher if your users need a branded filename. Those three things would have saved me days of debugging.</p>
 <p><em>The full implementation is in <a href="https://github.com/project-SIMPLE/simple.webplatform/pull/151" rel="nofollow noopener noreferrer" target="_blank">project-SIMPLE/simple.webplatform#151</a>.</em></p>  <div class="giscus-wrapper" data-astro-cid-an2nl7ar> <script src="https://giscus.app/client.js" data-repo="RoiArthurB/roiarthurb.github.io" data-repo-id="R_kgDOSPu0kw" data-category="General" data-category-id="DIC_kwDOSPu0k84C8QdB" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="en" data-loading="lazy" crossorigin="anonymous" async></script> </div> <script data-astro-rerun>
 	function syncGiscusTheme() {
