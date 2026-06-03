@@ -42,6 +42,7 @@
     "ogLabel": "STAR-FARM",
     "link": "https://capacity4dev.europa.eu/projects/desira/info/star-farm_en"
   },
+
   {
     "id": "project-comokit",
     "title": "COvid19 MOdeling KIT (COMOKIT)",
@@ -51,7 +52,7 @@
     "authors": [],
     "ogLabel": "COMOKIT",
     "link": "https://comokit.org",
-    "heroImage": "https://comokit.org/assets/img/COMOKIT2.png"
+    "heroImage": "/src/assets/projects/COMOKIT.png"
   },
   {
     "id": "project-escape",
