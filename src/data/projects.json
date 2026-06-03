@@ -44,6 +44,16 @@
   },
 
   {
+    "id": "project-phd",
+    "title": "Couplage dynamique et passage à l'échelle de modèles socio-environnementaux complexes",
+    "description": "Designing a unified multi-level agent-based modeling framework in GAMA to address the methodological challenges of coupling multi-scales simulations.",
+    "year": [2020,2025],
+    "status": "Completed",
+    "authors": [],
+    "ogLabel": "Ph.D.",
+    "link": "https://theses.fr/2025SORUS566"
+  },
+  {
     "id": "project-comokit",
     "title": "COvid19 MOdeling KIT (COMOKIT)",
     "description": "Building a modeling kit written in GAMA for analyzing and comparing interventions against the COVID-19 epidemic at the scale of a city.",
