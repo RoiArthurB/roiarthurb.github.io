@@ -5,8 +5,10 @@
     "description": "An open-source research framework designed to bridge the gap between digital and physical simulations by using the GAMA platform to orchestrate a fleet of modular, low-cost robots that embody complex agent-based models in real time.",
     "ogLabel": "TANGO",
     "year": [2026, 2027],
-    "status": "Coming Soon",
-    "authors": ["arthur-brugiere", "baptiste-lesquoy"]
+    "status": "Current",
+    "authors": [],
+    "link": "https://tango-projet.github.io/",
+    "heroImage": "/src/assets/projects/tango.png"
   },
   {
     "id": "project-simple",
