@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://arthurbrugiere.fr/astro-scholar/pr-previews/2sitemap-index.xml

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Arthur Brugière</title><description>Computer Researcher / IT Geek</description><link>https://arthurbrugiere.fr/</link><item><title>Using Your MacBook as a Local WiFi Access Point</title><link>https://arthurbrugiere.fr/blog/macbook-air-access-point/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/macbook-air-access-point/</guid><description>How I&apos;ve been able to use a MacBook Air as a router without internet connection.</description><pubDate>Mon, 25 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;The Problem&lt;/h2&gt;
+&lt;p&gt;I needed my MacBook Air M2 (Sonoma) to broadcast its own WiFi network, being a WiFi server instead of a client. Not to share an internet connection, just to create a local wireless network so other devices could connect to it and talk to each other. Think local development and setting up a private LAN without carrying a router.&lt;/p&gt;
+&lt;p&gt;macOS has a built-in &lt;strong&gt;Internet Sharing&lt;/strong&gt; feature (&lt;a href=&quot;https://support.apple.com/en-vn/guide/mac-help/mchlp1540/mac&quot;&gt;documentation&lt;/a&gt;), but it&apos;s designed to share an existing internet connection (like Ethernet or Bluetooth tethering) over another network (such as WiFi).&lt;/p&gt;
+&lt;p&gt;On a MacBook with only a WiFi card and no wired connection, creating a &lt;em&gt;standalone&lt;/em&gt; access point is not straightforward.&lt;/p&gt;
+&lt;h2&gt;Attempt 1: Native Internet Sharing (Silent failure)&lt;/h2&gt;
+&lt;p&gt;So I did follow the documentation and the internet&apos;s recommendations. I went to &lt;strong&gt;&lt;code&gt;System Settings&lt;/code&gt; → &lt;code&gt;General&lt;/code&gt; → &lt;code&gt;Sharing&lt;/code&gt; → &lt;code&gt;Internet Sharing&lt;/code&gt;&lt;/strong&gt; and enabled everything:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Picked a source connection (let&apos;s say &lt;em&gt;Thunderbolt&lt;/em&gt;)&lt;/li&gt;
+&lt;li&gt;Selected &lt;em&gt;&amp;quot;To computers using:&amp;quot;&lt;/em&gt; &lt;code&gt;Wi-Fi&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Set the network name and password&lt;/li&gt;
+&lt;li&gt;Kept my WiFi on, but not connected to any network&lt;/li&gt;
+&lt;li&gt;Turned the toggle on&lt;/li&gt;
+&lt;li&gt;Accepted the warning popup&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Everything appeared enabled. No error messages. No warnings. But &lt;strong&gt;the WiFi network simply never appeared&lt;/strong&gt;. Not on my phone, not on any other device. macOS accepted the configuration but silently refused to actually broadcast the signal.&lt;/p&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/macbook-air-access-point-wifi-not-working.webp&amp;quot; alt=&amp;quot;Internet sharing is enabled, but not wifi is broadcasted&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;Internet sharing is enabled, but not wifi is broadcasted (it should be displayed here as we will see later)&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;p&gt;The reason: macOS Internet Sharing is built to share an &lt;em&gt;existing&lt;/em&gt; (i.e. activated, up) connection, not blindly bridge one network stack to another. Without an active upstream connection that the system recognizes as active, the underlying service doesn&apos;t actually bring up the access point, even though the UI lets you enable everything.&lt;/p&gt;
+&lt;h2&gt;The hack: Faking a connection with a loopback interface&lt;/h2&gt;
+&lt;p&gt;The solution came from a gist by &lt;code&gt;@zhuhuilin&lt;/code&gt;: &lt;strong&gt;&amp;lt;a href=&amp;quot;https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2&amp;quot; target=&amp;quot;_blank&amp;quot;&amp;gt;macOS Internet Sharing Without Internet Connection&amp;lt;/a&amp;gt;&lt;/strong&gt;[^note].&lt;/p&gt;
+&lt;p&gt;The trick is to create a new network service on the loopback interface (&lt;code&gt;lo0&lt;/code&gt;). macOS only checks that the network service has an IP address (which is apparently how it determines whether a connection is active) before allowing Internet Sharing. It doesn&apos;t verify that the connection reaches the real internet. By assigning a static IP to &lt;code&gt;lo0&lt;/code&gt; and registering it as a network service, macOS happily accepts it as a valid source.&lt;/p&gt;
+&lt;p&gt;The gist provides the exact commands to run in Terminal:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -L https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2/raw/setup-adhoc-network.sh | bash
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/macbook-air-access-point-wifi-terminal.webp&amp;quot; alt=&amp;quot;Running zhuhuilin&apos;s setup script&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;Running zhuhuilin&apos;s setup script&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;p&gt;This will automatically:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Find your active internet connection&lt;/li&gt;
+&lt;li&gt;Create a new network service (named &lt;code&gt;AdHoc&lt;/code&gt;) on &lt;code&gt;lo0&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Assign the Mac the IP &lt;code&gt;10.10.10.1&lt;/code&gt; on this new service&lt;/li&gt;
+&lt;li&gt;Save state for safe removal&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/macbook-air-access-point-wifi-AdHoc-setup.webp&amp;quot; alt=&amp;quot;MacOS Settings window with the Internet Sharing configured with the AdHoc interface&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;Internet Sharing configured with the AdHoc interface, just need to enable it now&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;p&gt;Then you can select this &lt;code&gt;AdHoc&lt;/code&gt; service as your source in Internet Sharing. Once configured, macOS actually brings up the WiFi access point, and devices can see and connect to it.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!CAUTION]
+The WiFi should be enabled on MacOS to have the beacon activated. But it should not be connected to any networks.&lt;/p&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/macbook-air-access-point-wifi-enabled.webp&amp;quot; alt=&amp;quot;Keeping wifi enabled and seeing the shared network broadcasted&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;WiFi is enabled, and is showing the &amp;quot;Internet Sharing&amp;quot; on Channel 11&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;Changing the DHCP range&lt;/h2&gt;
+&lt;p&gt;By default, macOS Internet Sharing assigns connected devices to the &lt;code&gt;192.168.2.0/24&lt;/code&gt; range. I needed mine to be &lt;code&gt;192.168.68.0/24&lt;/code&gt; to match my existing setup.&lt;/p&gt;
+&lt;p&gt;After some digging, I found that you can override the default DHCP range with three &lt;code&gt;defaults write&lt;/code&gt; commands targeting the system NAT preferences:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Set the starting IP address
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict-add SharingNetworkNumberStart 192.168.68.2
+# Set the last IP address
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict-add SharingNetworkNumberEnd 192.168.68.254
+# Set the netmask as /24
+# -&amp;gt; This isn&apos;t automatic and is necessary!
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict-add SharingNetworkMask 255.255.255.0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After running these and restarting Internet Sharing, connected devices received IPs in the &lt;code&gt;192.168.68.x&lt;/code&gt; range — exactly what I needed.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!TIP]
+Settings seems to cache these parameters. Quit the Settings application before applying them, then reactivate Internet Sharing.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The whole thing works reliably once the loopback trick is in place. The &lt;code&gt;AdHoc&lt;/code&gt; service survives reboots, and the DHCP range sticks as long as you don&apos;t reset the NAT preferences. The one thing to keep in mind: if you do have an actual upstream connection available (Ethernet, USB tethering), you can use that directly as the Internet Sharing source and skip the loopback hack entirely, it&apos;s only needed when you want to have an access point from macOS without internet.&lt;/p&gt;
+&lt;p&gt;[^note]: I made a backup of &lt;em&gt;Zhuhuilin&lt;/em&gt;&apos;s scripts &lt;a href=&quot;https://git.arthurbrugiere.fr/roiarthurb/macOS_Internet-Sharing_Without_Internet-Connection&quot;&gt;here&lt;/a&gt;&lt;/p&gt;
+</content:encoded></item><item><title>Making ADB Wireless more *accessible* on Meta Quest headsets</title><link>https://arthurbrugiere.fr/blog/mq3-wireless-adb/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/mq3-wireless-adb/</guid><description>How I&apos;ve been able to enable ADB Wireless without user interaction.</description><pubDate>Thu, 21 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Meta Quest headsets have a nasty habit of forgetting your wireless ADB trust relationship every time they reboot. For a research project deploying ten headsets to a classroom of teachers who&apos;ve never touched a terminal, &lt;em&gt;&amp;quot;just run &lt;code&gt;adb tcpip 5555&lt;/code&gt; again&amp;quot;&lt;/em&gt; isn&apos;t a solution, it&apos;s a support ticket generator at best. I spent weeks trying to automate the &amp;quot;Allow wireless debugging?&amp;quot; popup out of existence. The path involved dead ends, Android security walls, and finally a brute-force accessibility hack that actually works.&lt;/p&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/mq3-wireless-adb.webp&amp;quot; alt=&amp;quot;ADB Wireless Popup visible in a Meta Quest 3 headset&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;The &amp;quot;Allow wireless debugging?&amp;quot; popup on a Meta Quest 3.&amp;lt;br/&amp;gt;Credit: Image from &amp;lt;a href=&amp;quot;https://www.quest-games-optimizer.com/how-to-enable-adb-from-your-meta-quest&amp;quot;&amp;gt;QGO&amp;lt;/a&amp;gt;&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;h2&gt;The Problem That Shouldn&apos;t Exist&lt;/h2&gt;
+&lt;p&gt;Wireless ADB on stock Android is straightforward: enable it once, pair your machine, and the phone remembers. Meta&apos;s Quest OS, built on Android but heavily modified, treats this differently: On every reboot, the system clears its in-memory list of trusted wireless debugging fingerprints. The &lt;code&gt;adb_wifi_enabled&lt;/code&gt; setting flips to 0 (which is normal). Reconnect, and you&apos;re greeted with the same permission dialog asking if you trust this network.&lt;/p&gt;
+&lt;p&gt;For the &lt;a href=&quot;https://project-simple.eu&quot;&gt;SIMPLE project&lt;/a&gt; — a swarm of six &lt;a href=&quot;https://www.meta.com/quest/quest-3/&quot;&gt;Meta Quest 3&lt;/a&gt; headsets streaming video via &lt;a href=&quot;https://github.com/Genymobile/scrcpy&quot;&gt;scrcpy&lt;/a&gt; and receiving commands from a central controller — this was a deployment blocker. We can&apos;t send a technician to every school every morning to click one popup in each headset...&lt;/p&gt;
+&lt;h2&gt;Attempt 1: Off-the-Shelf Automation&lt;/h2&gt;
+&lt;p&gt;Before writing a single line of Java, I tried the obvious tools &lt;a href=&quot;https://llamalab.com/automate/&quot;&gt;Automate&lt;/a&gt;, &lt;a href=&quot;https://tasker.joaoapps.com/&quot;&gt;Tasker&lt;/a&gt; (ie. the usual Android automation workhorses). Set up a simple flow: when the system shows the ADB popup, click &amp;quot;Allow&amp;quot; or &amp;quot;Always allow.&amp;quot; Should be trivial.&lt;/p&gt;
+&lt;p&gt;It isn&apos;t. The moment those apps trigger &lt;code&gt;adb tcpip 5555&lt;/code&gt; (toggle the wireless debugging setting), the system popup appears and &lt;strong&gt;pauses the automation engine&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;The blueprint or macro freezes in place, waiting for the dialog to dismiss — which it never will by the automation, because the automation is paused and can&apos;t click it. Classic deadlock. The popup blocks the very tool trying to dismiss it.&lt;/p&gt;
+&lt;p&gt;This killed the no-code approach instantly. I needed something that could run &lt;em&gt;outside&lt;/em&gt; the normal app lifecycle, something the system couldn&apos;t freeze when the dialog appeared.&lt;/p&gt;
+&lt;h2&gt;Attempt 2: Just Write the Setting&lt;/h2&gt;
+&lt;p&gt;The next obvious approach: grant &lt;code&gt;WRITE_SECURE_SETTINGS&lt;/code&gt; to a foreground service and toggle &lt;code&gt;adb_wifi_enabled&lt;/code&gt; to 1 on boot. This works right up until the system shows the trust popup. Writing the setting triggers &lt;code&gt;WifiDebuggingAlertActivity&lt;/code&gt; from &lt;code&gt;com.oculus.os.vrusb&lt;/code&gt;, which sits there waiting for human input. The setting value bounces back to 0 until someone clicks &amp;quot;Allow.&amp;quot;&lt;/p&gt;
+&lt;p&gt;So the real problem isn&apos;t enabling ADB (by automation or from within some java code) it&apos;s dismissing the popup without a finger.&lt;/p&gt;
+&lt;h2&gt;Attempt 3: Direct Input Injection&lt;/h2&gt;
+&lt;p&gt;Android&apos;s &lt;code&gt;input&lt;/code&gt; command can simulate key events. From a PC, &lt;code&gt;adb shell input keyevent 66&lt;/code&gt; (Enter) dismisses the popup instantly. Running the same command from inside the app, however, throws:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;Targeted input event injection from pid 3266 was not directed at a window owned by uid 10168
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The app runs as a regular user (UID 10168). The popup belongs to the system package &lt;code&gt;com.oculus.os.vrusb&lt;/code&gt; (UID 1000). Android&apos;s input injection security prevents cross-UID event spoofing unless you hold &lt;code&gt;INJECT_EVENTS&lt;/code&gt;, which is signature-level and not grantable via &lt;code&gt;pm grant&lt;/code&gt;. The shell user (UID 2000) has this permission, which is why ADB from a PC works. Your app does not and, except if you can root the device, can&apos;t have it.&lt;/p&gt;
+&lt;p&gt;I tried &lt;a href=&quot;https://shizuku.rikka.app/&quot;&gt;Shizuku&lt;/a&gt; as a workaround — it lets apps run code via a privileged server process. Even with Shizuku, the input injection path hit the same wall. The Quest&apos;s VR shell is aggressively locked down.&lt;/p&gt;
+&lt;h2&gt;Attempt 4: Accessibility Service Clicking&lt;/h2&gt;
+&lt;p&gt;Android&apos;s AccessibilityService is the standard way to automate UI interaction for assistive purposes. It can traverse the view hierarchy, find nodes by text or ID, and perform &lt;code&gt;ACTION_CLICK&lt;/code&gt;. This works beautifully for normal apps. I assumed it would work here too. I assumed wrong, and I spent two days proving it.&lt;/p&gt;
+&lt;p&gt;The popup activity launches — &lt;code&gt;ActivityTaskManager&lt;/code&gt; confirms it:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-log&quot;&gt;04-21 10:27:35.928  ActivityTaskManager: START u0 cmp=com.oculus.os.vrusb/.WifiDebuggingAlertActivity
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;But &lt;code&gt;getWindowsOnAllDisplays()&lt;/code&gt; returns everything &lt;em&gt;&lt;strong&gt;except&lt;/strong&gt;&lt;/em&gt; the VrUsb window. The scan shows &lt;code&gt;Meta Horizon Shell&lt;/code&gt;, &lt;code&gt;Navigator&lt;/code&gt;, &lt;code&gt;Quick controls&lt;/code&gt;, random &lt;code&gt;AndroidPanelLayer&lt;/code&gt; components: the usual VR shell noise. No popup. I broadened the search to check every display, every package containing &lt;code&gt;com.oculus.os&lt;/code&gt;, every title containing &amp;quot;debugging&amp;quot; or &amp;quot;alert&amp;quot;. Still nothing.&lt;/p&gt;
+&lt;p&gt;When I finally managed to catch a window with the right package name, its root node was &lt;code&gt;null&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Not empty — &lt;code&gt;null&lt;/code&gt;. The accessibility service could see the window existed but it was a black box. Meanwhile, &lt;code&gt;uiautomator dump&lt;/code&gt; (running as shell user) could see the full node tree with &amp;quot;Always allow&amp;quot; and &amp;quot;Allow&amp;quot; plain as day. The popup was there on screen, visible to privileged tools, but to my accessibility service it was a ghost behind frosted glass.&lt;/p&gt;
+&lt;p&gt;I tried every variation: traversing parent nodes from child windows, using &lt;code&gt;getRootInActiveWindow()&lt;/code&gt; instead of enumerating displays, matching by &lt;code&gt;ViewIdResourceName&lt;/code&gt;, searching for partial text. I added aggressive logging that dumped every node property I could access. The service logged hundreds of windows across dozens of scans, but the moment the popup appeared, the corresponding window either vanished from the list or reported &lt;code&gt;root=null&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Meta&apos;s VR environment renders system dialogs through a completely different path than standard Android views. The compositor draws them; the accessibility tree doesn&apos;t expose them. This isn&apos;t a bug you can code around but an architectural mismatch. The accessibility framework was built for flat phone screens, not layered VR shells where a &amp;quot;window&amp;quot; might be a texture mapped onto a curved surface in 3D space.&lt;/p&gt;
+&lt;p&gt;Days of dead ends.&lt;/p&gt;
+&lt;h2&gt;The Hack That Worked: Blind Key Injection&lt;/h2&gt;
+&lt;p&gt;After the clicking approach failed, I realized something: I didn&apos;t need to &lt;em&gt;see&lt;/em&gt; the button. I needed to make the &lt;em&gt;system think someone pressed Tab and Enter&lt;/em&gt;. And the AccessibilityService has a way to do that — not by injecting raw input events (Attempt 3), but by sending accessibility events that the VR shell already listens to for controller navigation.&lt;/p&gt;
+&lt;p&gt;The AccessibilityService detects the popup via window title matching — when &lt;code&gt;getWindowsOnAllDisplays()&lt;/code&gt; returns a window containing &amp;quot;VrUsb&amp;quot;, it triggers. Then it simply runs &lt;code&gt;input keyevent&lt;/code&gt; via &lt;code&gt;Runtime.exec()&lt;/code&gt;. The exact same command that failed from a regular app.&lt;/p&gt;
+&lt;p&gt;Here&apos;s the code of the accessibility service:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;private void performBlindSequence() {
+    lastActionTime = System.currentTimeMillis();
+    Log.d(TAG, &amp;quot;TAB x3, ENTER&amp;quot;);
+    
+    handler.postDelayed(() -&amp;gt; sendKey(KeyEvent.KEYCODE_TAB),   0);
+    handler.postDelayed(() -&amp;gt; sendKey(KeyEvent.KEYCODE_TAB), 100);
+    handler.postDelayed(() -&amp;gt; sendKey(KeyEvent.KEYCODE_TAB), 200);
+
+    handler.postDelayed(() -&amp;gt; sendKey(KeyEvent.KEYCODE_ENTER), 300);
+}
+
+private void sendKey(int keyCode) {
+    try {
+        Runtime.getRuntime().exec(&amp;quot;input keyevent &amp;quot; + keyCode);
+    } catch (Exception ignored) {}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;First Tab put focus on the &lt;em&gt;VrUsb&lt;/em&gt; window, then two extra Tabs move focus from &amp;quot;Allow&amp;quot; to &amp;quot;Deny&amp;quot; to &amp;quot;Always allow on this network&amp;quot;. Enter activates. The 100ms spacing between each keypress is the minimum I found that the shell reliably registers — any faster and keys get dropped.&lt;/p&gt;
+&lt;p&gt;The window detection is equally &lt;em&gt;dumber&lt;/em&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;for (AccessibilityWindowInfo w : windows) {
+    CharSequence title = w.getTitle();
+    if (title != null &amp;amp;&amp;amp; title.toString().contains(&amp;quot;VrUsb&amp;quot;)) {
+        Log.i(TAG, &amp;quot;VrUsb detected. Triggering trust sequence.&amp;quot;);
+        performBlindSequence();
+        return; 
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;No node traversal. No &lt;code&gt;findAccessibilityNodeInfosByText&lt;/code&gt;. Just check if any window title contains &amp;quot;VrUsb&amp;quot; and blindly fire keys.&lt;/p&gt;
+&lt;h2&gt;Wiring It All Together&lt;/h2&gt;
+&lt;p&gt;The full solution is a foreground service that:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Self-enables the accessibility service&lt;/strong&gt; on first run using &lt;code&gt;WRITE_SECURE_SETTINGS&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Registers a ContentObserver&lt;/strong&gt; on &lt;code&gt;adb_wifi_enabled&lt;/code&gt; to react instantly when Meta&apos;s system clears it&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Registers a NetworkCallback&lt;/strong&gt; to re-enable ADB when WiFi reconnects (handles network changes without reboot)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Polls every 30 seconds&lt;/strong&gt; as a dead man&apos;s switch&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Triggers the accessibility key sequence&lt;/strong&gt; when the popup appears&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;No hardcoded boot delays. No &amp;quot;wait 60 seconds for WiFi&amp;quot; loops. The service reacts to actual system state changes.&lt;/p&gt;
+&lt;h2&gt;The Meta-Specific Quirks&lt;/h2&gt;
+&lt;p&gt;Quest OS has a few behaviors that make this harder than stock Android:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Thread flooding is real.&lt;/strong&gt; The ContentObserver fires when &lt;code&gt;adb_wifi_enabled&lt;/code&gt; flips to 0, which happens &lt;em&gt;because&lt;/em&gt; the popup appeared. If your service blindly retries enabling ADB in response, you spawn infinite threads racing each other. We guard this with an &lt;code&gt;AtomicBoolean&lt;/code&gt; so only one configuration attempt runs at a time.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The window tree lies.&lt;/strong&gt; Don&apos;t trust &lt;code&gt;getWindowsOnAllDisplays()&lt;/code&gt; to show you the popup. Don&apos;t trust &lt;code&gt;getRootInActiveWindow()&lt;/code&gt;. The popup exists in the compositor, not the standard view hierarchy. Blind key injection is the only reliable path.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;The Result&lt;/h2&gt;
+&lt;p&gt;The app is a single APK, granted &lt;code&gt;WRITE_SECURE_SETTINGS&lt;/code&gt; once via ADB after installing the app. After that, teachers power on the headsets, the service starts automatically, and wireless ADB is ready within seconds after the headset connect to the network without anyone touching the controllers.&lt;/p&gt;
+&lt;p&gt;Repository is here if you&apos;re fighting the same fight: &lt;a href=&quot;https://github.com/project-SIMPLE/adb-auto-enable&quot;&gt;https://github.com/project-SIMPLE/adb-auto-enable&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;video controls style=&amp;quot;width:100%&amp;quot;&amp;gt;
+&amp;lt;source src=&amp;quot;/videos/mq3-wireless-adb.mp4&amp;quot; type=&amp;quot;video/mp4&amp;quot;&amp;gt;
+&amp;lt;/video&amp;gt;
+&amp;lt;figcaption&amp;gt;Demo: headset auto-enabling/accepting the ADB Wireless popup.&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;If Meta ever exposes a system property or hidden API to persist wireless debugging trust, this whole accessibility dance becomes unnecessary. Some developers already filed feedback through their developer channels for, maybe, years, but I&apos;m not holding my breath. For now, abusing the accessibility framework for input injection is the least-worst option.&lt;/p&gt;
+</content:encoded></item><item><title>From &quot;Works on My Machine&quot; to One Binary That Runs Everywhere</title><link>https://arthurbrugiere.fr/blog/packaging-nodejs-windows-sea/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/packaging-nodejs-windows-sea/</guid><description>How a filename on Windows broke my full packaged application</description><pubDate>Fri, 29 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Packaging a Node.js application into a single executable sounds like a solved problem. Tools exist. You build your JavaScript, bundle your assets, point a packager at your entry file, and you get a binary. On macOS and Linux, this workflow delivers. On Windows, with a native WebSocket module in your dependency tree, the same workflow produces a file that crashes before it prints a single log line.&lt;/p&gt;
+&lt;p&gt;I spent several days in that gap between &amp;quot;possible on paper&amp;quot; and &amp;quot;working in practice.&amp;quot; The project is &lt;a href=&quot;https://github.com/project-SIMPLE/simple.webplatform&quot;&gt;SIMPLE Webplatform&lt;/a&gt;, a Node.js application that bundles a web frontend, a WebSocket server (via &lt;code&gt;uWebSockets.js&lt;/code&gt;, the fastest WebSocket implementation for Node.js with a minimal memory footprint), and all the background logic and streaming layer into one stack. Shipping it meant producing a single file that a researcher or developer could download and double-click without installing Node.js, opening a terminal, or running &lt;code&gt;npm install&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;A previous attempt had used &lt;a href=&quot;http://github.com/yao-pkg/pkg&quot;&gt;&lt;code&gt;@yao-pkg/pkg&lt;/code&gt;&lt;/a&gt;, a community fork of the now-deprecated &lt;code&gt;pkg&lt;/code&gt;, to build binaries for Linux, macOS and Windows from NodeJS applcaition. Those 2 first binaries worked. The Windows binary exited with code &lt;code&gt;0xC0000005&lt;/code&gt; (access violation) the instant you ran it. No output. No stack trace. Just a segfault.&lt;/p&gt;
+&lt;p&gt;This is the story of how I fixed it, and the two Windows behaviors you will not find in any documentation.&lt;/p&gt;
+&lt;h2&gt;The Setup: What I was working with&lt;/h2&gt;
+&lt;p&gt;The application uses &lt;code&gt;uWebSockets.js&lt;/code&gt; for its WebSocket and HTTP servers. This library is written in C++ and exposes a native &lt;code&gt;.node&lt;/code&gt; binary that hooks deep into the Node.js event loop. That detail, &lt;em&gt;native module&lt;/em&gt;, turns out to be the entire problem.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;@yao-pkg/pkg&lt;/code&gt; works by embedding your JavaScript and assets into a modified &lt;code&gt;node.exe&lt;/code&gt;, then patching &lt;code&gt;process.dlopen&lt;/code&gt; (Node.js&apos;s low-level function for loading native &lt;code&gt;.node&lt;/code&gt; binaries, similar to &lt;code&gt;LoadLibrary&lt;/code&gt; on Windows) so it can load native modules from an in-memory snapshot rather than the filesystem. On Linux and macOS, this patch is transparent. On Windows, it crashes during &lt;code&gt;uWebSockets.js&lt;/code&gt; initialization.&lt;/p&gt;
+&lt;p&gt;I confirmed this through isolation. The &lt;code&gt;.node&lt;/code&gt; file extracted from the snapshot was valid. You could load it with regular Node.js without issue. The crash happened inside &lt;code&gt;@yao-pkg/pkg&lt;/code&gt;&apos;s patched &lt;code&gt;dlopen&lt;/code&gt; the moment &lt;code&gt;uWebSockets.js&lt;/code&gt; tried to register its NAPI callbacks (functions that bridge between C++ code and the JavaScript engine) with the runtime. The module was incompatible with the patched loader on Windows, full stop.&lt;/p&gt;
+&lt;p&gt;Replacing &lt;code&gt;uWebSockets.js&lt;/code&gt; with the pure-JavaScript &lt;code&gt;ws&lt;/code&gt; library was not an option. The project depends on &lt;code&gt;uWebSockets.js&lt;/code&gt; for its throughput and memory efficiency (it handles an order of magnitude more concurrent connections than &lt;code&gt;ws&lt;/code&gt; with a fraction of the RAM). I needed a packaging tool that leaves &lt;code&gt;process.dlopen&lt;/code&gt; untouched.&lt;/p&gt;
+&lt;h2&gt;The pivot to Node.js SEA&lt;/h2&gt;
+&lt;p&gt;Node.js 20 introduced &lt;a href=&quot;https://nodejs.org/api/single-executable-applications.html&quot;&gt;Single Executable Applications&lt;/a&gt; (SEA), a native mechanism for embedding your application into a copy of &lt;code&gt;node.exe&lt;/code&gt;. SEA does not patch &lt;code&gt;process.dlopen&lt;/code&gt;. It uses &lt;code&gt;postject&lt;/code&gt; (a CLI tool that injects a binary blob as a new section into an existing executable) to embed your code and assets as a PE (Portable Executable, the standard binary format for Windows) / Mach-O section into an unmodified Node.js binary. The runtime stays stock. Native modules load through the same path they would in a normal Node.js process.&lt;/p&gt;
+&lt;p&gt;I rewrote the build pipeline:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Vite bundles the frontend and backend as before&lt;/li&gt;
+&lt;li&gt;A Node.js script collects all frontend assets plus the &lt;code&gt;uWebSockets.js&lt;/code&gt; &lt;code&gt;.node&lt;/code&gt; file into a SEA configuration&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;node --experimental-sea-config&lt;/code&gt; generates the blob&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;postject&lt;/code&gt; injects the blob into a Windows &lt;code&gt;node.exe&lt;/code&gt; copy&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The resulting binary was 103 MB and crashed on launch. The crash was not the same &lt;code&gt;0xC0000005&lt;/code&gt; from &lt;code&gt;pkg&lt;/code&gt;. This time, the issue was that SEA mode replaces the standard &lt;code&gt;require()&lt;/code&gt; with an internal &lt;code&gt;embedderRequire&lt;/code&gt; that cannot load &lt;code&gt;.node&lt;/code&gt; files from arbitrary paths. The &lt;code&gt;.node&lt;/code&gt; file was embedded in the SEA asset bundle, but &lt;code&gt;require(tmpFile)&lt;/code&gt; failed because &lt;code&gt;embedderRequire&lt;/code&gt; does not know how to handle a native module path in SEA context.&lt;/p&gt;
+&lt;h2&gt;Discovery #1: The &lt;em&gt;filename&lt;/em&gt; is the fix&lt;/h2&gt;
+&lt;p&gt;This was the moment the investigation turned from frustrating to non-sense. I had been testing hypotheses about Control Flow Guard flags, Authenticode signature corruption, and DLL load paths. None of them panned out. Then I ran a test I should have tried hours earlier. I took a plain, unmodified &lt;code&gt;node.exe&lt;/code&gt;, with no SEA blob, no injection, nothing, copied it to the same directory, renamed the copy to &lt;code&gt;plain-node.exe&lt;/code&gt;, and tried to load &lt;code&gt;uWebSockets.js&lt;/code&gt; from it.&lt;/p&gt;
+&lt;p&gt;It crashed.&lt;/p&gt;
+&lt;p&gt;I renamed that exact same file back to &lt;code&gt;node.exe&lt;/code&gt;. It worked.&lt;/p&gt;
+&lt;p&gt;Same bytes. Same directory. Same everything except the filename. One crashed, one did not.&lt;/p&gt;
+&lt;p&gt;Windows maintains an &lt;a href=&quot;https://learn.microsoft.com/en-us/windows/compatibility/application-technology-apps&quot;&gt;Application Compatibility database&lt;/a&gt;, a set of shims that apply behavioral fixes to specific executables based on their name. One of those shims targets &lt;code&gt;node.exe&lt;/code&gt; and alters how DLLs are loaded to support Node.js native modules. When you rename the executable to anything else, &lt;code&gt;simple-win.exe&lt;/code&gt;, &lt;code&gt;app.exe&lt;/code&gt;, anything, that shim disappears, and &lt;code&gt;uWebSockets.js&lt;/code&gt;&apos;s NAPI initialization hits a code path that triggers an access violation.&lt;/p&gt;
+&lt;p&gt;This is not documented anywhere obvious. You will not find it in the Node.js SEA guide or the &lt;code&gt;postject&lt;/code&gt; README. You find it by accident, after stripping a binary down to nothing and watching a plain &lt;code&gt;node.exe&lt;/code&gt; copy fail because you generated the artifact file with a meaningful name.&lt;/p&gt;
+&lt;p&gt;The build script now outputs the SEA binary to &lt;code&gt;bin/win/node.exe&lt;/code&gt;. Not &lt;code&gt;simple-win.exe&lt;/code&gt;. Not &lt;code&gt;app.exe&lt;/code&gt;. The application &lt;em&gt;must&lt;/em&gt; be named &lt;code&gt;node.exe&lt;/code&gt; for the Windows AppCompat shim to activate.&lt;/p&gt;
+&lt;h2&gt;Discovery #2: SEA asset loading for native modules&lt;/h2&gt;
+&lt;p&gt;With the name fixed, the binary started. But &lt;code&gt;uWebSockets.js&lt;/code&gt; was not loading from the SEA asset bundle yet. SEA provides two ways to access embedded assets: &lt;code&gt;sea.getAsset()&lt;/code&gt; returns the raw bytes, and &lt;code&gt;require()&lt;/code&gt; in SEA mode uses an internal &lt;code&gt;embedderRequire&lt;/code&gt; that cannot load &lt;code&gt;.node&lt;/code&gt; files from arbitrary paths.&lt;/p&gt;
+&lt;p&gt;The fix was a Vite plugin that transforms every &lt;code&gt;require(&amp;quot;uWebSockets.js&amp;quot;)&lt;/code&gt; in the compiled bundle into a self-contained loader (not the real code, but a comprehensive snippet):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-javascript&quot;&gt;// In SEA mode:
+
+// Load the SEA module (only available inside SEA binaries)
+const sea = require(&apos;node:sea&apos;);
+// Build a versioned temp path for the .node file
+const tmpFile = path.join(os.tmpdir(), &apos;uws-&apos; + process.versions.modules + &apos;.node&apos;);
+// Extract the native module from the embedded asset blob to disk
+fs.writeFileSync(tmpFile, Buffer.from(sea.getAsset(&apos;uws_win32_x64_137.node&apos;)));
+// Create an empty module object for dlopen to populate
+const mod = { exports: {} };
+// Load the .node file directly via the C-level loader (bypasses SEA&apos;s embedderRequire)
+process.dlopen(mod, tmpFile);
+// Return the loaded module to the caller
+module.exports = mod.exports;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In development or standard packaging, it falls back to a normal &lt;code&gt;require(&apos;uWebSockets.js&apos;)&lt;/code&gt;. The &lt;code&gt;.node&lt;/code&gt; file gets extracted to a temp directory once and loaded through the unmodified &lt;code&gt;process.dlopen&lt;/code&gt;. Because the parent binary is named &lt;code&gt;node.exe&lt;/code&gt;, this now works.&lt;/p&gt;
+&lt;h2&gt;The problem of the fix filename&lt;/h2&gt;
+&lt;p&gt;Shipping an application called &lt;code&gt;node.exe&lt;/code&gt; is not a good user experience. Users see a generic name in their download folder, their task manager, and their desktop shortcuts. I needed a user-facing binary with a proper name that still resulted in a process named &lt;code&gt;node.exe&lt;/code&gt; running under the AppCompat shim.&lt;/p&gt;
+&lt;p&gt;The solution is a launcher, a thin wrapper that extracts the real binary and runs it. I chose Go because it compiles to a statically linked native Windows executable with zero runtime dependencies. Three extra megabytes for the launcher is a fair trade for shipping a single file that needs nothing installed on the user&apos;s machine.&lt;/p&gt;
+&lt;p&gt;The launcher, written in Go:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Opens its own executable file and reads a 12-byte footer from the end&lt;/li&gt;
+&lt;li&gt;The footer contains the size of the embedded &lt;code&gt;node.exe&lt;/code&gt; payload and a magic number to verify validity&lt;/li&gt;
+&lt;li&gt;It extracts &lt;code&gt;node.exe&lt;/code&gt; to &lt;code&gt;%TEMP%\swp-node-&amp;lt;size&amp;gt;\node.exe&lt;/code&gt; (preserving the critical name)&lt;/li&gt;
+&lt;li&gt;On subsequent launches, it compares the cached file size against the embedded payload and skips extraction if they match&lt;/li&gt;
+&lt;li&gt;It spawns the extracted &lt;code&gt;node.exe&lt;/code&gt; with all command-line arguments forwarded, inherits stdout/stderr, and exits with the same code&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The build pipeline compiles the Go launcher, appends the &lt;code&gt;node.exe&lt;/code&gt; SEA binary, writes the footer, and produces a single file: &lt;code&gt;simple-win.exe&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;First launch takes a few seconds as 103 MB extracts to temp. Every launch after that is instant.&lt;/p&gt;
+&lt;h2&gt;Unifying all platforms on SEA&lt;/h2&gt;
+&lt;p&gt;With Windows solved, I looked at the remaining packaging infrastructure. &lt;code&gt;@yao-pkg/pkg&lt;/code&gt; was still building Linux and macOS binaries through a cross-compilation pipeline that required QEMU user-mode emulation and &lt;code&gt;ldid&lt;/code&gt; for macOS code signing. It worked, but it was a maintained fork of an abandoned project, running emulated architectures on an Ubuntu CI runner: Not very easy to maintain.&lt;/p&gt;
+&lt;p&gt;Since SEA was now working for Windows and is a native Node.js feature, the question became: why maintain two packaging systems? I migrated Linux and macOS to SEA as well. The same build script template works on all three platforms with minor platform-specific flags (&lt;code&gt;--macho-segment-name&lt;/code&gt; for macOS, ad-hoc codesigning after injection). Cross-compilation disappears, since each platform builds on its own native GitHub Actions runner, but the project is open source and the runners are free.&lt;/p&gt;
+&lt;p&gt;The CI pipeline now has three parallel jobs: &lt;code&gt;ubuntu-latest&lt;/code&gt; for Linux, &lt;code&gt;macos-latest&lt;/code&gt; for macOS, and &lt;code&gt;windows-latest&lt;/code&gt; for Windows. Each produces one binary using the same Node.js SEA mechanism. No more QEMU. No more &lt;code&gt;ldid&lt;/code&gt;. No more &lt;code&gt;pkg&lt;/code&gt;.&lt;/p&gt;
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;The SIMPLE Webplatform now ships as a single executable on all three platforms. Windows uses a Go self-extracting launcher that bundles a SEA-built &lt;code&gt;node.exe&lt;/code&gt; and extracts it to temp on first run. Linux and macOS use native SEA binaries without wrappers. The packaging pipeline relies on Node.js built-in tools plus &lt;code&gt;postject&lt;/code&gt; and Go. No deprecated third-party packagers, no emulation layers, no platform-specific native module patching.&lt;/p&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/packaging-nodejs-windows-sea-compilation.webp&amp;quot; alt=&amp;quot;Compilation logs of the windows binary&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;Compilation logs of the windows binary on Github Actions&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;p&gt;If you are packaging a Node.js application with native modules for Windows, use &lt;em&gt;Node.js SEA&lt;/em&gt; (it&apos;s been in beta for very long time, but it really works fine nowadays), name your binary &lt;code&gt;node.exe&lt;/code&gt;, and wrap it with a launcher if your users need a branded filename. Those three things would have saved me days of debugging.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;The full implementation is in &lt;a href=&quot;https://github.com/project-SIMPLE/simple.webplatform/pull/151&quot;&gt;project-SIMPLE/simple.webplatform#151&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;
+</content:encoded></item></channel></rss>
