@@ -11,6 +11,17 @@
     "heroImage": "/src/assets/projects/tango.png"
   },
   {
+    "id": "project-simple-eveil",
+    "title": "Environnements Virtuels pour l'Éducation Immersive au développement durable en Langue française (ÉVEIL)",
+    "description": "An extension of the SIMPLE project, led by IRD and funded by the SCAC (the French Embassy's Service for Cooperation and Cultural Action) and the Institut Français. Using immersive education a step further by using Virtual Reality tools for French language learning.",
+    "year": [2026, 2027],
+    "status": "Current",
+    "authors": [],
+    "ogLabel": "EVEIL",
+    "link": "https://project-simple.eu/projects/eveil/",
+    "heroImage": "/src/assets/projects/simple-eveil.png"
+  },
+  {
     "id": "project-simple",
     "title": "Sustainability Issues Metaverse for building Participatory Learning Environments (SIMPLE)",
     "description": "The general objective of SIMPLE is to raise awareness of young audiences on the challenges of finding sustainable solutions to environmental problems by developing, testing, and delivering a “sustainability metaverse”, i.e., an infrastructure and a set of pedagogical methods based on immersive virtual reality environments, serious games, and scientific simulations.",
