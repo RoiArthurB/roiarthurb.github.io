@@ -1,4 +1,119 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Arthur Brugière</title><description>Computer Researcher / IT Geek</description><link>https://arthurbrugiere.fr/</link><item><title>Using Your MacBook as a Local WiFi Access Point</title><link>https://arthurbrugiere.fr/blog/macbook-air-access-point/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/macbook-air-access-point/</guid><description>How I&apos;ve been able to use a MacBook Air as a router without internet connection.</description><pubDate>Mon, 25 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;The Problem&lt;/h2&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Arthur Brugière</title><description>Computer Researcher / IT Geek</description><link>https://arthurbrugiere.fr/</link><item><title>Installing OpenMediaVault without IPv6</title><link>https://arthurbrugiere.fr/blog/install-omv-8-without-ipv6/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/install-omv-8-without-ipv6/</guid><description>When IPv6 is the future, but you can&apos;t connect to it</description><pubDate>Thu, 04 Jun 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I needed a &lt;a href=&quot;https://en.wikipedia.org/wiki/Network-attached_storage&quot;&gt;&lt;em&gt;Network Attached Storage&lt;/em&gt;&lt;/a&gt; (&lt;em&gt;NAS&lt;/em&gt;) for my lab. I had a Dell Vostro 3888 sitting around, an i3-10100 with 20GB RAM, one SSD, and two 1TB HDDs. &lt;a href=&quot;https://www.openmediavault.org&quot;&gt;OpenMediaVault&lt;/a&gt; (&lt;em&gt;OMV&lt;/em&gt;) seemed like the obvious choice. The install should have taken twenty minutes. It took most of an afternoon, because I had no IPv6, and other issues.&lt;/p&gt;
+&lt;p&gt;Here is every issue I ran into, in order, so you don&apos;t have to repeat my mistakes.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+This &lt;em&gt;&amp;quot;guide&amp;quot;&lt;/em&gt; is describing the struggle I had to install &lt;strong&gt;OMV 8.0.7 (stable)&lt;/strong&gt; on a machine in a network with IPv6 disabled.&lt;/p&gt;
+&lt;p&gt;If you&apos;re using another version of OMV, your mileage may vary :)&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;hr&gt;
+&lt;h2&gt;Issue 1: The installer blue-screens after WiFi connection&lt;/h2&gt;
+&lt;p&gt;I do have some experience installing Linux systems, so I pretty much followed the same steps as described in the &lt;a href=&quot;https://docs.openmediavault.org/en/latest/installation/via_iso.html&quot;&gt;official documentation&lt;/a&gt;: Downloaded the iso, flashed a USB stick, boot the OMV ISO, follow the first steps, connect to your WiFi network, type the password, see the &amp;quot;Configuring DHCP&amp;quot; loading screen, see the &amp;quot;Configuring DHCP&lt;strong&gt;v6&lt;/strong&gt;&amp;quot; loading screen...&lt;/p&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-dhcp.webp&amp;quot; alt=&amp;quot;Debian installer DHCP loading screen&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;I don&apos;t have ways to capture my installation screen, imagine it&apos;s written &lt;code&gt;DHCPv6&lt;/code&gt; please....&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;p&gt;The popup closes. You&apos;re staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and display them on the screen, but nothing happens.&lt;/p&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-bsod.webp&amp;quot; alt=&amp;quot;Debian installer blue screen&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;The BSOD (Blue Screen Of &lt;s&gt;Death&lt;/s&gt; Debian), not my most useful illustration...&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;p&gt;The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request times out with no response or got an unexpected message... Anyway, the installer broke and after waiting 1 hour, I tried to fix it : I disabled IPv6 at the kernel level for this boot only.&lt;/p&gt;
+&lt;p&gt;To do so, at the GRUB boot menu, press &lt;code&gt;e&lt;/code&gt; to edit the current entry. Find the &lt;code&gt;linux&lt;/code&gt; line and append &lt;code&gt;ipv6.disable=1&lt;/code&gt; to the end:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;linux /install/vmlinuz vga=normal quiet file=/cdrom/preseed.cfg ipv6.disable=1
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Press &lt;code&gt;Ctrl+X&lt;/code&gt; or &lt;code&gt;F10&lt;/code&gt; to boot. The installer skips DHCPv6 and proceeds.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!TIP]
+Editing in GRUB with &lt;code&gt;e&lt;/code&gt; changes the boot parameters for this session only. Nothing gets written to disk. If it doesn&apos;t work, reboot and try something else. Once you confirm the fix, you can make it permanent later.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;Issue 2: No network after first boot&lt;/h2&gt;
+&lt;p&gt;OMV installs, reboots, and the WiFi interface (&lt;code&gt;wlp2s0&lt;/code&gt; in my case) has no IPv4 address. The web UI is, obviously unreachable. The &lt;code&gt;ipv6.disable=1&lt;/code&gt; fix was only for the installer boot, and the freshly installed system tries to negotiate IPv6 on the network. My router still has IPv6 disabled, so the negotiation fails and the interface gets no usable IP at all.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The fix:&lt;/strong&gt; Again, boot with &lt;code&gt;ipv6.disable=1&lt;/code&gt; added from GRUB (press &lt;code&gt;e&lt;/code&gt; at the boot menu, add it to the kernel line, &lt;code&gt;Ctrl+X&lt;/code&gt; to boot).&lt;/p&gt;
+&lt;p&gt;After this, nothing is magically working yet. I had to manually bring the WiFi up with a few commands:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Generate WPA config
+wpa_passphrase &amp;quot;YourSSID&amp;quot; &amp;quot;YourPassword&amp;quot; &amp;gt; /etc/wpa_supplicant/wpa_supplicant.conf
+
+# Connect my wifi interface using the generated config
+wpa_supplicant -B -i wlp2s0 -c /etc/wpa_supplicant/wpa_supplicant.conf
+
+# Request an IPv4 address to the network&apos;s DHCP.
+dhcpcd wlp2s0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;You should now have an IPv4 address and be able to ping the machine, but you won&apos;t be able to reach the web UI at &lt;code&gt;http://&amp;lt;machine-ip&amp;gt;&lt;/code&gt; yet...&lt;/p&gt;
+&lt;h2&gt;Issue 3: nginx fails to start because of IPv6&lt;/h2&gt;
+&lt;p&gt;With WiFi up and an IPv4 address in hand, I tried to open the OMV web UI. Nothing on port 80. The nginx service was failing to start :&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-log&quot;&gt;-- Unit nginx.service has begun starting up.
+Jun 02 14:46:27 nginx[5069]: nginx: [emerg] socket() [::]:80 failed (97: Address family not supported by protocol)
+Jun 02 14:46:27 nginx[5069]: nginx: configuration file /etc/nginx/nginx.conf test failed
+Jun 02 14:46:27 systemd[1]: nginx.service: Control process exited, code=exited status=1
+Jun 02 14:46:27 systemd[1]: Failed to start A high performance web server and a reverse proxy server.
+-- Subject: Unit nginx.service has failed
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The reason: OMV&apos;s nginx config binds to &lt;code&gt;[::]:80&lt;/code&gt; (the IPv6 wildcard) by default. But I had booted with &lt;code&gt;ipv6.disable=1&lt;/code&gt; on the kernel command line, my router doesn&apos;t provide any IPv6 : so IPv6 is not available. Nginx tries to listen on &lt;code&gt;[::]:80&lt;/code&gt;, gets &amp;quot;Address family not supported by protocol,&amp;quot; and dies.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The fix:&lt;/strong&gt; Edit the nginx site config to remove the IPv6 listen directive:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nano /etc/nginx/sites-enabled/openmediavault-webgui
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Comment out the line &lt;code&gt;listen [::]:80;&lt;/code&gt; (but keep the &lt;code&gt;listen 80;&lt;/code&gt; line used to wildcard on the IPv4). Then restart nginx:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;systemctl restart nginx
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The web UI comes up. Log in, with the default credentials (&lt;code&gt;admin&lt;/code&gt; / &lt;code&gt;openmediavault&lt;/code&gt;), go to Network → Interfaces, configure your WiFi interface (me &lt;code&gt;wlp2s0&lt;/code&gt;) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer use the faulty IPv6.&lt;/p&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-network-config.webp&amp;quot; alt=&amp;quot;OMV network config with IPv6 disabled&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;Saved working network with IPv6 disabled&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;p&gt;Finally :)&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;Storage: Btrfs RAID1 on the two HDDs&lt;/h2&gt;
+&lt;p&gt;With the OS running on the SSD, the two 1TB drives become the data pool. I used &lt;a href=&quot;https://btrfs.readthedocs.io/en/latest/&quot;&gt;Btrfs&lt;/a&gt; in RAID1.&lt;/p&gt;
+&lt;p&gt;Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and native RAID support. For a NAS, the checksums detect silent data corruption, snapshots let you roll back files if someone overwrites them, and RAID1 keeps your data alive if one drive fails (both disks are mirrored, I loose a lot of space, but I&apos;m less likely to loose data). OMV handles all of this through the UI.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Storage&lt;/li&gt;
+&lt;li&gt;File Systems&lt;/li&gt;
+&lt;li&gt;Press the blue button &lt;em&gt;Create&lt;/em&gt;.&lt;/li&gt;
+&lt;li&gt;Select &lt;code&gt;BTRFS&lt;/code&gt; from the dropdown.&lt;/li&gt;
+&lt;li&gt;Select your desired &lt;em&gt;Profile&lt;/em&gt; (&lt;code&gt;RAID1&lt;/code&gt; for me).&lt;/li&gt;
+&lt;li&gt;Select both HDDs.&lt;/li&gt;
+&lt;li&gt;Hit create, wait a few minutes, then mount it.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-btrfs.webp&amp;quot; alt=&amp;quot;OMV network config with IPv6 disabled&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;Saved working network with IPv6 disabled&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;p&gt;After that, create a shared folder on the volume and enable SMB, NFS and over network protocols under &lt;code&gt;Services&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;One thing to not forget to ease the management of the NAS is to set up a regular (monthly) scrub to catch silent data corruption. OMV 8 doesn&apos;t expose this in the UI, so use a scheduled task:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;System → Scheduled Tasks → Add
+Schedule: Monthly (0 2 1 * * for 2am on the 1st)
+Command: btrfs scrub start /srv/dev-disk-by-uuid-XXXX
+&lt;/code&gt;&lt;/pre&gt;
+&lt;hr&gt;
+&lt;h2&gt;Issue 4: Some Windows 11 machines refuse to connect&lt;/h2&gt;
+&lt;p&gt;The goal for this NAS is simple: anyone in the lab walks in with there own machine, opens the file manager, find the NAS in there &lt;em&gt;Network&lt;/em&gt; file tab, and gets in. No passwords, no account creation, no IT support. I configured the SMB share with &lt;strong&gt;Guests allowed&lt;/strong&gt;, meaning anyone can connect as a guest and access files. I also enabled NFS and other protocols for the Linux (me 😁) and macOS machines in the lab.&lt;/p&gt;
+&lt;p&gt;Everything worked on every Linux machine&lt;s&gt;s&lt;/s&gt;. Everything worked on every MacOS machines. It worked on the first Windows 11 machines. But others Windows 11 popped up a credential prompt that rejected everything I threw at it. Blank username, &lt;code&gt;guest&lt;/code&gt;, random names. Nothing worked, no error message, no hint, just an endless login loop.&lt;/p&gt;
+&lt;p&gt;The probable cause: &lt;strong&gt;Windows 11 24H2&lt;/strong&gt; changed two SMB security defaults. Microsoft now requires SMB signing on all connections, and Windows 11 Pro disables insecure guest logons[^1]. Earlier builds (23H2 and before) still allowed guest fallback. 24H2 does not, and the behavior is inconsistent. Some 24H2 machines on my network connected fine, others refused. I couldn&apos;t find a pattern.&lt;/p&gt;
+&lt;p&gt;I tried the obvious OMV-side fixes. &lt;code&gt;Guests only&lt;/code&gt; (force anonymous access). &lt;code&gt;Guests allowed&lt;/code&gt; with &lt;code&gt;nobody&lt;/code&gt; given full ACL permissions. None of it mattered. The Windows machines that locked down guest access wouldn&apos;t connect without a valid credential, and OMV didn&apos;t had any credential to connect with.&lt;/p&gt;
+&lt;p&gt;I saw on internet the possibility to use some admin PowerShell commands that I did not try. The whole point of this NAS is that it works from any machine in the lab without touching the client. Running around to every Windows computer to change security settings is not an acceptable fix.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The fix:&lt;/strong&gt; Create a single shared user in OMV.&lt;/p&gt;
+&lt;p&gt;In the OMV web UI:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Users → Users → Add&lt;/li&gt;
+&lt;li&gt;Username: &lt;code&gt;lab&lt;/code&gt; (or whatever, I won&apos;t write on internet the one we use :) )&lt;/li&gt;
+&lt;li&gt;Password: &lt;code&gt;password&lt;/code&gt; (something simple everyone in the lab can remember, but maybe not that..)&lt;/li&gt;
+&lt;li&gt;No admin rights needed&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Then in your SMB share settings, set Public to &lt;strong&gt;Guests allowed&lt;/strong&gt; and give the &lt;code&gt;lab&lt;/code&gt; user read/write permissions on the shared folder.&lt;/p&gt;
+&lt;p&gt;On each Windows machine, when the credential prompt appears:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Username: &lt;code&gt;lab&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Password: &lt;code&gt;password&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Windows caches the credentials after the first successful connection. You enter them once per machine and you won&apos;t need to enter them again.&lt;/p&gt;
+&lt;p&gt;&amp;lt;figure&amp;gt;
+&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-final.webp&amp;quot; alt=&amp;quot;OMV dashboard with plenty of stats&amp;quot; /&amp;gt;
+&amp;lt;figcaption&amp;gt;The dashboard of the NAS with plenty of stats but nobody using it there&amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;[^1]: Microsoft made this change in Windows 11 24H2, released in late 2024. It affects both the SMB signing requirement and guest logon behavior on Pro and Enterprise editions. See &lt;a href=&quot;https://techcommunity.microsoft.com/blog/filecab/accessing-a-third-party-nas-with-smb-in-windows-11-24h2-may-fail/4154300&quot;&gt;Microsoft&apos;s official guidance on SMB signing and guest authentication&lt;/a&gt;.&lt;/p&gt;
+</content:encoded></item><item><title>Using Your MacBook as a Local WiFi Access Point</title><link>https://arthurbrugiere.fr/blog/macbook-air-access-point/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/macbook-air-access-point/</guid><description>How I&apos;ve been able to use a MacBook Air as a router without internet connection.</description><pubDate>Mon, 25 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;The Problem&lt;/h2&gt;
 &lt;p&gt;I needed my MacBook Air M2 (Sonoma) to broadcast its own WiFi network, being a WiFi server instead of a client. Not to share an internet connection, just to create a local wireless network so other devices could connect to it and talk to each other. Think local development and setting up a private LAN without carrying a router.&lt;/p&gt;
 &lt;p&gt;macOS has a built-in &lt;strong&gt;Internet Sharing&lt;/strong&gt; feature (&lt;a href=&quot;https://support.apple.com/en-vn/guide/mac-help/mchlp1540/mac&quot;&gt;documentation&lt;/a&gt;), but it&apos;s designed to share an existing internet connection (like Ethernet or Bluetooth tethering) over another network (such as WiFi).&lt;/p&gt;
 &lt;p&gt;On a MacBook with only a WiFi card and no wired connection, creating a &lt;em&gt;standalone&lt;/em&gt; access point is not straightforward.&lt;/p&gt;
