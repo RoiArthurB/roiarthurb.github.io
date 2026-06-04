@@ -30,14 +30,14 @@ I do have some experience installing Linux systems, so I pretty much followed th
     <figcaption>I don't have ways to capture my installation screen, imagine it's written `DHCPv6` please....</figcaption>
 </figure>
 
-The popup closes. You're staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and display them on the screen, but nothing happens.
+The popup closes. You're staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and displays them on the screen, but nothing happens.
 
 <figure>
     <img src="/images/install-omv-8-without-ipv6-bsod.webp" alt="Debian installer blue screen" />
-    <figcaption>The BSOD (Blue Screen Of ~~Death~~ Debian), not my most useful illustration...</figcaption>
+    <figcaption>The BSOD (Blue Screen Of <s>Death</s> Debian), not my most useful illustration...</figcaption>
 </figure>
 
-The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request times out with no response or got an unexpected message... Anyway, the installer broke and after waiting 1 hour, I tried to fix it : I disabled IPv6 at the kernel level for this boot only.
+The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request timed out with no response or got an unexpected message... Anyway, the installer broke and after waiting 1 hour, I tried to fix it: I disabled IPv6 at the kernel level for this boot only.
 
 To do so, at the GRUB boot menu, press `e` to edit the current entry. Find the `linux` line and append `ipv6.disable=1` to the end:
 
@@ -52,7 +52,7 @@ Press `Ctrl+X` or `F10` to boot. The installer skips DHCPv6 and proceeds.
 
 ## Issue 2: No network after first boot
 
-OMV installs, reboots, and the WiFi interface (`wlp2s0` in my case) has no IPv4 address. The web UI is, obviously unreachable. The `ipv6.disable=1` fix was only for the installer boot, and the freshly installed system tries to negotiate IPv6 on the network. My router still has IPv6 disabled, so the negotiation fails and the interface gets no usable IP at all.
+OMV installs, reboots, and the WiFi interface (`wlp2s0` in my case) has no IPv4 address. The web UI is, obviously, unreachable. The `ipv6.disable=1` fix was only for the installer boot, and the freshly installed system tries to negotiate IPv6 on the network. My router still has IPv6 disabled, so the negotiation fails and the interface gets no usable IP at all.
 
 **The fix:** Again, boot with `ipv6.disable=1` added from GRUB (press `e` at the boot menu, add it to the kernel line, `Ctrl+X` to boot).
 
@@ -73,7 +73,7 @@ You should now have an IPv4 address and be able to ping the machine, but you won
 
 ## Issue 3: nginx fails to start because of IPv6
 
-With WiFi up and an IPv4 address in hand, I tried to open the OMV web UI. Nothing on port 80. The nginx service was failing to start : 
+With WiFi up and an IPv4 address in hand, I tried to open the OMV web UI. Nothing on port 80. The nginx service was failing to start: 
 
 ```log
 -- Unit nginx.service has begun starting up.
@@ -84,7 +84,7 @@ Jun 02 14:46:27 systemd[1]: Failed to start A high performance web server and a 
 -- Subject: Unit nginx.service has failed
 ```
 
-The reason: OMV's nginx config binds to `[::]:80` (the IPv6 wildcard) by default. But I had booted with `ipv6.disable=1` on the kernel command line, my router doesn't provide any IPv6 : so IPv6 is not available. Nginx tries to listen on `[::]:80`, gets "Address family not supported by protocol," and dies.
+The reason: OMV's nginx config binds to `[::]:80` (the IPv6 wildcard) by default. But I had booted with `ipv6.disable=1` on the kernel command line, my router doesn't provide any IPv6: so IPv6 is not available. Nginx tries to listen on `[::]:80`, gets "Address family not supported by protocol," and dies.
 
 **The fix:** Edit the nginx site config to remove the IPv6 listen directive:
 
@@ -92,13 +92,13 @@ The reason: OMV's nginx config binds to `[::]:80` (the IPv6 wildcard) by default
 nano /etc/nginx/sites-enabled/openmediavault-webgui
 ```
 
-Comment out the line `listen [::]:80;` (but keep the `listen 80;` line used to wildcard on the IPv4). Then restart nginx:
+Comment out the line `listen [::]:80;` (but keep the `listen 80;` line used for IPv4). Then restart nginx:
 
 ```bash
 systemctl restart nginx
 ```
 
-The web UI comes up. Log in, with the default credentials (`admin` / `openmediavault`), go to Network → Interfaces, configure your WiFi interface (me `wlp2s0`) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer use the faulty IPv6.
+The web UI comes up. Log in, with the default credentials (`admin` / `openmediavault`), go to Network → Interfaces, configure your WiFi interface (me `wlp2s0`) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer uses the faulty IPv6.
 
 <figure>
     <img src="/images/install-omv-8-without-ipv6-network-config.webp" alt="OMV network config with IPv6 disabled" />
@@ -113,7 +113,7 @@ Finally :)
 
 With the OS running on the SSD, the two 1TB drives become the data pool. I used [Btrfs](https://btrfs.readthedocs.io/en/latest/) in RAID1.
 
-Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and native RAID support. For a NAS, the checksums detect silent data corruption, snapshots let you roll back files if someone overwrites them, and RAID1 keeps your data alive if one drive fails (both disks are mirrored, I loose a lot of space, but I'm less likely to loose data). OMV handles all of this through the UI.
+Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and native RAID support. For a NAS, the checksums detect silent data corruption, snapshots let you roll back files if someone overwrites them, and RAID1 keeps your data alive if one drive fails (both disks are mirrored, I lose a lot of space, but I'm less likely to lose data). OMV handles all of this through the UI.
 
 1. Storage
 1. File Systems
@@ -124,11 +124,11 @@ Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and nati
 1. Hit create, wait a few minutes, then mount it.
 
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-btrfs.webp" alt="OMV network config with IPv6 disabled" />
+    <img src="/images/install-omv-8-without-ipv6-btrfs.webp" alt="OMV FS configured with BTRFS and displaying 1TB of usable storage" />
     <figcaption>Saved working network with IPv6 disabled</figcaption>
 </figure>
 
-After that, create a shared folder on the volume and enable SMB, NFS and over network protocols under `Services`.
+After that, create a shared folder on the volume and enable SMB, NFS and other network protocols under `Services`.
 
 One thing to not forget to ease the management of the NAS is to set up a regular (monthly) scrub to catch silent data corruption. OMV 8 doesn't expose this in the UI, so use a scheduled task:
 
@@ -142,13 +142,13 @@ Command: btrfs scrub start /srv/dev-disk-by-uuid-XXXX
 
 ## Issue 4: Some Windows 11 machines refuse to connect
 
-The goal for this NAS is simple: anyone in the lab walks in with there own machine, opens the file manager, find the NAS in there *Network* file tab, and gets in. No passwords, no account creation, no IT support. I configured the SMB share with **Guests allowed**, meaning anyone can connect as a guest and access files. I also enabled NFS and other protocols for the Linux (me 😁) and macOS machines in the lab.
+The goal for this NAS is simple: anyone in the lab walks in with their own machine, opens the file manager, find the NAS in their *Network* file tab, and gets in. No passwords, no account creation, no IT support. I configured the SMB share with **Guests allowed**, meaning anyone can connect as a guest and access files. I also enabled NFS and other protocols for the Linux (me 😁) and macOS machines in the lab.
 
-Everything worked on every Linux machine~~s~~. Everything worked on every MacOS machines. It worked on the first Windows 11 machines. But others Windows 11 popped up a credential prompt that rejected everything I threw at it. Blank username, `guest`, random names. Nothing worked, no error message, no hint, just an endless login loop.
+Everything worked on every Linux machine~~s~~. Everything worked on all macOS machines. It worked on the first Windows 11 machines. But other Windows 11 popped up a credential prompt that rejected everything I threw at it. Blank username, `guest`, random names. Nothing worked, no error message, no hint, just an endless login loop.
 
 The probable cause: **Windows 11 24H2** changed two SMB security defaults. Microsoft now requires SMB signing on all connections, and Windows 11 Pro disables insecure guest logons[^1]. Earlier builds (23H2 and before) still allowed guest fallback. 24H2 does not, and the behavior is inconsistent. Some 24H2 machines on my network connected fine, others refused. I couldn't find a pattern.
 
-I tried the obvious OMV-side fixes. `Guests only` (force anonymous access). `Guests allowed` with `nobody` given full ACL permissions. None of it mattered. The Windows machines that locked down guest access wouldn't connect without a valid credential, and OMV didn't had any credential to connect with.
+I tried the obvious OMV-side fixes. `Guests only` (force anonymous access). `Guests allowed` with `nobody` given full ACL permissions. None of it mattered. The Windows machines that locked down guest access wouldn't connect without a valid credential, and OMV didn't have any credential to connect with.
 
 I saw on internet the possibility to use some admin PowerShell commands that I did not try. The whole point of this NAS is that it works from any machine in the lab without touching the client. Running around to every Windows computer to change security settings is not an acceptable fix.
 
@@ -174,6 +174,8 @@ Windows caches the credentials after the first successful connection. You enter 
     <img src="/images/install-omv-8-without-ipv6-final.webp" alt="OMV dashboard with plenty of stats" />
     <figcaption>The dashboard of the NAS with plenty of stats but nobody using it there</figcaption>
 </figure>
+
+Two weeks in, the NAS just works. The Windows machines all connect, the scrubs run monthly (I hope), and everyone's happy about it.
 
 ---
 
