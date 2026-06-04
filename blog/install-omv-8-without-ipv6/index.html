@@ -115,19 +115,19 @@ Table of Contents
     <img src="/images/install-omv-8-without-ipv6-dhcp.webp" alt="Debian installer DHCP loading screen">
     <figcaption>I don't have ways to capture my installation screen, imagine it's written `DHCPv6` please....</figcaption>
 </figure>
-<p>The popup closes. You’re staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and display them on the screen, but nothing happens.</p>
+<p>The popup closes. You’re staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and displays them on the screen, but nothing happens.</p>
 <figure>
     <img src="/images/install-omv-8-without-ipv6-bsod.webp" alt="Debian installer blue screen">
-    <figcaption>The BSOD (Blue Screen Of ~~Death~~ Debian), not my most useful illustration...</figcaption>
+    <figcaption>The BSOD (Blue Screen Of <s>Death</s> Debian), not my most useful illustration...</figcaption>
 </figure>
-<p>The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request times out with no response or got an unexpected message… Anyway, the installer broke and after waiting 1 hour, I tried to fix it : I disabled IPv6 at the kernel level for this boot only.</p>
+<p>The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request timed out with no response or got an unexpected message… Anyway, the installer broke and after waiting 1 hour, I tried to fix it: I disabled IPv6 at the kernel level for this boot only.</p>
 <p>To do so, at the GRUB boot menu, press <code>e</code> to edit the current entry. Find the <code>linux</code> line and append <code>ipv6.disable=1</code> to the end:</p>
 <pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>linux /install/vmlinuz vga=normal quiet file=/cdrom/preseed.cfg ipv6.disable=1</span></span></code></pre>
 <p>Press <code>Ctrl+X</code> or <code>F10</code> to boot. The installer skips DHCPv6 and proceeds.</p>
 <div class="callout" data-callout="tip"><p>Editing in GRUB with <code>e</code> changes the boot parameters for this session only. Nothing gets written to disk. If it doesn’t work, reboot and try something else. Once you confirm the fix, you can make it permanent later.</p>
 </div>
 <h2 id="issue-2-no-network-after-first-boot">Issue 2: No network after first boot</h2>
-<p>OMV installs, reboots, and the WiFi interface (<code>wlp2s0</code> in my case) has no IPv4 address. The web UI is, obviously unreachable. The <code>ipv6.disable=1</code> fix was only for the installer boot, and the freshly installed system tries to negotiate IPv6 on the network. My router still has IPv6 disabled, so the negotiation fails and the interface gets no usable IP at all.</p>
+<p>OMV installs, reboots, and the WiFi interface (<code>wlp2s0</code> in my case) has no IPv4 address. The web UI is, obviously, unreachable. The <code>ipv6.disable=1</code> fix was only for the installer boot, and the freshly installed system tries to negotiate IPv6 on the network. My router still has IPv6 disabled, so the negotiation fails and the interface gets no usable IP at all.</p>
 <p><strong>The fix:</strong> Again, boot with <code>ipv6.disable=1</code> added from GRUB (press <code>e</code> at the boot menu, add it to the kernel line, <code>Ctrl+X</code> to boot).</p>
 <p>After this, nothing is magically working yet. I had to manually bring the WiFi up with a few commands:</p>
 <pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic"># Generate WPA config</span></span>
@@ -140,19 +140,19 @@ Table of Contents
 <span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">dhcpcd</span><span style="color:#032F62;--shiki-dark:#B8BB26"> wlp2s0</span></span></code></pre>
 <p>You should now have an IPv4 address and be able to ping the machine, but you won’t be able to reach the web UI at <code>http://&#x3C;machine-ip></code> yet…</p>
 <h2 id="issue-3-nginx-fails-to-start-because-of-ipv6">Issue 3: nginx fails to start because of IPv6</h2>
-<p>With WiFi up and an IPv4 address in hand, I tried to open the OMV web UI. Nothing on port 80. The nginx service was failing to start :</p>
+<p>With WiFi up and an IPv4 address in hand, I tried to open the OMV web UI. Nothing on port 80. The nginx service was failing to start:</p>
 <pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="log"><code><span class="line"><span style="color:#24292E;--shiki-dark:#EBDBB2">-- Unit </span><span style="color:#005CC5;--shiki-dark:#D3869B">nginx.service</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> has begun starting up.</span></span>
 <span class="line"><span style="color:#24292E;--shiki-dark:#EBDBB2">Jun </span><span style="color:#005CC5;--shiki-dark:#D3869B">02</span><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic"> 14:46:27</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> nginx[</span><span style="color:#005CC5;--shiki-dark:#D3869B">5069</span><span style="color:#24292E;--shiki-dark:#EBDBB2">]: nginx: [emerg] socket() [::]:</span><span style="color:#005CC5;--shiki-dark:#D3869B">80</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> failed (</span><span style="color:#005CC5;--shiki-dark:#D3869B">97</span><span style="color:#24292E;--shiki-dark:#EBDBB2">: Address family not supported by protocol)</span></span>
 <span class="line"><span style="color:#24292E;--shiki-dark:#EBDBB2">Jun </span><span style="color:#005CC5;--shiki-dark:#D3869B">02</span><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic"> 14:46:27</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> nginx[</span><span style="color:#005CC5;--shiki-dark:#D3869B">5069</span><span style="color:#24292E;--shiki-dark:#EBDBB2">]: nginx: configuration file /etc/nginx/nginx.conf test failed</span></span>
 <span class="line"><span style="color:#24292E;--shiki-dark:#EBDBB2">Jun </span><span style="color:#005CC5;--shiki-dark:#D3869B">02</span><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic"> 14:46:27</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> systemd[</span><span style="color:#005CC5;--shiki-dark:#D3869B">1</span><span style="color:#24292E;--shiki-dark:#EBDBB2">]: </span><span style="color:#005CC5;--shiki-dark:#D3869B">nginx.service</span><span style="color:#24292E;--shiki-dark:#EBDBB2">: Control process exited, code=exited status=</span><span style="color:#005CC5;--shiki-dark:#D3869B">1</span></span>
 <span class="line"><span style="color:#24292E;--shiki-dark:#EBDBB2">Jun </span><span style="color:#005CC5;--shiki-dark:#D3869B">02</span><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic"> 14:46:27</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> systemd[</span><span style="color:#005CC5;--shiki-dark:#D3869B">1</span><span style="color:#24292E;--shiki-dark:#EBDBB2">]: Failed to start A high performance web server and a reverse proxy server.</span></span>
 <span class="line"><span style="color:#24292E;--shiki-dark:#EBDBB2">-- Subject: Unit </span><span style="color:#005CC5;--shiki-dark:#D3869B">nginx.service</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> has failed</span></span></code></pre>
-<p>The reason: OMV’s nginx config binds to <code>[::]:80</code> (the IPv6 wildcard) by default. But I had booted with <code>ipv6.disable=1</code> on the kernel command line, my router doesn’t provide any IPv6 : so IPv6 is not available. Nginx tries to listen on <code>[::]:80</code>, gets “Address family not supported by protocol,” and dies.</p>
+<p>The reason: OMV’s nginx config binds to <code>[::]:80</code> (the IPv6 wildcard) by default. But I had booted with <code>ipv6.disable=1</code> on the kernel command line, my router doesn’t provide any IPv6: so IPv6 is not available. Nginx tries to listen on <code>[::]:80</code>, gets “Address family not supported by protocol,” and dies.</p>
 <p><strong>The fix:</strong> Edit the nginx site config to remove the IPv6 listen directive:</p>
 <pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">nano</span><span style="color:#032F62;--shiki-dark:#B8BB26"> /etc/nginx/sites-enabled/openmediavault-webgui</span></span></code></pre>
-<p>Comment out the line <code>listen [::]:80;</code> (but keep the <code>listen 80;</code> line used to wildcard on the IPv4). Then restart nginx:</p>
+<p>Comment out the line <code>listen [::]:80;</code> (but keep the <code>listen 80;</code> line used for IPv4). Then restart nginx:</p>
 <pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">systemctl</span><span style="color:#032F62;--shiki-dark:#B8BB26"> restart</span><span style="color:#032F62;--shiki-dark:#B8BB26"> nginx</span></span></code></pre>
-<p>The web UI comes up. Log in, with the default credentials (<code>admin</code> / <code>openmediavault</code>), go to Network → Interfaces, configure your WiFi interface (me <code>wlp2s0</code>) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer use the faulty IPv6.</p>
+<p>The web UI comes up. Log in, with the default credentials (<code>admin</code> / <code>openmediavault</code>), go to Network → Interfaces, configure your WiFi interface (me <code>wlp2s0</code>) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer uses the faulty IPv6.</p>
 <figure>
     <img src="/images/install-omv-8-without-ipv6-network-config.webp" alt="OMV network config with IPv6 disabled">
     <figcaption>Saved working network with IPv6 disabled</figcaption>
@@ -161,7 +161,7 @@ Table of Contents
 <hr>
 <h2 id="storage-btrfs-raid1-on-the-two-hdds">Storage: Btrfs RAID1 on the two HDDs</h2>
 <p>With the OS running on the SSD, the two 1TB drives become the data pool. I used <a href="https://btrfs.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer nofollow">Btrfs</a> in RAID1.</p>
-<p>Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and native RAID support. For a NAS, the checksums detect silent data corruption, snapshots let you roll back files if someone overwrites them, and RAID1 keeps your data alive if one drive fails (both disks are mirrored, I loose a lot of space, but I’m less likely to loose data). OMV handles all of this through the UI.</p>
+<p>Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and native RAID support. For a NAS, the checksums detect silent data corruption, snapshots let you roll back files if someone overwrites them, and RAID1 keeps your data alive if one drive fails (both disks are mirrored, I lose a lot of space, but I’m less likely to lose data). OMV handles all of this through the UI.</p>
 <ol>
 <li>Storage</li>
 <li>File Systems</li>
@@ -172,20 +172,20 @@ Table of Contents
 <li>Hit create, wait a few minutes, then mount it.</li>
 </ol>
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-btrfs.webp" alt="OMV network config with IPv6 disabled">
+    <img src="/images/install-omv-8-without-ipv6-btrfs.webp" alt="OMV FS configured with BTRFS and displaying 1TB of usable storage">
     <figcaption>Saved working network with IPv6 disabled</figcaption>
 </figure>
-<p>After that, create a shared folder on the volume and enable SMB, NFS and over network protocols under <code>Services</code>.</p>
+<p>After that, create a shared folder on the volume and enable SMB, NFS and other network protocols under <code>Services</code>.</p>
 <p>One thing to not forget to ease the management of the NAS is to set up a regular (monthly) scrub to catch silent data corruption. OMV 8 doesn’t expose this in the UI, so use a scheduled task:</p>
 <pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>System → Scheduled Tasks → Add</span></span>
 <span class="line"><span>Schedule: Monthly (0 2 1 * * for 2am on the 1st)</span></span>
 <span class="line"><span>Command: btrfs scrub start /srv/dev-disk-by-uuid-XXXX</span></span></code></pre>
 <hr>
 <h2 id="issue-4-some-windows-11-machines-refuse-to-connect">Issue 4: Some Windows 11 machines refuse to connect</h2>
-<p>The goal for this NAS is simple: anyone in the lab walks in with there own machine, opens the file manager, find the NAS in there <em>Network</em> file tab, and gets in. No passwords, no account creation, no IT support. I configured the SMB share with <strong>Guests allowed</strong>, meaning anyone can connect as a guest and access files. I also enabled NFS and other protocols for the Linux (me 😁) and macOS machines in the lab.</p>
-<p>Everything worked on every Linux machine<del>s</del>. Everything worked on every MacOS machines. It worked on the first Windows 11 machines. But others Windows 11 popped up a credential prompt that rejected everything I threw at it. Blank username, <code>guest</code>, random names. Nothing worked, no error message, no hint, just an endless login loop.</p>
+<p>The goal for this NAS is simple: anyone in the lab walks in with their own machine, opens the file manager, find the NAS in their <em>Network</em> file tab, and gets in. No passwords, no account creation, no IT support. I configured the SMB share with <strong>Guests allowed</strong>, meaning anyone can connect as a guest and access files. I also enabled NFS and other protocols for the Linux (me 😁) and macOS machines in the lab.</p>
+<p>Everything worked on every Linux machine<del>s</del>. Everything worked on all macOS machines. It worked on the first Windows 11 machines. But other Windows 11 popped up a credential prompt that rejected everything I threw at it. Blank username, <code>guest</code>, random names. Nothing worked, no error message, no hint, just an endless login loop.</p>
 <p>The probable cause: <strong>Windows 11 24H2</strong> changed two SMB security defaults. Microsoft now requires SMB signing on all connections, and Windows 11 Pro disables insecure guest logons<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup>. Earlier builds (23H2 and before) still allowed guest fallback. 24H2 does not, and the behavior is inconsistent. Some 24H2 machines on my network connected fine, others refused. I couldn’t find a pattern.</p>
-<p>I tried the obvious OMV-side fixes. <code>Guests only</code> (force anonymous access). <code>Guests allowed</code> with <code>nobody</code> given full ACL permissions. None of it mattered. The Windows machines that locked down guest access wouldn’t connect without a valid credential, and OMV didn’t had any credential to connect with.</p>
+<p>I tried the obvious OMV-side fixes. <code>Guests only</code> (force anonymous access). <code>Guests allowed</code> with <code>nobody</code> given full ACL permissions. None of it mattered. The Windows machines that locked down guest access wouldn’t connect without a valid credential, and OMV didn’t have any credential to connect with.</p>
 <p>I saw on internet the possibility to use some admin PowerShell commands that I did not try. The whole point of this NAS is that it works from any machine in the lab without touching the client. Running around to every Windows computer to change security settings is not an acceptable fix.</p>
 <p><strong>The fix:</strong> Create a single shared user in OMV.</p>
 <p>In the OMV web UI:</p>
@@ -206,6 +206,7 @@ Table of Contents
     <img src="/images/install-omv-8-without-ipv6-final.webp" alt="OMV dashboard with plenty of stats">
     <figcaption>The dashboard of the NAS with plenty of stats but nobody using it there</figcaption>
 </figure>
+<p>Two weeks in, the NAS just works. The Windows machines all connect, the scrubs run monthly (I hope), and everyone’s happy about it.</p>
 <hr>
 <section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label">Footnotes</h2>
 <ol>
