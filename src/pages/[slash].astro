@@ -1,0 +1,25 @@
+---
+import { getCollection, render } from 'astro:content';
+import SlashPage from '../layouts/SlashPage.astro';
+
+// One root-level page per slash entry: src/content/slashes/uses.md -> /uses
+export async function getStaticPaths() {
+	const entries = await getCollection('slashes');
+	return entries.map((entry) => ({
+		params: { slash: entry.id },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<SlashPage
+	title={entry.data.title}
+	description={entry.data.description}
+	lede={entry.data.lede}
+	updatedDate={entry.data.updatedDate}
+>
+	<Content />
+</SlashPage>

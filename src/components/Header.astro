@@ -24,6 +24,7 @@ const cvHref = CV_URL ? url(CV_URL) : null;
 				</div>
 			</div>
 			{cvHref && <HeaderLink href={cvHref} target="_blank">CV</HeaderLink>}
+            <HeaderLink href={url('/slashes')} style="color: var(--color-bg)">/</HeaderLink>
 		</div>
 
         <div class="header-actions">
@@ -138,7 +139,7 @@ const cvHref = CV_URL ? url(CV_URL) : null;
         transition: all 0.2s ease;
 	}
 	.internal-links :global(a:hover) {
-        color: var(--color-accent);
+        color: var(--color-accent) !important;
     }
 	.internal-links :global(a.active) {
 		text-decoration: none;

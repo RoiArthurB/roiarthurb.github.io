@@ -1,0 +1,134 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+
+// Works as a Markdown `layout:` target — frontmatter arrives on Astro.props.frontmatter.
+// It also works when imported as a wrapper: props fall back to the top level.
+const fm = (Astro.props.frontmatter ?? Astro.props) as {
+	title: string;
+	description?: string;
+	lede?: string;
+	updatedDate?: string | Date;
+};
+
+const { title, description = SITE_DESCRIPTION, lede, updatedDate } = fm;
+const updated = updatedDate ? new Date(updatedDate) : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${title} | ${SITE_TITLE}`} description={description} />
+		<style>
+			.slash-header {
+				text-align: center;
+				margin: 1rem 0 2.5rem;
+				z-index: 0;
+				position: inherit;
+			}
+			.slash-header h1 {
+				font-family: var(--font-serif-fancy);
+				font-size: clamp(2rem, 5vw, 2.8rem);
+				line-height: 1.15;
+				margin: 0;
+			}
+			.slash-lede {
+				margin: 0.75rem auto 0;
+				max-width: 46ch;
+				color: var(--color-text-muted);
+				font-size: 1.05rem;
+			}
+			.slash-updated {
+				margin-top: 0.85rem;
+				font-family: var(--font-mono);
+				font-size: 0.8rem;
+				letter-spacing: 0.02em;
+				text-transform: uppercase;
+				color: var(--color-text-muted);
+			}
+
+			.slash-prose {
+				max-width: 68ch;
+				margin: 0 auto;
+				color: var(--color-text-main);
+			}
+			.slash-prose :global(h2) {
+				font-family: var(--font-serif);
+				margin: 2.5rem 0 0.75rem;
+				font-size: 1.5rem;
+			}
+			.slash-prose :global(h3) {
+				margin: 1.75rem 0 0.5rem;
+				font-size: 1.2rem;
+			}
+			.slash-prose :global(p) {
+				line-height: 1.7;
+				margin: 0 0 1.25rem;
+			}
+			.slash-prose :global(a) {
+				color: var(--color-accent);
+			}
+			.slash-prose :global(ul),
+			.slash-prose :global(ol) {
+				margin: 0 0 1.5rem;
+				padding-left: 1.4rem;
+			}
+			.slash-prose :global(li) {
+				margin: 0.4rem 0;
+				line-height: 1.6;
+			}
+			.slash-prose :global(hr) {
+				margin: 2.5rem 0;
+				border: 0;
+				border-top: 1px solid var(--color-border);
+			}
+			.slash-prose :global(blockquote) {
+				margin: 1.75rem 0;
+				padding: 0.5rem 0 0.5rem 1.25rem;
+				border-left: 3px solid var(--color-accent);
+				color: var(--color-text-muted);
+			}
+			.slash-prose :global(code) {
+				font-family: var(--font-mono);
+				font-size: 0.9em;
+				background: var(--color-accent-light);
+				padding: 0.15rem 0.35rem;
+				border-radius: 0.35rem;
+			}
+			.slash-prose :global(a[href^='/slashes']),
+			.slash-back {
+				text-decoration: none;
+			}
+			.slash-back {
+				display: inline-block;
+				margin-top: 3rem;
+				font-size: 0.9rem;
+				color: var(--color-text-muted);
+			}
+			.slash-back:hover {
+				color: var(--color-accent);
+			}
+		</style>
+	</head>
+
+	<body>
+		<Header />
+		<main>
+			<header class="slash-header">
+				<h1>{title}</h1>
+				{lede && <p class="slash-lede">{lede}</p>}
+				{updated && (
+					<p class="slash-updated">Updated <FormattedDate date={updated} /></p>
+				)}
+			</header>
+
+			<div class="slash-prose">
+				<slot />
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>

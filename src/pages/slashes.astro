@@ -1,0 +1,92 @@
+---
+import { getCollection } from 'astro:content';
+import SlashPage from '../layouts/SlashPage.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import { url } from '../utils/paths';
+
+// Self-generating: every entry in the slashes collection shows up here automatically.
+const pages = (await getCollection('slashes')).sort((a, b) =>
+	a.data.title.localeCompare(b.data.title),
+);
+---
+
+<SlashPage
+	title="Slashes"
+	lede="A small set of low-key pages, in the spirit of slashpages.net. Consider them an easter egg."
+	description="An index of the slash pages on this site."
+>
+	<ul class="slash-index">
+		{pages.map((page) => (
+			<li>
+				<a href={url(`/${page.id}`)}>
+					<span class="slash-index-title">{page.data.title}</span>
+					{page.data.lede && <span class="slash-index-lede">{page.data.lede}</span>}
+				</a>
+				{page.data.updatedDate && (
+					<span class="slash-index-date">
+						<FormattedDate date={page.data.updatedDate} />
+					</span>
+				)}
+			</li>
+		))}
+	</ul>
+
+	<style>
+		.slash-index {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			display: grid;
+			gap: 0.75rem;
+		}
+		.slash-index li {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 1rem;
+			padding: 1rem 1.1rem;
+			border: 1px solid var(--color-border);
+			border-radius: 14px;
+			background: var(--color-bg-offset);
+			transition: border-color 0.2s ease, transform 0.2s ease;
+		}
+		.slash-index li:hover {
+			border-color: var(--color-accent);
+			transform: translateY(-1px);
+		}
+		.slash-index a {
+			text-decoration: none;
+			color: var(--color-text-main);
+			display: flex;
+			flex-direction: column;
+			gap: 0.2rem;
+			min-width: 0;
+		}
+		.slash-index-title {
+			font-family: var(--font-serif);
+			font-size: 1.15rem;
+		}
+		.slash-index li:hover .slash-index-title {
+			color: var(--color-accent);
+		}
+		.slash-index-lede {
+			color: var(--color-text-muted);
+			font-size: 0.92rem;
+		}
+		.slash-index-date {
+			flex-shrink: 0;
+			font-family: var(--font-mono);
+			font-size: 0.72rem;
+			text-transform: uppercase;
+			letter-spacing: 0.02em;
+			color: var(--color-text-muted);
+		}
+
+		@media (max-width: 520px) {
+			.slash-index li {
+				flex-direction: column;
+				gap: 0.4rem;
+			}
+		}
+	</style>
+</SlashPage>

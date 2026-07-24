@@ -23,4 +23,15 @@ const blog = defineCollection({
 		}),
 });
 
-export const collections = { blog };
+const slashes = defineCollection({
+	// Low-key "slash pages" (slashpages.net). Source lives here; each renders at the site root.
+	loader: glob({ base: './src/content/slashes', pattern: '**/*.{md,mdx}' }),
+	schema: z.object({
+		title: z.string(),
+		description: z.string().optional(),
+		lede: z.string().optional(),
+		updatedDate: z.coerce.date().optional(),
+	}),
+});
+
+export const collections = { blog, slashes };
