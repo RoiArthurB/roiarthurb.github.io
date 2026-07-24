@@ -29,6 +29,8 @@ if (currentPath === '') {
 const { title, description, image = defaultImg } = Astro.props;
 const atkinsonRegular = url('/fonts/atkinson-regular.woff');
 const atkinsonBold = url('/fonts/atkinson-bold.woff');
+const aginaRegular = url('/fonts/agina.otf');
+const epicalRegular = url('/fonts/Epical Comeback.otf');
 
 const resolveImage = (img: string) => {
     if (img.startsWith('http')) return img;
@@ -140,6 +142,8 @@ const imageUrl = typeof image === 'string'
 <meta name="color-scheme" content="light dark" />
 <link rel="preload" href={atkinsonRegular} as="font" type="font/woff" crossorigin />
 <link rel="preload" href={atkinsonBold} as="font" type="font/woff" crossorigin />
+<link rel="preload" href={aginaRegular} as="font" type="font/otf" crossorigin />
+<link rel="preload" href={epicalRegular} as="font" type="font/otf" crossorigin />
 
 <style
 	is:inline
@@ -156,6 +160,22 @@ const imageUrl = typeof image === 'string'
 			font-family: "Atkinson";
 			src: url("${atkinsonBold}") format("woff");
 			font-weight: 700;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Agina";
+			src: url("${aginaRegular}") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Epical";
+			src: url("${epicalRegular}") format("opentype");
+			font-weight: 400;
 			font-style: normal;
 			font-display: swap;
 		}

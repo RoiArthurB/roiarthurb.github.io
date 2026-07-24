@@ -1,5 +1,5 @@
 ---
-title: 'From "Works on My Machine" to One Binary That Runs Everywhere'
+title: 'Packaging a Node.js application with SEA and native binaries'
 description: "How a filename on Windows broke my full packaged application"
 pubDate: '2026-05-29'
 toc: true
