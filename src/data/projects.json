@@ -72,7 +72,8 @@
     "status": "Completed",
     "authors": [],
     "ogLabel": "ESCAPE",
-    "link": "https://anr.fr/Projet-ANR-16-CE39-0011"
+    "link": "https://anr.fr/Projet-ANR-16-CE39-0011",
+    "heroImage": "/src/assets/projects/escape.png"
   },
   {
     "id": "project-hka",
