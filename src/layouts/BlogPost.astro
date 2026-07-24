@@ -23,6 +23,9 @@ const fallbackHero = id ? url(`/blog/${id}.webp`) : url('/og.webp');
 			html {
 				scroll-padding-top: 5.5rem; /* Account for sticky header height when scrolling to anchors */
 			}
+            .prose :global(h2) {
+                font-family: var(--font-serif) !important;
+            }
 			main {
 				width: 100%;
 				max-width: 100%;
