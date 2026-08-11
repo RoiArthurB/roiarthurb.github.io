@@ -1,4 +1,4 @@
-const AVATAR_PALETTE = [
+export const AVATAR_PALETTE = [
   { bg: "#DCEBFF", fg: "#1D4ED8" },
   { bg: "#DFF7E2", fg: "#166534" },
   { bg: "#FDE7D8", fg: "#C2410C" },

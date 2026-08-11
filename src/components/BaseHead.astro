@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
 import type { ImageMetadata } from 'astro';
-import { SITE_TITLE } from '../consts';
+import { SITE_TITLE, SOCIAL_LINKS } from '../consts';
 import { url } from '../utils/paths';
 
 interface Props {
@@ -27,6 +27,32 @@ if (currentPath === '') {
 }
 
 const { title, description, image = defaultImg } = Astro.props;
+
+// — JSON-LD structured data for Person + WebSite schema (SEO rich results)
+const siteUrl = import.meta.env.SITE || 'https://arthurbrugiere.fr';
+const jsonLdPerson: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "WebSite",
+            "@id": `${siteUrl}/#website`,
+            "url": siteUrl,
+            "name": SITE_TITLE,
+            "description": description,
+            "inLanguage": "en"
+        },
+        {
+            "@type": "Person",
+            "@id": `${siteUrl}/#person`,
+            "name": SITE_TITLE,
+            "jobTitle": "Computer Science Researcher / IT Geek",
+            "url": siteUrl,
+            "sameAs": SOCIAL_LINKS
+                .filter(l => !l.href.startsWith('mailto:'))
+                .map(l => l.href)
+        }
+    ]
+};
 const atkinsonRegular = url('/fonts/atkinson-regular.woff');
 const atkinsonBold = url('/fonts/atkinson-bold.woff');
 const aginaRegular = url('/fonts/agina.otf');
@@ -75,17 +101,17 @@ const imageUrl = typeof image === 'string'
 		--color-bg-header: rgba(255, 255, 255, 0.85);
 		--color-text-main: #1a1a1a;
 		--color-text-muted: #555555;
-		--color-accent: #003366;
+		--color-accent: #c47f00;
 		--color-border: #eaeaea;
 	}
 	[data-theme='dark'] {
-		--color-bg: #0f172a;
-		--color-bg-offset: #0f172a;
-		--color-bg-header: rgba(15, 23, 42, 0.8);
-		--color-text-main: #e2e8f0;
-		--color-text-muted: #94a3b8;
-		--color-accent: #60a5fa;
-		--color-border: #334155;
+		--color-bg: #1f1f1e;
+		--color-bg-offset: #272726;
+		--color-bg-header: rgba(31, 31, 30, 0.85);
+		--color-text-main: #ddd4c0;
+		--color-text-muted: #6b6358;
+		--color-accent: #ffab00;
+		--color-border: #242424;
 	}
 	html, body { min-height: 100%; background-color: var(--color-bg); }
 	@media (prefers-color-scheme: dark) {
@@ -134,8 +160,14 @@ const imageUrl = typeof image === 'string'
 <link rel="sitemap" href={url('/sitemap-index.xml')} />
 <link
 	rel="alternate"
-	type="application/rss+xml"
+	type="application/atom+xml"
 	title={SITE_TITLE}
+	href={new URL('feed.xml', Astro.site)}
+/>
+<link
+	rel="alternate"
+	type="application/rss+xml"
+	title={`${SITE_TITLE} (RSS)`}
 	href={new URL('rss.xml', Astro.site)}
 />
 <meta name="generator" content={Astro.generator} />
@@ -199,3 +231,5 @@ const imageUrl = typeof image === 'string'
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={imageUrl} />
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLdPerson)} />

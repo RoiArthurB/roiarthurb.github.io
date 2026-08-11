@@ -15,7 +15,7 @@
   {
     "id": "alexis-drogoul",
     "name": "Alexis Drogoul",
-    "role": "Senior Researcher",
+    "role": "Senior researcher",
     "avatar": "https://github.com/alexisdrogoul.png",
     "github": "https://github.com/alexisdrogoul",
     "linkedin": "https://www.linkedin.com/in/alexisdrogoul/",
@@ -25,7 +25,7 @@
   {
     "id": "patrick-taillandier",
     "name": "Patrick Taillandier",
-    "role": "Senior Researcher",
+    "role": "Senior researcher",
     "avatar": "https://github.com/ptaillandier.png",
     "github": "https://github.com/ptaillandier",
     "google_scholar": "https://scholar.google.com/citations?user=Z_lxQLEAAAAJ",
@@ -45,7 +45,7 @@
   {
     "id": "benoit-gaudou",
     "name": "Benoit Gaudou",
-    "role": "Senior Researcher",
+    "role": "Senior researcher",
     "avatar": "https://github.com/benoitgaudou.png",
     "github": "https://github.com/benoitgaudou",
     "linkedin": "https://www.linkedin.com/in/benoit-gaudou-a6806a20/",
@@ -113,7 +113,7 @@
   {
     "id": "marc-choisy",
     "name": "Marc Choisy",
-    "role": "Senior Researcher",
+    "role": "Senior researcher",
     "avatar": "https://github.com/choisy.png",
     "github": "https://github.com/choisy",
     "website": "http://marcchoisy.free.fr/index.html",
@@ -124,7 +124,7 @@
   {
     "id": "jean-daniel-zucker",
     "name": "Jean-Daniel Zucker",
-    "role": "Senior Researcher",
+    "role": "Senior researcher",
     "avatar": "https://github.com/jdzucker.png",
     "github": "https://github.com/jdzucker",
     "website": "https://scai.sorbonne-universite.fr/researchers/zucker-jean-daniel",
@@ -135,7 +135,7 @@
   {
     "id": "leo-bire",
     "name": "Léo Biré",
-    "role": "Ph.D. Student",
+    "role": "Ph.D. student",
     "avatar": "https://github.com/LBIRE.png",
     "github": "https://github.com/LBIRE",
     "google_scholar": "https://scholar.google.com/citations?user=JX98ADUAAAAJ",
@@ -153,7 +153,7 @@
   {
     "id": "pierre-larmande",
     "name": "Pierre Larmande",
-    "role": "Senior Researcher",
+    "role": "Senior researcher",
     "avatar": "https://github.com/pierrelarmande.png",
     "github": "https://github.com/pierrelarmande",
     "linkedin": "https://www.linkedin.com/in/pierre-larmande-5110b91a/",
