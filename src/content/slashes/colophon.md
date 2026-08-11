@@ -11,7 +11,7 @@ updatedDate: 2026-07-24
   - Started from **amazing** the [astro-scholar](https://github.com/shravanngoswamii/astro-scholar) theme, heavily reworked since.
 - Content is Markdown/MDX. Code blocks are highlighted at build time with [Shiki](https://shiki.style/) (`github-light` / `gruvbox-dark-medium`), and GitHub-style alerts become callouts via `rehype-github-alerts`.
 - Full-text search is powered by [Pagefind](https://pagefind.app/), which indexes the built site as a post-build step — no search server required.
-- An RSS feed and a sitemap are generated on every build.
+- An [Atom feed](/feed.xml) and a sitemap are generated on every build. A legacy [RSS feed](/rss.xml) is still served for older subscribers.
 
 ## Images & performance
 
