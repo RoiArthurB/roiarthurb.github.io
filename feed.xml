@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+	<id>https://arthurbrugiere.fr/</id>
+	<title>Arthur Brugière</title>
+	<subtitle>Computer Researcher / IT Geek</subtitle>
+	<updated>2026-08-10T00:00:00.000Z</updated>
+	<link rel="self" type="application/atom+xml" href="https://arthurbrugiere.fr/feed.xml" />
+	<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/" />
+	<author><name>Arthur Brugière</name></author>
+	<entry>
+		<id>https://arthurbrugiere.fr/blog/quest-adb-setup-simple/</id>
+		<title>Auto-configuring Meta Quest headsets for classroom use with ADB</title>
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/quest-adb-setup-simple/" />
+		<published>2026-08-10T00:00:00.000Z</published>
+		<updated>2026-08-10T00:00:00.000Z</updated>
+		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
+		<category term="meta quest" />
+		<category term="adb" />
+		<category term="network" />
+		<summary type="html">How Meta Quest headsets are setup for classroom use in the SIMPLE Project.</summary>
+		<content type="html"><![CDATA[<p>To run a demo with some Meta Quest headsets, you need to be able to keep them connected to WiFi and keep their display on. Unfortunately, they ship with consumer defaults that fight you on that. The <a href="https://project-simple.eu/"><em>SIMPLE Project</em></a> handles this by pushing a complete ADB configuration profile every time a headset connects to the platform. Here's what the headset tries to do, why it breaks your demo, and how SIMPLE stops it.</p>
+<blockquote>
+<p>[!NOTE]
+Precisely, the use in the <em>SIMPLE Project</em> is by bringing a <a href="https://github.com/project-SIMPLE/M2L2"><em>M2L2</em></a> (an all-in-one device including an offline WiFi router, six Meta Quest headsets, and a computer running software; everything interconnected) into classrooms to easily use VR in ASEAN schools.</p>
+<p>Most of the configuration presented here is made precisely for this use case.</p>
+</blockquote>
+<h2>WiFi disconnects on networks without internet</h2>
+<p>If your setup runs on a local network with no internet access, the Quest will eventually disconnect. Android continuously tests whether WiFi has internet access, and when the check fails, it flags the network as bad, shows a <code>No internet access</code> warning.
+On regular Android that's not too much of an issue, but Meta hates that (they want your data) and auto-disconnects to &quot;avoid the inconvenience of not having internet&quot; or something. Also Meta disable the automatic connection to a network tagged as <code>No internet access</code>, being a major issue in a game session to run LAN games...</p>
+<p>SIMPLE fixes this by disabling the network probes entirely, so no wifi network can be flagged.</p>
+<h3>Disabling <em>Captive Portal</em> detection</h3>
+<p>Android pings Google servers to check for captive portals, the login pages you see at hotels and airports. On an offline network, these requests time out, and Android interprets that as a connectivity problem. To spoof this, I simply disabled captive portal detection and points the probe URLs at localhost so they always answer instead of failing outward:</p>
+<pre><code class="language-txt">captive_portal_detection_enabled: 0
+captive_portal_mode: 0
+captive_portal_server: &quot;localhost&quot;
+captive_portal_https_url: &quot;https://localhost&quot;
+captive_portal_http_url: &quot;http://localhost&quot;
+</code></pre>
+<p><code>private_dns_mode: &quot;off&quot;</code> handles a related issue: Android's private DNS feature (DNS-over-TLS) tries to connect to hardcoded DNS servers. On an offline network, these connections fail and can trigger additional disconnect logic. Turning it off removes that failure path.</p>
+<h3>Disabling every WiFi auto-switcher</h3>
+<p>Even with captive portal detection disabled, Android has multiple watchdog services that will abandon a network they don't like. SIMPLE disables all of them:</p>
+<pre><code class="language-txt">wifi_watchdog_on: 0
+wifi_watchdog_poor_network_test_enabled: 0
+network_recommendations_enabled: 0
+network_avoid_bad_wifi: 0
+wifi_passpoint_enabled: 0
+wifi_enhance_network_while_sleeping: 0
+</code></pre>
+<p>The WiFi watchdog roams to another network or drops the connection when it thinks quality is poor. <code>network_avoid_bad_wifi</code> does exactly what it says: it disconnects from networks without internet. <code>network_recommendations_enabled</code> pops up suggestions to switch networks, which is disruptive mid-demo. <code>wifi_passpoint_enabled</code> disables automatic authentication with carrier hotspot networks, which is irrelevant in most setups but removes another background process that could interfere.</p>
+<p><code>wifi_sleep_policy: 2</code> keeps WiFi active when the device sleeps. Without this, a headset that <a href="https://en.wikipedia.org/wiki/Android_Marshmallow#DOZE">dozes</a> briefly drops its connection and you have to manually reconnect it. Annoying.</p>
+<p><code>wifi_networks_available_notification_on: 0</code> and <code>netstats_enabled: 0</code> remove the last two sources of network-related noise: popups about other nearby networks, and background data usage tracking. Less background activity means fewer opportunities for the system to interrupt the connection.</p>
+<h2>The headset goes to sleep mid-session</h2>
+<p>A Meta Quest headset is quite battery hungry because of all the processing it has to do (6 DOF, heavy graphical computing, etc), and having 30~60 minutes of battery life is bad press. So a Meta Quest headset is the laziest device in the world and try to sleep as much as it can.</p>
+<p>For instance, a stock Quest falls asleep after a few minutes of idle time. In any demo or session, &quot;idle&quot; happens constantly as someone waiting for instructions, a discussion, a presenter demonstrating something on the projector. If the headset sleeps, the player drops from the simulation (disconnect from the backend server) and has to wake it, reconnect, and rejoin. SIMPLE prevents this at three layers.</p>
+<h3>Set Android to never sleeps</h3>
+<pre><code class="language-txt">stay_on_while_plugged_in: 15
+</code></pre>
+<p>This is a bitmask. Each bit controls a different power source:</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Value</th>
+<th>Power Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>AC adapter</td>
+</tr>
+<tr>
+<td>1</td>
+<td>2</td>
+<td>USB</td>
+</tr>
+<tr>
+<td>2</td>
+<td>4</td>
+<td>Wireless charging</td>
+</tr>
+<tr>
+<td>3</td>
+<td>8</td>
+<td>Docked</td>
+</tr>
+</tbody>
+</table>
+<p><code>1 + 2 + 4 + 8 = 15</code>, so the screen stays on across all four conditions. In a setup where headsets sit on USB charging cables or charging stands between uses, this alone prevents most mid-session blackouts.</p>
+<pre><code class="language-txt">screen_off_timeout: 86400000  // 24 hours
+sleep_timeout: -1             // Disabled entirely
+</code></pre>
+<p><code>screen_off_timeout</code> lives in the <code>system</code> settings namespace and controls when the display subsystem turns off the screen. <code>sleep_timeout</code> lives in the <code>secure</code> namespace and governs when the entire device enters deep sleep. SIMPLE sets both to never trigger.
+&lt;!-- Modifying secure settings requires <code>WRITE_SECURE_SETTINGS</code> permission, which is why SIMPLE installs a companion app with that privilege.--&gt;</p>
+<h3>Meta's OVR Layer: Four-hours safety window</h3>
+<p>Meta adds its own logical layer, touching obviously to the <s>lazyness</s> sleep logic on top of Android, controlled through the <code>PreferencesService</code> binder interface:</p>
+<pre><code class="language-txt">idle_time_threshold: 14400   // Display off after 4 hours
+autosleep_time: 14400        // Sleep mode after 4 hours
+</code></pre>
+<p>Both values are in seconds. Four hours covers a full session with breaks, but still lets a forgotten headset power down eventually instead of sitting awake overnight. The code checks the current value via <code>getprop</code> and only writes if it changed, so repeated reconnections don't waste calls.</p>
+<blockquote>
+<p>[!NOTE]
+You can also set <code>autosleep_time</code> through the headset's system settings GUI, it's probably the only setting from this entire article that's exposed in the interface. But SIMPLE sets it via ADB anyway as part of the automated configuration.</p>
+</blockquote>
+<h3>The proximity sensor blacks out the display</h3>
+<p>This one is interesting! 😋</p>
+<p>When you remove a Quest headset, a proximity sensor detects the gap and blacks out the display to save power (or doze if you didn't applied any of the above parameters, remember: lazy device). In any multi-user setup, demo, else, headsets get passed around or set on charging stations between activities. If the display blacks out, the streaming session breaks and the next person sees a dark screen instead of the simulation.</p>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/quest-adb-setup-simple-sensor.webp&quot; alt=&quot;Picture of proximity sensors inside of a meta quest headset&quot; /&gt;
+&lt;figcaption&gt;This captor exists in both &lt;i&gt;Meta Quest 2&lt;/i&gt; and &lt;i&gt;Meta Quest 3&lt;/i&gt; (not the 3s)&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>SIMPLE disable this behavior by sending a broadcast on each headset's boot:</p>
+<pre><code class="language-txt">am broadcast -a com.oculus.vrpowermanager.prox_close
+</code></pre>
+<p>This forces the power manager to treat the headset as currently worn. The display stays on even when the headset is sitting on a charging stand or being handed from one user to the next, so the stream keeps flowing uninterrupted. The disadvantage is the battery life which is the most impacted by it.</p>
+<blockquote>
+<p>[!NOTE]
+A lot of people (as well as us first) are putting opaque tape <a href="https://www.reddit.com/r/OculusQuest/comments/1laug5p/i_found_a_solve_to_the_quest_2_proximity_sensor/">or similar</a> on the sensor to fake it. But, from our experience, it's not that much reliable and created a lot of instability on some units. This method is better.</p>
+</blockquote>
+<h2>Maintenance: Keeping the fleet in a static state</h2>
+<p>Beyond the session fixes, SIMPLE tweaks the devices with a <em>maintenance layer</em> that keeps the equipment stable over time. I don't want any new firmware changes overnight or connection drift breaking my setup in the morning of an exhibition...</p>
+<h3>Restrict firmware updates</h3>
+<pre><code class="language-txt">ota_disable_automatic_update: 1
+</code></pre>
+<p>A system update downloading during a session, or worse, forcing an unexpected reboot, can end a demo. This stops <a href="https://en.wikipedia.org/wiki/Over-the-air_update">Android's OTA</a> updates from triggering automatically.</p>
+<pre><code class="language-txt">am set-standby-bucket com.oculus.updater restricted
+am set-standby-bucket com.oculus.nux.ota restricted
+cmd appops set com.oculus.updater RUN_ANY_IN_BACKGROUND deny
+cmd appops set com.oculus.nux.ota RUN_ANY_IN_BACKGROUND deny
+</code></pre>
+<p><code>com.oculus.updater</code> and <code>com.oculus.nux.ota</code> handle Meta's layer for firmware updates and telemetry. With restricted standby buckets and background execution denied, they cannot wake the headset. This pairs with <code>ota_disable_automatic_update: 1</code> at the global settings level makes a two-layer defense against a fleet of headsets deciding to search and download a system update at anypoint.</p>
+<blockquote>
+<p>[!CAUTION]
+Disabling auto-updates keeps your fleet in a known software state, which is what you want for reproducible demos. Just remember to manually update the headsets between projects if you need security patches or new features.</p>
+</blockquote>
+<h3>Keep the ADB session alive</h3>
+<pre><code class="language-txt">adb_allowed_connection_time: 9007199254740991  // ~285 years, effectively never
+</code></pre>
+<p>Meta's Android build times out ADB debugging sessions. When it expires, the headset drops from the platform and you have to re-authorize the host (to make this point clear, it's not ADB which is not up, but it refuses to connect with old paired device, ie. the server). Setting this to <code>MAX_SAFE_INTEGER</code> means the session survives indefinitely.</p>
+<p>SIMPLE also installs <code>eu.project_simple.adbautoenable</code>, a companion app that keeps the ADB connection alive and handles re-authorization automatically. I already presented how it works in a previous article : https://arthurbrugiere.fr/blog/mq3-wireless-adb/</p>
+<h2>Conclusion</h2>
+<p>You pretty much broke all the engineering Meta put in their devices to give the players a nice experience, but you succeed to have device which works as you would expect in an exhibition or a classroom.</p>
+<p>At least I'm happy to run them in the project now 😁</p>
+]]></content>
+	</entry>
+	<entry>
+		<id>https://arthurbrugiere.fr/blog/install-omv-8-without-ipv6/</id>
+		<title>Installing OpenMediaVault without IPv6</title>
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/install-omv-8-without-ipv6/" />
+		<published>2026-06-04T00:00:00.000Z</published>
+		<updated>2026-06-04T00:00:00.000Z</updated>
+		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
+		<category term="linux" />
+		<category term="nas" />
+		<category term="network" />
+		<summary type="html">When IPv6 is the future, but you can&apos;t connect to it</summary>
+		<content type="html"><![CDATA[<p>I needed a <a href="https://en.wikipedia.org/wiki/Network-attached_storage"><em>Network Attached Storage</em></a> (<em>NAS</em>) for my lab. I had a Dell Vostro 3888 sitting around, an i3-10100 with 20GB RAM, one SSD, and two 1TB HDDs. <a href="https://www.openmediavault.org">OpenMediaVault</a> (<em>OMV</em>) seemed like the obvious choice. The install should have taken twenty minutes. It took most of an afternoon, because I had no IPv6, and other issues.</p>
+<p>Here is every issue I ran into, in order, so you don't have to repeat my mistakes.</p>
+<blockquote>
+<p>[!NOTE]
+This <em>&quot;guide&quot;</em> is describing the struggle I had to install <strong>OMV 8.0.7 (stable)</strong> on a machine in a network with IPv6 disabled.</p>
+<p>If you're using another version of OMV, your mileage may vary :)</p>
+</blockquote>
+<hr>
+<h2>Issue 1: The installer blue-screens after WiFi connection</h2>
+<p>I do have some experience installing Linux systems, so I pretty much followed the same steps as described in the <a href="https://docs.openmediavault.org/en/latest/installation/via_iso.html">official documentation</a>: Downloaded the iso, flashed a USB stick, boot the OMV ISO, follow the first steps, connect to your WiFi network, type the password, see the &quot;Configuring DHCP&quot; loading screen, see the &quot;Configuring DHCP<strong>v6</strong>&quot; loading screen...</p>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/install-omv-8-without-ipv6-dhcp.webp&quot; alt=&quot;Debian installer DHCP loading screen&quot; /&gt;
+&lt;figcaption&gt;I don't have ways to capture my installation screen, imagine it's written <code>DHCPv6</code> please....&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>The popup closes. You're staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and displays them on the screen, but nothing happens.</p>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/install-omv-8-without-ipv6-bsod.webp&quot; alt=&quot;Debian installer blue screen&quot; /&gt;
+&lt;figcaption&gt;The BSOD (Blue Screen Of &lt;s&gt;Death&lt;/s&gt; Debian), not my most useful illustration...&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request timed out with no response or got an unexpected message... Anyway, the installer broke and after waiting 1 hour, I tried to fix it: I disabled IPv6 at the kernel level for this boot only.</p>
+<p>To do so, at the GRUB boot menu, press <code>e</code> to edit the current entry. Find the <code>linux</code> line and append <code>ipv6.disable=1</code> to the end:</p>
+<pre><code>linux /install/vmlinuz vga=normal quiet file=/cdrom/preseed.cfg ipv6.disable=1
+</code></pre>
+<p>Press <code>Ctrl+X</code> or <code>F10</code> to boot. The installer skips DHCPv6 and proceeds.</p>
+<blockquote>
+<p>[!TIP]
+Editing in GRUB with <code>e</code> changes the boot parameters for this session only. Nothing gets written to disk. If it doesn't work, reboot and try something else. Once you confirm the fix, you can make it permanent later.</p>
+</blockquote>
+<h2>Issue 2: No network after first boot</h2>
+<p>OMV installs, reboots, and the WiFi interface (<code>wlp2s0</code> in my case) has no IPv4 address. The web UI is, obviously, unreachable. The <code>ipv6.disable=1</code> fix was only for the installer boot, and the freshly installed system tries to negotiate IPv6 on the network. My router still has IPv6 disabled, so the negotiation fails and the interface gets no usable IP at all.</p>
+<p><strong>The fix:</strong> Again, boot with <code>ipv6.disable=1</code> added from GRUB (press <code>e</code> at the boot menu, add it to the kernel line, <code>Ctrl+X</code> to boot).</p>
+<p>After this, nothing is magically working yet. I had to manually bring the WiFi up with a few commands:</p>
+<pre><code class="language-bash"># Generate WPA config
+wpa_passphrase &quot;YourSSID&quot; &quot;YourPassword&quot; &gt; /etc/wpa_supplicant/wpa_supplicant.conf
+
+# Connect my wifi interface using the generated config
+wpa_supplicant -B -i wlp2s0 -c /etc/wpa_supplicant/wpa_supplicant.conf
+
+# Request an IPv4 address to the network's DHCP.
+dhcpcd wlp2s0
+</code></pre>
+<p>You should now have an IPv4 address and be able to ping the machine, but you won't be able to reach the web UI at <code>http://&lt;machine-ip&gt;</code> yet...</p>
+<h2>Issue 3: nginx fails to start because of IPv6</h2>
+<p>With WiFi up and an IPv4 address in hand, I tried to open the OMV web UI. Nothing on port 80. The nginx service was failing to start:</p>
+<pre><code class="language-log">-- Unit nginx.service has begun starting up.
+Jun 02 14:46:27 nginx[5069]: nginx: [emerg] socket() [::]:80 failed (97: Address family not supported by protocol)
+Jun 02 14:46:27 nginx[5069]: nginx: configuration file /etc/nginx/nginx.conf test failed
+Jun 02 14:46:27 systemd[1]: nginx.service: Control process exited, code=exited status=1
+Jun 02 14:46:27 systemd[1]: Failed to start A high performance web server and a reverse proxy server.
+-- Subject: Unit nginx.service has failed
+</code></pre>
+<p>The reason: OMV's nginx config binds to <code>[::]:80</code> (the IPv6 wildcard) by default. But I had booted with <code>ipv6.disable=1</code> on the kernel command line, my router doesn't provide any IPv6: so IPv6 is not available. Nginx tries to listen on <code>[::]:80</code>, gets &quot;Address family not supported by protocol,&quot; and dies.</p>
+<p><strong>The fix:</strong> Edit the nginx site config to remove the IPv6 listen directive:</p>
+<pre><code class="language-bash">nano /etc/nginx/sites-enabled/openmediavault-webgui
+</code></pre>
+<p>Comment out the line <code>listen [::]:80;</code> (but keep the <code>listen 80;</code> line used for IPv4). Then restart nginx:</p>
+<pre><code class="language-bash">systemctl restart nginx
+</code></pre>
+<p>The web UI comes up. Log in, with the default credentials (<code>admin</code> / <code>openmediavault</code>), go to Network → Interfaces, configure your WiFi interface (me <code>wlp2s0</code>) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer uses the faulty IPv6.</p>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/install-omv-8-without-ipv6-network-config.webp&quot; alt=&quot;OMV network config with IPv6 disabled&quot; /&gt;
+&lt;figcaption&gt;Saved working network with IPv6 disabled&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>Finally :)</p>
+<hr>
+<h2>Storage: Btrfs RAID1 on the two HDDs</h2>
+<p>With the OS running on the SSD, the two 1TB drives become the data pool. I used <a href="https://btrfs.readthedocs.io/en/latest/">Btrfs</a> in RAID1.</p>
+<p>Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and native RAID support. For a NAS, the checksums detect silent data corruption, snapshots let you roll back files if someone overwrites them, and RAID1 keeps your data alive if one drive fails (both disks are mirrored, I lose a lot of space, but I'm less likely to lose data). OMV handles all of this through the UI.</p>
+<ol>
+<li>Storage</li>
+<li>File Systems</li>
+<li>Press the blue button <em>Create</em>.</li>
+<li>Select <code>BTRFS</code> from the dropdown.</li>
+<li>Select your desired <em>Profile</em> (<code>RAID1</code> for me).</li>
+<li>Select both HDDs.</li>
+<li>Hit create, wait a few minutes, then mount it.</li>
+</ol>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/install-omv-8-without-ipv6-btrfs.webp&quot; alt=&quot;OMV FS configured with BTRFS and displaying 1TB of usable storage&quot; /&gt;
+&lt;figcaption&gt;Saved working network with IPv6 disabled&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>After that, create a shared folder on the volume and enable SMB, NFS and other network protocols under <code>Services</code>.</p>
+<p>One thing to not forget to ease the management of the NAS is to set up a regular (monthly) scrub to catch silent data corruption. OMV 8 doesn't expose this in the UI, so use a scheduled task:</p>
+<pre><code>System → Scheduled Tasks → Add
+Schedule: Monthly (0 2 1 * * for 2am on the 1st)
+Command: btrfs scrub start /srv/dev-disk-by-uuid-XXXX
+</code></pre>
+<hr>
+<h2>Issue 4: Some Windows 11 machines refuse to connect</h2>
+<p>The goal for this NAS is simple: anyone in the lab walks in with their own machine, opens the file manager, find the NAS in their <em>Network</em> file tab, and gets in. No passwords, no account creation, no IT support. I configured the SMB share with <strong>Guests allowed</strong>, meaning anyone can connect as a guest and access files. I also enabled NFS and other protocols for the Linux (me 😁) and macOS machines in the lab.</p>
+<p>Everything worked on every Linux machine<s>s</s>. Everything worked on all macOS machines. It worked on the first Windows 11 machines. But other Windows 11 popped up a credential prompt that rejected everything I threw at it. Blank username, <code>guest</code>, random names. Nothing worked, no error message, no hint, just an endless login loop.</p>
+<p>The probable cause: <strong>Windows 11 24H2</strong> changed two SMB security defaults. Microsoft now requires SMB signing on all connections, and Windows 11 Pro disables insecure guest logons[^1]. Earlier builds (23H2 and before) still allowed guest fallback. 24H2 does not, and the behavior is inconsistent. Some 24H2 machines on my network connected fine, others refused. I couldn't find a pattern.</p>
+<p>I tried the obvious OMV-side fixes. <code>Guests only</code> (force anonymous access). <code>Guests allowed</code> with <code>nobody</code> given full ACL permissions. None of it mattered. The Windows machines that locked down guest access wouldn't connect without a valid credential, and OMV didn't have any credential to connect with.</p>
+<p>I saw on internet the possibility to use some admin PowerShell commands that I did not try. The whole point of this NAS is that it works from any machine in the lab without touching the client. Running around to every Windows computer to change security settings is not an acceptable fix.</p>
+<p><strong>The fix:</strong> Create a single shared user in OMV.</p>
+<p>In the OMV web UI:</p>
+<ul>
+<li>Users → Users → Add</li>
+<li>Username: <code>lab</code> (or whatever, I won't write on internet the one we use :) )</li>
+<li>Password: <code>password</code> (something simple everyone in the lab can remember, but maybe not that..)</li>
+<li>No admin rights needed</li>
+</ul>
+<p>Then in your SMB share settings, set Public to <strong>Guests allowed</strong> and give the <code>lab</code> user read/write permissions on the shared folder.</p>
+<p>On each Windows machine, when the credential prompt appears:</p>
+<ul>
+<li>Username: <code>lab</code></li>
+<li>Password: <code>password</code></li>
+</ul>
+<p>Windows caches the credentials after the first successful connection. You enter them once per machine and you won't need to enter them again.</p>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/install-omv-8-without-ipv6-final.webp&quot; alt=&quot;OMV dashboard with plenty of stats&quot; /&gt;
+&lt;figcaption&gt;The dashboard of the NAS with plenty of stats but nobody using it there&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>Two weeks in, the NAS just works. The Windows machines all connect, the scrubs run monthly (I hope), and everyone's happy about it.</p>
+<hr>
+<p>[^1]: Microsoft made this change in Windows 11 24H2, released in late 2024. It affects both the SMB signing requirement and guest logon behavior on Pro and Enterprise editions. See <a href="https://techcommunity.microsoft.com/blog/filecab/accessing-a-third-party-nas-with-smb-in-windows-11-24h2-may-fail/4154300">Microsoft's official guidance on SMB signing and guest authentication</a>.</p>
+]]></content>
+	</entry>
+	<entry>
+		<id>https://arthurbrugiere.fr/blog/packaging-nodejs-windows-sea/</id>
+		<title>Packaging a Node.js application with SEA and native binaries</title>
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/packaging-nodejs-windows-sea/" />
+		<published>2026-05-29T00:00:00.000Z</published>
+		<updated>2026-05-29T00:00:00.000Z</updated>
+		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
+		<category term="windows" />
+		<category term="nodejs" />
+		<category term="sea" />
+		<category term="packaging" />
+		<summary type="html">How a filename on Windows broke my full packaged application</summary>
+		<content type="html"><![CDATA[<p>Packaging a Node.js application into a single executable sounds like a solved problem. Tools exist. You build your JavaScript, bundle your assets, point a packager at your entry file, and you get a binary. On macOS and Linux, this workflow delivers. On Windows, with a native WebSocket module in your dependency tree, the same workflow produces a file that crashes before it prints a single log line.</p>
+<p>I spent several days in that gap between &quot;possible on paper&quot; and &quot;working in practice.&quot; The project is <a href="https://github.com/project-SIMPLE/simple.webplatform">SIMPLE Webplatform</a>, a Node.js application that bundles a web frontend, a WebSocket server (via <code>uWebSockets.js</code>, the fastest WebSocket implementation for Node.js with a minimal memory footprint), and all the background logic and streaming layer into one stack. Shipping it meant producing a single file that a researcher or developer could download and double-click without installing Node.js, opening a terminal, or running <code>npm install</code>.</p>
+<p>A previous attempt had used <a href="http://github.com/yao-pkg/pkg"><code>@yao-pkg/pkg</code></a>, a community fork of the now-deprecated <code>pkg</code>, to build binaries for Linux, macOS and Windows from NodeJS applcaition. Those 2 first binaries worked. The Windows binary exited with code <code>0xC0000005</code> (access violation) the instant you ran it. No output. No stack trace. Just a segfault.</p>
+<p>This is the story of how I fixed it, and the two Windows behaviors you will not find in any documentation.</p>
+<h2>The Setup: What I was working with</h2>
+<p>The application uses <code>uWebSockets.js</code> for its WebSocket and HTTP servers. This library is written in C++ and exposes a native <code>.node</code> binary that hooks deep into the Node.js event loop. That detail, <em>native module</em>, turns out to be the entire problem.</p>
+<p><code>@yao-pkg/pkg</code> works by embedding your JavaScript and assets into a modified <code>node.exe</code>, then patching <code>process.dlopen</code> (Node.js's low-level function for loading native <code>.node</code> binaries, similar to <code>LoadLibrary</code> on Windows) so it can load native modules from an in-memory snapshot rather than the filesystem. On Linux and macOS, this patch is transparent. On Windows, it crashes during <code>uWebSockets.js</code> initialization.</p>
+<p>I confirmed this through isolation. The <code>.node</code> file extracted from the snapshot was valid. You could load it with regular Node.js without issue. The crash happened inside <code>@yao-pkg/pkg</code>'s patched <code>dlopen</code> the moment <code>uWebSockets.js</code> tried to register its NAPI callbacks (functions that bridge between C++ code and the JavaScript engine) with the runtime. The module was incompatible with the patched loader on Windows, full stop.</p>
+<p>Replacing <code>uWebSockets.js</code> with the pure-JavaScript <code>ws</code> library was not an option. The project depends on <code>uWebSockets.js</code> for its throughput and memory efficiency (it handles an order of magnitude more concurrent connections than <code>ws</code> with a fraction of the RAM). I needed a packaging tool that leaves <code>process.dlopen</code> untouched.</p>
+<h2>The pivot to Node.js SEA</h2>
+<p>Node.js 20 introduced <a href="https://nodejs.org/api/single-executable-applications.html">Single Executable Applications</a> (SEA), a native mechanism for embedding your application into a copy of <code>node.exe</code>. SEA does not patch <code>process.dlopen</code>. It uses <code>postject</code> (a CLI tool that injects a binary blob as a new section into an existing executable) to embed your code and assets as a PE (Portable Executable, the standard binary format for Windows) / Mach-O section into an unmodified Node.js binary. The runtime stays stock. Native modules load through the same path they would in a normal Node.js process.</p>
+<p>I rewrote the build pipeline:</p>
+<ul>
+<li>Vite bundles the frontend and backend as before</li>
+<li>A Node.js script collects all frontend assets plus the <code>uWebSockets.js</code> <code>.node</code> file into a SEA configuration</li>
+<li><code>node --experimental-sea-config</code> generates the blob</li>
+<li><code>postject</code> injects the blob into a Windows <code>node.exe</code> copy</li>
+</ul>
+<p>The resulting binary was 103 MB and crashed on launch. The crash was not the same <code>0xC0000005</code> from <code>pkg</code>. This time, the issue was that SEA mode replaces the standard <code>require()</code> with an internal <code>embedderRequire</code> that cannot load <code>.node</code> files from arbitrary paths. The <code>.node</code> file was embedded in the SEA asset bundle, but <code>require(tmpFile)</code> failed because <code>embedderRequire</code> does not know how to handle a native module path in SEA context.</p>
+<h2>Discovery #1: The <em>filename</em> is the fix</h2>
+<p>This was the moment the investigation turned from frustrating to non-sense. I had been testing hypotheses about Control Flow Guard flags, Authenticode signature corruption, and DLL load paths. None of them panned out. Then I ran a test I should have tried hours earlier. I took a plain, unmodified <code>node.exe</code>, with no SEA blob, no injection, nothing, copied it to the same directory, renamed the copy to <code>plain-node.exe</code>, and tried to load <code>uWebSockets.js</code> from it.</p>
+<p>It crashed.</p>
+<p>I renamed that exact same file back to <code>node.exe</code>. It worked.</p>
+<p>Same bytes. Same directory. Same everything except the filename. One crashed, one did not.</p>
+<p>Windows maintains an <a href="https://learn.microsoft.com/en-us/windows/compatibility/application-technology-apps">Application Compatibility database</a>, a set of shims that apply behavioral fixes to specific executables based on their name. One of those shims targets <code>node.exe</code> and alters how DLLs are loaded to support Node.js native modules. When you rename the executable to anything else, <code>simple-win.exe</code>, <code>app.exe</code>, anything, that shim disappears, and <code>uWebSockets.js</code>'s NAPI initialization hits a code path that triggers an access violation.</p>
+<p>This is not documented anywhere obvious. You will not find it in the Node.js SEA guide or the <code>postject</code> README. You find it by accident, after stripping a binary down to nothing and watching a plain <code>node.exe</code> copy fail because you generated the artifact file with a meaningful name.</p>
+<p>The build script now outputs the SEA binary to <code>bin/win/node.exe</code>. Not <code>simple-win.exe</code>. Not <code>app.exe</code>. The application <em>must</em> be named <code>node.exe</code> for the Windows AppCompat shim to activate.</p>
+<h2>Discovery #2: SEA asset loading for native modules</h2>
+<p>With the name fixed, the binary started. But <code>uWebSockets.js</code> was not loading from the SEA asset bundle yet. SEA provides two ways to access embedded assets: <code>sea.getAsset()</code> returns the raw bytes, and <code>require()</code> in SEA mode uses an internal <code>embedderRequire</code> that cannot load <code>.node</code> files from arbitrary paths.</p>
+<p>The fix was a Vite plugin that transforms every <code>require(&quot;uWebSockets.js&quot;)</code> in the compiled bundle into a self-contained loader (not the real code, but a comprehensive snippet):</p>
+<pre><code class="language-javascript">// In SEA mode:
+
+// Load the SEA module (only available inside SEA binaries)
+const sea = require('node:sea');
+// Build a versioned temp path for the .node file
+const tmpFile = path.join(os.tmpdir(), 'uws-' + process.versions.modules + '.node');
+// Extract the native module from the embedded asset blob to disk
+fs.writeFileSync(tmpFile, Buffer.from(sea.getAsset('uws_win32_x64_137.node')));
+// Create an empty module object for dlopen to populate
+const mod = { exports: {} };
+// Load the .node file directly via the C-level loader (bypasses SEA's embedderRequire)
+process.dlopen(mod, tmpFile);
+// Return the loaded module to the caller
+module.exports = mod.exports;
+</code></pre>
+<p>In development or standard packaging, it falls back to a normal <code>require('uWebSockets.js')</code>. The <code>.node</code> file gets extracted to a temp directory once and loaded through the unmodified <code>process.dlopen</code>. Because the parent binary is named <code>node.exe</code>, this now works.</p>
+<h2>The problem of the fix filename</h2>
+<p>Shipping an application called <code>node.exe</code> is not a good user experience. Users see a generic name in their download folder, their task manager, and their desktop shortcuts. I needed a user-facing binary with a proper name that still resulted in a process named <code>node.exe</code> running under the AppCompat shim.</p>
+<p>The solution is a launcher, a thin wrapper that extracts the real binary and runs it. I chose Go because it compiles to a statically linked native Windows executable with zero runtime dependencies. Three extra megabytes for the launcher is a fair trade for shipping a single file that needs nothing installed on the user's machine.</p>
+<p>The launcher, written in Go:</p>
+<ol>
+<li>Opens its own executable file and reads a 12-byte footer from the end</li>
+<li>The footer contains the size of the embedded <code>node.exe</code> payload and a magic number to verify validity</li>
+<li>It extracts <code>node.exe</code> to <code>%TEMP%\swp-node-&lt;size&gt;\node.exe</code> (preserving the critical name)</li>
+<li>On subsequent launches, it compares the cached file size against the embedded payload and skips extraction if they match</li>
+<li>It spawns the extracted <code>node.exe</code> with all command-line arguments forwarded, inherits stdout/stderr, and exits with the same code</li>
+</ol>
+<p>The build pipeline compiles the Go launcher, appends the <code>node.exe</code> SEA binary, writes the footer, and produces a single file: <code>simple-win.exe</code>.</p>
+<p>First launch takes a few seconds as 103 MB extracts to temp. Every launch after that is instant.</p>
+<h2>Unifying all platforms on SEA</h2>
+<p>With Windows solved, I looked at the remaining packaging infrastructure. <code>@yao-pkg/pkg</code> was still building Linux and macOS binaries through a cross-compilation pipeline that required QEMU user-mode emulation and <code>ldid</code> for macOS code signing. It worked, but it was a maintained fork of an abandoned project, running emulated architectures on an Ubuntu CI runner: Not very easy to maintain.</p>
+<p>Since SEA was now working for Windows and is a native Node.js feature, the question became: why maintain two packaging systems? I migrated Linux and macOS to SEA as well. The same build script template works on all three platforms with minor platform-specific flags (<code>--macho-segment-name</code> for macOS, ad-hoc codesigning after injection). Cross-compilation disappears, since each platform builds on its own native GitHub Actions runner, but the project is open source and the runners are free.</p>
+<p>The CI pipeline now has three parallel jobs: <code>ubuntu-latest</code> for Linux, <code>macos-latest</code> for macOS, and <code>windows-latest</code> for Windows. Each produces one binary using the same Node.js SEA mechanism. No more QEMU. No more <code>ldid</code>. No more <code>pkg</code>.</p>
+<h2>Summary</h2>
+<p>The SIMPLE Webplatform now ships as a single executable on all three platforms. Windows uses a Go self-extracting launcher that bundles a SEA-built <code>node.exe</code> and extracts it to temp on first run. Linux and macOS use native SEA binaries without wrappers. The packaging pipeline relies on Node.js built-in tools plus <code>postject</code> and Go. No deprecated third-party packagers, no emulation layers, no platform-specific native module patching.</p>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/packaging-nodejs-windows-sea-compilation.webp&quot; alt=&quot;Compilation logs of the windows binary&quot; /&gt;
+&lt;figcaption&gt;Compilation logs of the windows binary on Github Actions&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>If you are packaging a Node.js application with native modules for Windows, use <em>Node.js SEA</em> (it's been in beta for very long time, but it really works fine nowadays), name your binary <code>node.exe</code>, and wrap it with a launcher if your users need a branded filename. Those three things would have saved me days of debugging.</p>
+<p><em>The full implementation is in <a href="https://github.com/project-SIMPLE/simple.webplatform/pull/151">project-SIMPLE/simple.webplatform#151</a>.</em></p>
+]]></content>
+	</entry>
+	<entry>
+		<id>https://arthurbrugiere.fr/blog/macbook-air-access-point/</id>
+		<title>Using Your MacBook as a Local WiFi Access Point</title>
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/macbook-air-access-point/" />
+		<published>2026-05-25T00:00:00.000Z</published>
+		<updated>2026-05-25T00:00:00.000Z</updated>
+		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
+		<category term="macOS" />
+		<category term="network" />
+		<summary type="html">How I&apos;ve been able to use a MacBook Air as a router without internet connection.</summary>
+		<content type="html"><![CDATA[<h2>The Problem</h2>
+<p>I needed my MacBook Air M2 (Sonoma) to broadcast its own WiFi network, being a WiFi server instead of a client. Not to share an internet connection, just to create a local wireless network so other devices could connect to it and talk to each other. Think local development and setting up a private LAN without carrying a router.</p>
+<p>macOS has a built-in <strong>Internet Sharing</strong> feature (<a href="https://support.apple.com/en-vn/guide/mac-help/mchlp1540/mac">documentation</a>), but it's designed to share an existing internet connection (like Ethernet or Bluetooth tethering) over another network (such as WiFi).</p>
+<p>On a MacBook with only a WiFi card and no wired connection, creating a <em>standalone</em> access point is not straightforward.</p>
+<h2>Attempt 1: Native Internet Sharing (Silent failure)</h2>
+<p>So I did follow the documentation and the internet's recommendations. I went to <strong><code>System Settings</code> → <code>General</code> → <code>Sharing</code> → <code>Internet Sharing</code></strong> and enabled everything:</p>
+<ul>
+<li>Picked a source connection (let's say <em>Thunderbolt</em>)</li>
+<li>Selected <em>&quot;To computers using:&quot;</em> <code>Wi-Fi</code></li>
+<li>Set the network name and password</li>
+<li>Kept my WiFi on, but not connected to any network</li>
+<li>Turned the toggle on</li>
+<li>Accepted the warning popup</li>
+</ul>
+<p>Everything appeared enabled. No error messages. No warnings. But <strong>the WiFi network simply never appeared</strong>. Not on my phone, not on any other device. macOS accepted the configuration but silently refused to actually broadcast the signal.</p>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/macbook-air-access-point-wifi-not-working.webp&quot; alt=&quot;Internet sharing is enabled, but not wifi is broadcasted&quot; /&gt;
+&lt;figcaption&gt;Internet sharing is enabled, but not wifi is broadcasted (it should be displayed here as we will see later)&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>The reason: macOS Internet Sharing is built to share an <em>existing</em> (i.e. activated, up) connection, not blindly bridge one network stack to another. Without an active upstream connection that the system recognizes as active, the underlying service doesn't actually bring up the access point, even though the UI lets you enable everything.</p>
+<h2>The hack: Faking a connection with a loopback interface</h2>
+<p>The solution came from a gist by <code>@zhuhuilin</code>: <strong>&lt;a href=&quot;https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2&quot; target=&quot;_blank&quot;&gt;macOS Internet Sharing Without Internet Connection&lt;/a&gt;</strong>[^note].</p>
+<p>The trick is to create a new network service on the loopback interface (<code>lo0</code>). macOS only checks that the network service has an IP address (which is apparently how it determines whether a connection is active) before allowing Internet Sharing. It doesn't verify that the connection reaches the real internet. By assigning a static IP to <code>lo0</code> and registering it as a network service, macOS happily accepts it as a valid source.</p>
+<p>The gist provides the exact commands to run in Terminal:</p>
+<pre><code class="language-bash">curl -L https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2/raw/setup-adhoc-network.sh | bash
+</code></pre>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/macbook-air-access-point-wifi-terminal.webp&quot; alt=&quot;Running zhuhuilin's setup script&quot; /&gt;
+&lt;figcaption&gt;Running zhuhuilin's setup script&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>This will automatically:</p>
+<ul>
+<li>Find your active internet connection</li>
+<li>Create a new network service (named <code>AdHoc</code>) on <code>lo0</code></li>
+<li>Assign the Mac the IP <code>10.10.10.1</code> on this new service</li>
+<li>Save state for safe removal</li>
+</ul>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/macbook-air-access-point-wifi-AdHoc-setup.webp&quot; alt=&quot;MacOS Settings window with the Internet Sharing configured with the AdHoc interface&quot; /&gt;
+&lt;figcaption&gt;Internet Sharing configured with the AdHoc interface, just need to enable it now&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<p>Then you can select this <code>AdHoc</code> service as your source in Internet Sharing. Once configured, macOS actually brings up the WiFi access point, and devices can see and connect to it.</p>
+<blockquote>
+<p>[!CAUTION]
+The WiFi should be enabled on MacOS to have the beacon activated. But it should not be connected to any networks.</p>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/macbook-air-access-point-wifi-enabled.webp&quot; alt=&quot;Keeping wifi enabled and seeing the shared network broadcasted&quot; /&gt;
+&lt;figcaption&gt;WiFi is enabled, and is showing the &quot;Internet Sharing&quot; on Channel 11&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+</blockquote>
+<h2>Changing the DHCP range</h2>
+<p>By default, macOS Internet Sharing assigns connected devices to the <code>192.168.2.0/24</code> range. I needed mine to be <code>192.168.68.0/24</code> to match my existing setup.</p>
+<p>After some digging, I found that you can override the default DHCP range with three <code>defaults write</code> commands targeting the system NAT preferences:</p>
+<pre><code class="language-bash"># Set the starting IP address
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict-add SharingNetworkNumberStart 192.168.68.2
+# Set the last IP address
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict-add SharingNetworkNumberEnd 192.168.68.254
+# Set the netmask as /24
+# -&gt; This isn't automatic and is necessary!
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict-add SharingNetworkMask 255.255.255.0
+</code></pre>
+<p>After running these and restarting Internet Sharing, connected devices received IPs in the <code>192.168.68.x</code> range — exactly what I needed.</p>
+<blockquote>
+<p>[!TIP]
+Settings seems to cache these parameters. Quit the Settings application before applying them, then reactivate Internet Sharing.</p>
+</blockquote>
+<p>The whole thing works reliably once the loopback trick is in place. The <code>AdHoc</code> service survives reboots, and the DHCP range sticks as long as you don't reset the NAT preferences. The one thing to keep in mind: if you do have an actual upstream connection available (Ethernet, USB tethering), you can use that directly as the Internet Sharing source and skip the loopback hack entirely, it's only needed when you want to have an access point from macOS without internet.</p>
+<p>[^note]: I made a backup of <em>Zhuhuilin</em>'s scripts <a href="https://git.arthurbrugiere.fr/roiarthurb/macOS_Internet-Sharing_Without_Internet-Connection">here</a></p>
+]]></content>
+	</entry>
+	<entry>
+		<id>https://arthurbrugiere.fr/blog/mq3-wireless-adb/</id>
+		<title>Making ADB Wireless more *accessible* on Meta Quest headsets</title>
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/mq3-wireless-adb/" />
+		<published>2026-05-21T00:00:00.000Z</published>
+		<updated>2026-05-21T00:00:00.000Z</updated>
+		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
+		<category term="meta quest" />
+		<category term="adb" />
+		<category term="network" />
+		<summary type="html">How I&apos;ve been able to enable ADB Wireless without user interaction.</summary>
+		<content type="html"><![CDATA[<p>Meta Quest headsets have a nasty habit of forgetting your wireless ADB trust relationship every time they reboot. For a research project deploying ten headsets to a classroom of teachers who've never touched a terminal, <em>&quot;just run <code>adb tcpip 5555</code> again&quot;</em> isn't a solution, it's a support ticket generator at best. I spent weeks trying to automate the &quot;Allow wireless debugging?&quot; popup out of existence. The path involved dead ends, Android security walls, and finally a brute-force accessibility hack that actually works.</p>
+<p>&lt;figure&gt;
+&lt;img src=&quot;/images/mq3-wireless-adb.webp&quot; alt=&quot;ADB Wireless Popup visible in a Meta Quest 3 headset&quot; /&gt;
+&lt;figcaption&gt;The &quot;Allow wireless debugging?&quot; popup on a Meta Quest 3.&lt;br/&gt;Credit: Image from &lt;a href=&quot;https://www.quest-games-optimizer.com/how-to-enable-adb-from-your-meta-quest&quot;&gt;QGO&lt;/a&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<h2>The Problem That Shouldn't Exist</h2>
+<p>Wireless ADB on stock Android is straightforward: enable it once, pair your machine, and the phone remembers. Meta's Quest OS, built on Android but heavily modified, treats this differently: On every reboot, the system clears its in-memory list of trusted wireless debugging fingerprints. The <code>adb_wifi_enabled</code> setting flips to 0 (which is normal). Reconnect, and you're greeted with the same permission dialog asking if you trust this network.</p>
+<p>For the <a href="https://project-simple.eu">SIMPLE project</a> — a swarm of six <a href="https://www.meta.com/quest/quest-3/">Meta Quest 3</a> headsets streaming video via <a href="https://github.com/Genymobile/scrcpy">scrcpy</a> and receiving commands from a central controller — this was a deployment blocker. We can't send a technician to every school every morning to click one popup in each headset...</p>
+<h2>Attempt 1: Off-the-Shelf Automation</h2>
+<p>Before writing a single line of Java, I tried the obvious tools <a href="https://llamalab.com/automate/">Automate</a>, <a href="https://tasker.joaoapps.com/">Tasker</a> (ie. the usual Android automation workhorses). Set up a simple flow: when the system shows the ADB popup, click &quot;Allow&quot; or &quot;Always allow.&quot; Should be trivial.</p>
+<p>It isn't. The moment those apps trigger <code>adb tcpip 5555</code> (toggle the wireless debugging setting), the system popup appears and <strong>pauses the automation engine</strong>.</p>
+<p>The blueprint or macro freezes in place, waiting for the dialog to dismiss — which it never will by the automation, because the automation is paused and can't click it. Classic deadlock. The popup blocks the very tool trying to dismiss it.</p>
+<p>This killed the no-code approach instantly. I needed something that could run <em>outside</em> the normal app lifecycle, something the system couldn't freeze when the dialog appeared.</p>
+<h2>Attempt 2: Just Write the Setting</h2>
+<p>The next obvious approach: grant <code>WRITE_SECURE_SETTINGS</code> to a foreground service and toggle <code>adb_wifi_enabled</code> to 1 on boot. This works right up until the system shows the trust popup. Writing the setting triggers <code>WifiDebuggingAlertActivity</code> from <code>com.oculus.os.vrusb</code>, which sits there waiting for human input. The setting value bounces back to 0 until someone clicks &quot;Allow.&quot;</p>
+<p>So the real problem isn't enabling ADB (by automation or from within some java code) it's dismissing the popup without a finger.</p>
+<h2>Attempt 3: Direct Input Injection</h2>
+<p>Android's <code>input</code> command can simulate key events. From a PC, <code>adb shell input keyevent 66</code> (Enter) dismisses the popup instantly. Running the same command from inside the app, however, throws:</p>
+<pre><code class="language-txt">Targeted input event injection from pid 3266 was not directed at a window owned by uid 10168
+</code></pre>
+<p>The app runs as a regular user (UID 10168). The popup belongs to the system package <code>com.oculus.os.vrusb</code> (UID 1000). Android's input injection security prevents cross-UID event spoofing unless you hold <code>INJECT_EVENTS</code>, which is signature-level and not grantable via <code>pm grant</code>. The shell user (UID 2000) has this permission, which is why ADB from a PC works. Your app does not and, except if you can root the device, can't have it.</p>
+<p>I tried <a href="https://shizuku.rikka.app/">Shizuku</a> as a workaround — it lets apps run code via a privileged server process. Even with Shizuku, the input injection path hit the same wall. The Quest's VR shell is aggressively locked down.</p>
+<h2>Attempt 4: Accessibility Service Clicking</h2>
+<p>Android's AccessibilityService is the standard way to automate UI interaction for assistive purposes. It can traverse the view hierarchy, find nodes by text or ID, and perform <code>ACTION_CLICK</code>. This works beautifully for normal apps. I assumed it would work here too. I assumed wrong, and I spent two days proving it.</p>
+<p>The popup activity launches — <code>ActivityTaskManager</code> confirms it:</p>
+<pre><code class="language-log">04-21 10:27:35.928  ActivityTaskManager: START u0 cmp=com.oculus.os.vrusb/.WifiDebuggingAlertActivity
+</code></pre>
+<p>But <code>getWindowsOnAllDisplays()</code> returns everything <em><strong>except</strong></em> the VrUsb window. The scan shows <code>Meta Horizon Shell</code>, <code>Navigator</code>, <code>Quick controls</code>, random <code>AndroidPanelLayer</code> components: the usual VR shell noise. No popup. I broadened the search to check every display, every package containing <code>com.oculus.os</code>, every title containing &quot;debugging&quot; or &quot;alert&quot;. Still nothing.</p>
+<p>When I finally managed to catch a window with the right package name, its root node was <code>null</code>.</p>
+<p>Not empty — <code>null</code>. The accessibility service could see the window existed but it was a black box. Meanwhile, <code>uiautomator dump</code> (running as shell user) could see the full node tree with &quot;Always allow&quot; and &quot;Allow&quot; plain as day. The popup was there on screen, visible to privileged tools, but to my accessibility service it was a ghost behind frosted glass.</p>
+<p>I tried every variation: traversing parent nodes from child windows, using <code>getRootInActiveWindow()</code> instead of enumerating displays, matching by <code>ViewIdResourceName</code>, searching for partial text. I added aggressive logging that dumped every node property I could access. The service logged hundreds of windows across dozens of scans, but the moment the popup appeared, the corresponding window either vanished from the list or reported <code>root=null</code>.</p>
+<p>Meta's VR environment renders system dialogs through a completely different path than standard Android views. The compositor draws them; the accessibility tree doesn't expose them. This isn't a bug you can code around but an architectural mismatch. The accessibility framework was built for flat phone screens, not layered VR shells where a &quot;window&quot; might be a texture mapped onto a curved surface in 3D space.</p>
+<p>Days of dead ends.</p>
+<h2>The Hack That Worked: Blind Key Injection</h2>
+<p>After the clicking approach failed, I realized something: I didn't need to <em>see</em> the button. I needed to make the <em>system think someone pressed Tab and Enter</em>. And the AccessibilityService has a way to do that — not by injecting raw input events (Attempt 3), but by sending accessibility events that the VR shell already listens to for controller navigation.</p>
+<p>The AccessibilityService detects the popup via window title matching — when <code>getWindowsOnAllDisplays()</code> returns a window containing &quot;VrUsb&quot;, it triggers. Then it simply runs <code>input keyevent</code> via <code>Runtime.exec()</code>. The exact same command that failed from a regular app.</p>
+<p>Here's the code of the accessibility service:</p>
+<pre><code class="language-java">private void performBlindSequence() {
+    lastActionTime = System.currentTimeMillis();
+    Log.d(TAG, &quot;TAB x3, ENTER&quot;);
+    
+    handler.postDelayed(() -&gt; sendKey(KeyEvent.KEYCODE_TAB),   0);
+    handler.postDelayed(() -&gt; sendKey(KeyEvent.KEYCODE_TAB), 100);
+    handler.postDelayed(() -&gt; sendKey(KeyEvent.KEYCODE_TAB), 200);
+
+    handler.postDelayed(() -&gt; sendKey(KeyEvent.KEYCODE_ENTER), 300);
+}
+
+private void sendKey(int keyCode) {
+    try {
+        Runtime.getRuntime().exec(&quot;input keyevent &quot; + keyCode);
+    } catch (Exception ignored) {}
+}
+</code></pre>
+<p>First Tab put focus on the <em>VrUsb</em> window, then two extra Tabs move focus from &quot;Allow&quot; to &quot;Deny&quot; to &quot;Always allow on this network&quot;. Enter activates. The 100ms spacing between each keypress is the minimum I found that the shell reliably registers — any faster and keys get dropped.</p>
+<p>The window detection is equally <em>dumber</em>:</p>
+<pre><code class="language-java">for (AccessibilityWindowInfo w : windows) {
+    CharSequence title = w.getTitle();
+    if (title != null &amp;&amp; title.toString().contains(&quot;VrUsb&quot;)) {
+        Log.i(TAG, &quot;VrUsb detected. Triggering trust sequence.&quot;);
+        performBlindSequence();
+        return; 
+    }
+}
+</code></pre>
+<p>No node traversal. No <code>findAccessibilityNodeInfosByText</code>. Just check if any window title contains &quot;VrUsb&quot; and blindly fire keys.</p>
+<h2>Wiring It All Together</h2>
+<p>The full solution is a foreground service that:</p>
+<ol>
+<li><strong>Self-enables the accessibility service</strong> on first run using <code>WRITE_SECURE_SETTINGS</code></li>
+<li><strong>Registers a ContentObserver</strong> on <code>adb_wifi_enabled</code> to react instantly when Meta's system clears it</li>
+<li><strong>Registers a NetworkCallback</strong> to re-enable ADB when WiFi reconnects (handles network changes without reboot)</li>
+<li><strong>Polls every 30 seconds</strong> as a dead man's switch</li>
+<li><strong>Triggers the accessibility key sequence</strong> when the popup appears</li>
+</ol>
+<p>No hardcoded boot delays. No &quot;wait 60 seconds for WiFi&quot; loops. The service reacts to actual system state changes.</p>
+<h2>The Meta-Specific Quirks</h2>
+<p>Quest OS has a few behaviors that make this harder than stock Android:</p>
+<ul>
+<li><strong>Thread flooding is real.</strong> The ContentObserver fires when <code>adb_wifi_enabled</code> flips to 0, which happens <em>because</em> the popup appeared. If your service blindly retries enabling ADB in response, you spawn infinite threads racing each other. We guard this with an <code>AtomicBoolean</code> so only one configuration attempt runs at a time.</li>
+<li><strong>The window tree lies.</strong> Don't trust <code>getWindowsOnAllDisplays()</code> to show you the popup. Don't trust <code>getRootInActiveWindow()</code>. The popup exists in the compositor, not the standard view hierarchy. Blind key injection is the only reliable path.</li>
+</ul>
+<h2>The Result</h2>
+<p>The app is a single APK, granted <code>WRITE_SECURE_SETTINGS</code> once via ADB after installing the app. After that, teachers power on the headsets, the service starts automatically, and wireless ADB is ready within seconds after the headset connect to the network without anyone touching the controllers.</p>
+<p>Repository is here if you're fighting the same fight: <a href="https://github.com/project-SIMPLE/adb-auto-enable">https://github.com/project-SIMPLE/adb-auto-enable</a></p>
+<p>&lt;figure&gt;
+&lt;video controls style=&quot;width:100%&quot;&gt;
+&lt;source src=&quot;/videos/mq3-wireless-adb.mp4&quot; type=&quot;video/mp4&quot;&gt;
+&lt;/video&gt;
+&lt;figcaption&gt;Demo: headset auto-enabling/accepting the ADB Wireless popup.&lt;/figcaption&gt;
+&lt;/figure&gt;</p>
+<h2>Conclusion</h2>
+<p>If Meta ever exposes a system property or hidden API to persist wireless debugging trust, this whole accessibility dance becomes unnecessary. Some developers already filed feedback through their developer channels for, maybe, years, but I'm not holding my breath. For now, abusing the accessibility framework for input injection is the least-worst option.</p>
+]]></content>
+	</entry>
+</feed>
