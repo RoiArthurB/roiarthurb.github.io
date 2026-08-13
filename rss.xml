@@ -1,4 +1,395 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Arthur Brugière</title><description>Computer Researcher / IT Geek</description><link>https://arthurbrugiere.fr/</link><item><title>Using Your MacBook as a Local WiFi Access Point</title><link>https://arthurbrugiere.fr/blog/2026/05/macbook-air-access-point/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/05/macbook-air-access-point/</guid><description>How I&apos;ve been able to use a MacBook Air as a router without internet connection.</description><pubDate>Mon, 25 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;The Problem&lt;/h2&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Arthur Brugière</title><description>Computer Researcher / IT Geek</description><link>https://arthurbrugiere.fr/</link><item><title>Disabling a touchscreen for good on X11 desktop</title><link>https://arthurbrugiere.fr/blog/2026/08/disabling-a-touchscreen-for-good/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/08/disabling-a-touchscreen-for-good/</guid><description>A @reboot cron never disabled my laptop touchscreen. Finding the layer that does.</description><pubDate>Thu, 13 Aug 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I own an old &lt;a href=&quot;https://www.dell.com/support/product-details/en-vn/product/inspiron-11-3158-laptop/overview&quot;&gt;&lt;em&gt;Dell Inspiron 2-in-1 11-3158&lt;/em&gt;&lt;/a&gt; that I bought at a flea market years ago and made my travel machine: an i3-6100U running &lt;a href=&quot;https://mxlinux.org/&quot;&gt;MX Linux&lt;/a&gt; with &lt;a href=&quot;https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)&quot;&gt;Cinnamon&lt;/a&gt;, maxed at 8GB of DDR3 RAM[^1].&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/disabling-a-touchscreen-for-good-laptop.webp&quot; alt=&quot;My Inspiron laptop covered with stickers&quot; /&gt;
+    &lt;figcaption&gt;My Inspiron laptop covered with stickers, I love stickers!&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;As it&apos;s a convertible (&lt;em&gt;2-in-1&lt;/em&gt; model), it has a touchscreen, but it&apos;s broken and sometimes it bugs and blocks the cursor clicking in the upper corner, which makes it impossible to use. So I wanted to disable the touchscreen from that machine, for good.&lt;/p&gt;
+&lt;p&gt;Killing it for the current session is simple. Making that stick across reboots meant working out which layer of the input stack owns the device, and it&apos;s been a little more complicated than I expected.&lt;/p&gt;
+&lt;h2&gt;What I tried first&lt;/h2&gt;
+&lt;p&gt;Playing a bit with &lt;code&gt;xinput&lt;/code&gt; I made a little bash script which catches the touchscreen and disables it by ID automatically:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;#!/bin/bash
+# Disable the touchscreen every time X11 starts
+
+# Try to find the device by name (more robust than a fixed id)
+DEV_ID=$(xinput list --id-only &amp;quot;ELAN Touchscreen&amp;quot;)   # ID of the touchscreen
+
+if [ -n &amp;quot;$DEV_ID&amp;quot; ]; then
+    xinput disable &amp;quot;$DEV_ID&amp;quot;
+fi
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The stuck cursor stops, until the next login where I have to relaunch the script. Easy, but it can be automated so I don&apos;t have to think about it anymore. The obvious next step is a &lt;code&gt;@reboot&lt;/code&gt; &lt;a href=&quot;https://en.wikipedia.org/wiki/Cron&quot;&gt;cron&lt;/a&gt; entry to run the script automatically and fix the problem forever, so I wrote one, rebooted, and the corner ate my clicks again.&lt;/p&gt;
+&lt;p&gt;It&apos;s not working...&lt;/p&gt;
+&lt;p&gt;After some documentation digging, I found out that &lt;code&gt;@reboot&lt;/code&gt; fires when cron starts (normal), which &lt;strong&gt;happens &lt;em&gt;before&lt;/em&gt; Xorg runs&lt;/strong&gt; and before my login session exists. &lt;code&gt;xinput&lt;/code&gt; is an X client: it opens a connection to a running display and asks the server to flip a property. With no display nor server to connect to, it has nothing to ask. The command runs, fails, and cron discards the output where I won&apos;t read it.&lt;/p&gt;
+&lt;h2&gt;The Xorg layer&lt;/h2&gt;
+&lt;p&gt;As said, this laptop is using &lt;em&gt;Cinnamon&lt;/em&gt;, which runs on X11, so on this machine I get the good old X11 stack.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+Little precision on the vocabulary:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;X11&lt;/code&gt; is a protocol: a socket, plus a vocabulary for &amp;quot;give me a window&amp;quot; and &amp;quot;here is a click at these coordinates&amp;quot;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;X server&lt;/code&gt; is the process on the other end of that socket, the one holding the hardware and reading your keyboard and touchscreen&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Xorg&lt;/code&gt; is the implementation of that server almost every Linux desktop has run for decades&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;They are all tightly linked and that&apos;s why the three names get used for each other.&lt;/p&gt;
+&lt;p&gt;Cinnamon, Firefox and &lt;code&gt;xinput&lt;/code&gt; are &lt;code&gt;X clients&lt;/code&gt;: they own no hardware and ask the server for everything, so a client that starts before the server has nobody to ask.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The X server reads files in &lt;code&gt;/etc/X11/xorg.conf.d/&lt;/code&gt; at its own startup, before any session loads, so a rule there applies from the first frame:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Section &amp;quot;InputClass&amp;quot;
+    Identifier      &amp;quot;Disable ELAN touchscreen&amp;quot;
+    MatchProduct    &amp;quot;ELAN Touchscreen&amp;quot;
+    MatchIsTouchscreen &amp;quot;on&amp;quot;
+    Option          &amp;quot;Ignore&amp;quot; &amp;quot;on&amp;quot;
+EndSection
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Section &amp;quot;InputClass&amp;quot;&lt;/code&gt; opens a block of settings that Xorg applies to every input device matching the &lt;code&gt;Match*&lt;/code&gt; lines inside it, at the moment the server enumerates devices. &lt;code&gt;Identifier&lt;/code&gt; is a free-form name for the block, and it shows up in &lt;code&gt;/var/log/Xorg.0.log&lt;/code&gt; when the rule fires, which is how you check the match worked. &lt;code&gt;MatchProduct&lt;/code&gt; compares against the device name as a substring, and &lt;code&gt;MatchIsTouchscreen&lt;/code&gt; restricts the block to devices udev has already tagged as a touchscreen. &lt;code&gt;Option&lt;/code&gt; carries the payload: the setting applied to whatever survived the match.&lt;/p&gt;
+&lt;p&gt;Matching on the product name plus &lt;code&gt;MatchIsTouchscreen&lt;/code&gt; leaves the Synaptics touchpad and my other pointers untouched. &lt;code&gt;Option &amp;quot;Ignore&amp;quot; &amp;quot;on&amp;quot;&lt;/code&gt; makes X drop the device before anything can use it, which covers all the event nodes the touchscreen exposes without having to name them.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ sudo cp 99-disable-touchscreen.conf /etc/X11/xorg.conf.d/
+$ xinput list | grep -i elan   # after a reboot or a display manager restart: nothing
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Everything works perfectly now: the touchscreen is disabled forever.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;&amp;quot;Forever&amp;quot;&lt;/em&gt; in this context means &amp;quot;until I migrate to Wayland&amp;quot;, as that configuration file is only used by an X11 session. Switching protocol creates no warning and no logs, simply nothing reads it, the broken corner comes back, and I&apos;ll have to fix it again.&lt;/p&gt;
+&lt;p&gt;Even if &lt;em&gt;Cinnamon&lt;/em&gt; is currently using X11 by default, it will be migrating to Wayland soon. The Wayland session has been &lt;a href=&quot;https://forums.linuxmint.com/viewtopic.php?t=411761&quot;&gt;marked as experimental&lt;/a&gt; since Cinnamon 6.0, and the Mint team &lt;a href=&quot;https://www.phoronix.com/news/LinuxMint-Cinnamon-Wayland-Good&quot;&gt;announced in June 2026&lt;/a&gt; that the label goes away in Cinnamon 6.8, where both X11 and Wayland will be fully supported. So this fix won&apos;t work for me much longer.&lt;/p&gt;
+&lt;h2&gt;Wayland reads none of that&lt;/h2&gt;
+&lt;p&gt;Wayland has been pushed as a replacement to Xorg and, even if it has a compatibility layer, it&apos;s not an X server, so &lt;code&gt;/etc/X11/xorg.conf.d/&lt;/code&gt; never gets opened. Under Wayland the compositor itself (Mutter, KWin, sway, and others) talks to &lt;code&gt;libinput&lt;/code&gt;, and there is no shared config file across compositors for killing a device.&lt;/p&gt;
+&lt;p&gt;I want a universal fix, so I won&apos;t go and write one config file per compositor. The way out is to go one abstraction layer below, under any display server, to the part of the stack they share.&lt;/p&gt;
+&lt;p&gt;That level is &lt;code&gt;libinput&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The kernel exposes the touchscreen as an &lt;em&gt;event node&lt;/em&gt;, &lt;code&gt;udev&lt;/code&gt; enumerates it and tags it with everything it knows about the hardware. &lt;code&gt;libinput&lt;/code&gt; reads those tags and turns raw events into the pointer and touch data its consumers ask for. Xorg is one of those consumers through the &lt;code&gt;xf86-input-libinput&lt;/code&gt; driver, and every Wayland compositor is another. So killing the device at the &lt;code&gt;libinput&lt;/code&gt; level is a universal fix covering X11, Wayland and everything else at once, as that doesn&apos;t care which session I boot into.&lt;/p&gt;
+&lt;p&gt;A &lt;code&gt;udev&lt;/code&gt; rule setting &lt;code&gt;LIBINPUT_IGNORE_DEVICE=1&lt;/code&gt; makes &lt;code&gt;libinput&lt;/code&gt; hand back nothing for that device, so my Cinnamon session never sees it. The rule keys on the USB ID, &lt;code&gt;04f3:036e&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# Permanently disable the ELAN Touchscreen (USB 04f3:036e).
+# Compatible Wayland compositor AND X11 when it uses the xf86-input-libinput driver. 
+# Applied at device enumeration on every boot and hotplug -- no session hook required.
+SUBSYSTEM==&amp;quot;input&amp;quot;, ATTRS{idVendor}==&amp;quot;04f3&amp;quot;, ATTRS{idProduct}==&amp;quot;036e&amp;quot;, ENV{ID_INPUT_TOUCHSCREEN}==&amp;quot;1&amp;quot;, ENV{LIBINPUT_IGNORE_DEVICE}=&amp;quot;1&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;04f3:036e&lt;/code&gt; is the USB &lt;em&gt;vendor:product ID&lt;/em&gt; baked into the touchscreen hardware itself, and &lt;code&gt;lsusb&lt;/code&gt; prints it for every device on the machine. It&apos;s more stable than the event node name (&lt;code&gt;/dev/input/event7&lt;/code&gt; might shuffle around) and more precise than matching by name alone.&lt;/p&gt;
+&lt;p&gt;Once written, the rule goes in the &lt;code&gt;udev&lt;/code&gt; rules folder, and a quick &lt;code&gt;udevadm control --reload-rules &amp;amp;&amp;amp; udevadm trigger&lt;/code&gt; applies it without rebooting.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ sudo cp 99-disable-touchscreen.rules /etc/udev/rules.d/
+# Apply new rule without rebooting
+$ sudo udevadm control --reload-rules &amp;amp;&amp;amp; sudo udevadm trigger --subsystem-match=input --action=change
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Verify on either session type:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ xinput list | grep -i elan                 # X11
+# Nothing
+$ sudo libinput list-devices | grep -i elan  # X11 and Wayland
+# Nothing
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;What I kept&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;udev&lt;/code&gt; rule, on its own. It covers the X11 session I run today and a Wayland switch later, and X11 on this machine goes through &lt;code&gt;libinput&lt;/code&gt; anyway: every &lt;code&gt;xinput&lt;/code&gt; property on the device carries a &lt;code&gt;libinput ...&lt;/code&gt; prefix, which is what makes the &lt;code&gt;udev&lt;/code&gt; rule bite under Xorg too. The Xorg file is redundant on top of it, and I removed it to avoid any weird conflict.&lt;/p&gt;
+&lt;p&gt;Rolling back is deleting &lt;code&gt;/etc/udev/rules.d/99-disable-touchscreen.rules&lt;/code&gt; and running the same reload and trigger pair, which brings the device back without a reboot.&lt;/p&gt;
+&lt;p&gt;There is one more floor below &lt;code&gt;udev&lt;/code&gt;: unbinding the kernel driver, or blacklisting its module, which kills the touchscreen at a TTY login before any GUI starts. That would have worked too, but the broken corner only bothers me inside a desktop session, so I stopped at &lt;code&gt;udev&lt;/code&gt;.&lt;/p&gt;
+&lt;!-- --- --&gt;
+&lt;p&gt;[^1]: It&apos;s a 10-year-old machine, not the most powerful one, but it works very well and is good enough as a travel laptop 🧔‍♂️&lt;/p&gt;
+</content:encoded></item><item><title>Auto-configuring Meta Quest headsets for classroom use with ADB</title><link>https://arthurbrugiere.fr/blog/2026/08/quest-adb-setup-simple/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/08/quest-adb-setup-simple/</guid><description>How Meta Quest headsets are setup for classroom use in the SIMPLE Project.</description><pubDate>Mon, 10 Aug 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;To run a demo with some Meta Quest headsets, you need to be able to keep them connected to WiFi and keep their display on. Unfortunately, they ship with consumer defaults that fight you on that. The &lt;a href=&quot;https://project-simple.eu/&quot;&gt;&lt;em&gt;SIMPLE Project&lt;/em&gt;&lt;/a&gt; handles this by pushing a complete ADB configuration profile every time a headset connects to the platform. Here&apos;s what the headset tries to do, why it breaks your demo, and how SIMPLE stops it.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+Precisely, the use in the &lt;em&gt;SIMPLE Project&lt;/em&gt; is by bringing a &lt;a href=&quot;https://github.com/project-SIMPLE/M2L2&quot;&gt;&lt;em&gt;M2L2&lt;/em&gt;&lt;/a&gt; (an all-in-one device including an offline WiFi router, six Meta Quest headsets, and a computer running software; everything interconnected) into classrooms to easily use VR in ASEAN schools.&lt;/p&gt;
+&lt;p&gt;Most of the configuration presented here is made precisely for this use case.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;WiFi disconnects on networks without internet&lt;/h2&gt;
+&lt;p&gt;If your setup runs on a local network with no internet access, the Quest will eventually disconnect. Android continuously tests whether WiFi has internet access, and when the check fails, it flags the network as bad, shows a &lt;code&gt;No internet access&lt;/code&gt; warning.
+On regular Android that&apos;s not too much of an issue, but Meta hates that (they want your data) and auto-disconnects to &amp;quot;avoid the inconvenience of not having internet&amp;quot; or something. Also Meta disable the automatic connection to a network tagged as &lt;code&gt;No internet access&lt;/code&gt;, being a major issue in a game session to run LAN games...&lt;/p&gt;
+&lt;p&gt;SIMPLE fixes this by disabling the network probes entirely, so no wifi network can be flagged.&lt;/p&gt;
+&lt;h3&gt;Disabling &lt;em&gt;Captive Portal&lt;/em&gt; detection&lt;/h3&gt;
+&lt;p&gt;Android pings Google servers to check for captive portals, the login pages you see at hotels and airports. On an offline network, these requests time out, and Android interprets that as a connectivity problem. To spoof this, I simply disabled captive portal detection and points the probe URLs at localhost so they always answer instead of failing outward:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;captive_portal_detection_enabled: 0
+captive_portal_mode: 0
+captive_portal_server: &amp;quot;localhost&amp;quot;
+captive_portal_https_url: &amp;quot;https://localhost&amp;quot;
+captive_portal_http_url: &amp;quot;http://localhost&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;private_dns_mode: &amp;quot;off&amp;quot;&lt;/code&gt; handles a related issue: Android&apos;s private DNS feature (DNS-over-TLS) tries to connect to hardcoded DNS servers. On an offline network, these connections fail and can trigger additional disconnect logic. Turning it off removes that failure path.&lt;/p&gt;
+&lt;h3&gt;Disabling every WiFi auto-switcher&lt;/h3&gt;
+&lt;p&gt;Even with captive portal detection disabled, Android has multiple watchdog services that will abandon a network they don&apos;t like. SIMPLE disables all of them:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;wifi_watchdog_on: 0
+wifi_watchdog_poor_network_test_enabled: 0
+network_recommendations_enabled: 0
+network_avoid_bad_wifi: 0
+wifi_passpoint_enabled: 0
+wifi_enhance_network_while_sleeping: 0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The WiFi watchdog roams to another network or drops the connection when it thinks quality is poor. &lt;code&gt;network_avoid_bad_wifi&lt;/code&gt; does exactly what it says: it disconnects from networks without internet. &lt;code&gt;network_recommendations_enabled&lt;/code&gt; pops up suggestions to switch networks, which is disruptive mid-demo. &lt;code&gt;wifi_passpoint_enabled&lt;/code&gt; disables automatic authentication with carrier hotspot networks, which is irrelevant in most setups but removes another background process that could interfere.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;wifi_sleep_policy: 2&lt;/code&gt; keeps WiFi active when the device sleeps. Without this, a headset that &lt;a href=&quot;https://en.wikipedia.org/wiki/Android_Marshmallow#DOZE&quot;&gt;dozes&lt;/a&gt; briefly drops its connection and you have to manually reconnect it. Annoying.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;wifi_networks_available_notification_on: 0&lt;/code&gt; and &lt;code&gt;netstats_enabled: 0&lt;/code&gt; remove the last two sources of network-related noise: popups about other nearby networks, and background data usage tracking. Less background activity means fewer opportunities for the system to interrupt the connection.&lt;/p&gt;
+&lt;h2&gt;The headset goes to sleep mid-session&lt;/h2&gt;
+&lt;p&gt;A Meta Quest headset is quite battery hungry because of all the processing it has to do (6 DOF, heavy graphical computing, etc), and having 30~60 minutes of battery life is bad press. So a Meta Quest headset is the laziest device in the world and try to sleep as much as it can.&lt;/p&gt;
+&lt;p&gt;For instance, a stock Quest falls asleep after a few minutes of idle time. In any demo or session, &amp;quot;idle&amp;quot; happens constantly as someone waiting for instructions, a discussion, a presenter demonstrating something on the projector. If the headset sleeps, the player drops from the simulation (disconnect from the backend server) and has to wake it, reconnect, and rejoin. SIMPLE prevents this at three layers.&lt;/p&gt;
+&lt;h3&gt;Set Android to never sleeps&lt;/h3&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;stay_on_while_plugged_in: 15
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This is a bitmask. Each bit controls a different power source:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Bit&lt;/th&gt;
+&lt;th&gt;Value&lt;/th&gt;
+&lt;th&gt;Power Source&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;0&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;AC adapter&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;USB&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;4&lt;/td&gt;
+&lt;td&gt;Wireless charging&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;3&lt;/td&gt;
+&lt;td&gt;8&lt;/td&gt;
+&lt;td&gt;Docked&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;code&gt;1 + 2 + 4 + 8 = 15&lt;/code&gt;, so the screen stays on across all four conditions. In a setup where headsets sit on USB charging cables or charging stands between uses, this alone prevents most mid-session blackouts.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;screen_off_timeout: 86400000  // 24 hours
+sleep_timeout: -1             // Disabled entirely
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;screen_off_timeout&lt;/code&gt; lives in the &lt;code&gt;system&lt;/code&gt; settings namespace and controls when the display subsystem turns off the screen. &lt;code&gt;sleep_timeout&lt;/code&gt; lives in the &lt;code&gt;secure&lt;/code&gt; namespace and governs when the entire device enters deep sleep. SIMPLE sets both to never trigger.&lt;/p&gt;
+&lt;!-- Modifying secure settings requires `WRITE_SECURE_SETTINGS` permission, which is why SIMPLE installs a companion app with that privilege.--&gt;
+&lt;h3&gt;Meta&apos;s OVR Layer: Four-hours safety window&lt;/h3&gt;
+&lt;p&gt;Meta adds its own logical layer, touching obviously to the &lt;s&gt;lazyness&lt;/s&gt; sleep logic on top of Android, controlled through the &lt;code&gt;PreferencesService&lt;/code&gt; binder interface:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;idle_time_threshold: 14400   // Display off after 4 hours
+autosleep_time: 14400        // Sleep mode after 4 hours
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Both values are in seconds. Four hours covers a full session with breaks, but still lets a forgotten headset power down eventually instead of sitting awake overnight. The code checks the current value via &lt;code&gt;getprop&lt;/code&gt; and only writes if it changed, so repeated reconnections don&apos;t waste calls.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+You can also set &lt;code&gt;autosleep_time&lt;/code&gt; through the headset&apos;s system settings GUI, it&apos;s probably the only setting from this entire article that&apos;s exposed in the interface. But SIMPLE sets it via ADB anyway as part of the automated configuration.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3&gt;The proximity sensor blacks out the display&lt;/h3&gt;
+&lt;p&gt;This one is interesting! 😋&lt;/p&gt;
+&lt;p&gt;When you remove a Quest headset, a proximity sensor detects the gap and blacks out the display to save power (or doze if you didn&apos;t applied any of the above parameters, remember: lazy device). In any multi-user setup, demo, else, headsets get passed around or set on charging stations between activities. If the display blacks out, the streaming session breaks and the next person sees a dark screen instead of the simulation.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/quest-adb-setup-simple-sensor.webp&quot; alt=&quot;Picture of proximity sensors inside of a meta quest headset&quot; /&gt;
+    &lt;figcaption&gt;This captor exists in both &lt;i&gt;Meta Quest 2&lt;/i&gt; and &lt;i&gt;Meta Quest 3&lt;/i&gt; (not the 3s)&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;SIMPLE disable this behavior by sending a broadcast on each headset&apos;s boot:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;am broadcast -a com.oculus.vrpowermanager.prox_close
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This forces the power manager to treat the headset as currently worn. The display stays on even when the headset is sitting on a charging stand or being handed from one user to the next, so the stream keeps flowing uninterrupted. The disadvantage is the battery life which is the most impacted by it.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+A lot of people (as well as us first) are putting opaque tape &lt;a href=&quot;https://www.reddit.com/r/OculusQuest/comments/1laug5p/i_found_a_solve_to_the_quest_2_proximity_sensor/&quot;&gt;or similar&lt;/a&gt; on the sensor to fake it. But, from our experience, it&apos;s not that much reliable and created a lot of instability on some units. This method is better.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;Maintenance: Keeping the fleet in a static state&lt;/h2&gt;
+&lt;p&gt;Beyond the session fixes, SIMPLE tweaks the devices with a &lt;em&gt;maintenance layer&lt;/em&gt; that keeps the equipment stable over time. I don&apos;t want any new firmware changes overnight or connection drift breaking my setup in the morning of an exhibition...&lt;/p&gt;
+&lt;h3&gt;Restrict firmware updates&lt;/h3&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;ota_disable_automatic_update: 1
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A system update downloading during a session, or worse, forcing an unexpected reboot, can end a demo. This stops &lt;a href=&quot;https://en.wikipedia.org/wiki/Over-the-air_update&quot;&gt;Android&apos;s OTA&lt;/a&gt; updates from triggering automatically.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;am set-standby-bucket com.oculus.updater restricted
+am set-standby-bucket com.oculus.nux.ota restricted
+cmd appops set com.oculus.updater RUN_ANY_IN_BACKGROUND deny
+cmd appops set com.oculus.nux.ota RUN_ANY_IN_BACKGROUND deny
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;com.oculus.updater&lt;/code&gt; and &lt;code&gt;com.oculus.nux.ota&lt;/code&gt; handle Meta&apos;s layer for firmware updates and telemetry. With restricted standby buckets and background execution denied, they cannot wake the headset. This pairs with &lt;code&gt;ota_disable_automatic_update: 1&lt;/code&gt; at the global settings level makes a two-layer defense against a fleet of headsets deciding to search and download a system update at anypoint.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!CAUTION]
+Disabling auto-updates keeps your fleet in a known software state, which is what you want for reproducible demos. Just remember to manually update the headsets between projects if you need security patches or new features.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3&gt;Keep the ADB session alive&lt;/h3&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;adb_allowed_connection_time: 9007199254740991  // ~285 years, effectively never
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Meta&apos;s Android build times out ADB debugging sessions. When it expires, the headset drops from the platform and you have to re-authorize the host (to make this point clear, it&apos;s not ADB which is not up, but it refuses to connect with old paired device, ie. the server). Setting this to &lt;code&gt;MAX_SAFE_INTEGER&lt;/code&gt; means the session survives indefinitely.&lt;/p&gt;
+&lt;p&gt;SIMPLE also installs &lt;code&gt;eu.project_simple.adbautoenable&lt;/code&gt;, a companion app that keeps the ADB connection alive and handles re-authorization automatically. I already presented how it works in a previous article : https://arthurbrugiere.fr/blog/mq3-wireless-adb/&lt;/p&gt;
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;You pretty much broke all the engineering Meta put in their devices to give the players a nice experience, but you succeed to have device which works as you would expect in an exhibition or a classroom.&lt;/p&gt;
+&lt;p&gt;At least I&apos;m happy to run them in the project now 😁&lt;/p&gt;
+</content:encoded></item><item><title>Installing OpenMediaVault without IPv6</title><link>https://arthurbrugiere.fr/blog/2026/06/install-omv-8-without-ipv6/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/06/install-omv-8-without-ipv6/</guid><description>When IPv6 is the future, but you can&apos;t connect to it</description><pubDate>Thu, 04 Jun 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I needed a &lt;a href=&quot;https://en.wikipedia.org/wiki/Network-attached_storage&quot;&gt;&lt;em&gt;Network Attached Storage&lt;/em&gt;&lt;/a&gt; (&lt;em&gt;NAS&lt;/em&gt;) for my lab. I had a Dell Vostro 3888 sitting around, an i3-10100 with 20GB RAM, one SSD, and two 1TB HDDs. &lt;a href=&quot;https://www.openmediavault.org&quot;&gt;OpenMediaVault&lt;/a&gt; (&lt;em&gt;OMV&lt;/em&gt;) seemed like the obvious choice. The install should have taken twenty minutes. It took most of an afternoon, because I had no IPv6, and other issues.&lt;/p&gt;
+&lt;p&gt;Here is every issue I ran into, in order, so you don&apos;t have to repeat my mistakes.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+This &lt;em&gt;&amp;quot;guide&amp;quot;&lt;/em&gt; is describing the struggle I had to install &lt;strong&gt;OMV 8.0.7 (stable)&lt;/strong&gt; on a machine in a network with IPv6 disabled.&lt;/p&gt;
+&lt;p&gt;If you&apos;re using another version of OMV, your mileage may vary :)&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;hr&gt;
+&lt;h2&gt;Issue 1: The installer blue-screens after WiFi connection&lt;/h2&gt;
+&lt;p&gt;I do have some experience installing Linux systems, so I pretty much followed the same steps as described in the &lt;a href=&quot;https://docs.openmediavault.org/en/latest/installation/via_iso.html&quot;&gt;official documentation&lt;/a&gt;: Downloaded the iso, flashed a USB stick, boot the OMV ISO, follow the first steps, connect to your WiFi network, type the password, see the &amp;quot;Configuring DHCP&amp;quot; loading screen, see the &amp;quot;Configuring DHCP&lt;strong&gt;v6&lt;/strong&gt;&amp;quot; loading screen...&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-dhcp.webp&quot; alt=&quot;Debian installer DHCP loading screen&quot; /&gt;
+    &lt;figcaption&gt;I don&apos;t have ways to capture my installation screen, imagine it&apos;s written `DHCPv6` please....&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;The popup closes. You&apos;re staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and displays them on the screen, but nothing happens.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-bsod.webp&quot; alt=&quot;Debian installer blue screen&quot; /&gt;
+    &lt;figcaption&gt;The BSOD (Blue Screen Of &lt;s&gt;Death&lt;/s&gt; Debian), not my most useful illustration...&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request timed out with no response or got an unexpected message... Anyway, the installer broke and after waiting 1 hour, I tried to fix it: I disabled IPv6 at the kernel level for this boot only.&lt;/p&gt;
+&lt;p&gt;To do so, at the GRUB boot menu, press &lt;code&gt;e&lt;/code&gt; to edit the current entry. Find the &lt;code&gt;linux&lt;/code&gt; line and append &lt;code&gt;ipv6.disable=1&lt;/code&gt; to the end:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;linux /install/vmlinuz vga=normal quiet file=/cdrom/preseed.cfg ipv6.disable=1
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Press &lt;code&gt;Ctrl+X&lt;/code&gt; or &lt;code&gt;F10&lt;/code&gt; to boot. The installer skips DHCPv6 and proceeds.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!TIP]
+Editing in GRUB with &lt;code&gt;e&lt;/code&gt; changes the boot parameters for this session only. Nothing gets written to disk. If it doesn&apos;t work, reboot and try something else. Once you confirm the fix, you can make it permanent later.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;Issue 2: No network after first boot&lt;/h2&gt;
+&lt;p&gt;OMV installs, reboots, and the WiFi interface (&lt;code&gt;wlp2s0&lt;/code&gt; in my case) has no IPv4 address. The web UI is, obviously, unreachable. The &lt;code&gt;ipv6.disable=1&lt;/code&gt; fix was only for the installer boot, and the freshly installed system tries to negotiate IPv6 on the network. My router still has IPv6 disabled, so the negotiation fails and the interface gets no usable IP at all.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The fix:&lt;/strong&gt; Again, boot with &lt;code&gt;ipv6.disable=1&lt;/code&gt; added from GRUB (press &lt;code&gt;e&lt;/code&gt; at the boot menu, add it to the kernel line, &lt;code&gt;Ctrl+X&lt;/code&gt; to boot).&lt;/p&gt;
+&lt;p&gt;After this, nothing is magically working yet. I had to manually bring the WiFi up with a few commands:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Generate WPA config
+wpa_passphrase &amp;quot;YourSSID&amp;quot; &amp;quot;YourPassword&amp;quot; &amp;gt; /etc/wpa_supplicant/wpa_supplicant.conf
+
+# Connect my wifi interface using the generated config
+wpa_supplicant -B -i wlp2s0 -c /etc/wpa_supplicant/wpa_supplicant.conf
+
+# Request an IPv4 address to the network&apos;s DHCP.
+dhcpcd wlp2s0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;You should now have an IPv4 address and be able to ping the machine, but you won&apos;t be able to reach the web UI at &lt;code&gt;http://&amp;lt;machine-ip&amp;gt;&lt;/code&gt; yet...&lt;/p&gt;
+&lt;h2&gt;Issue 3: nginx fails to start because of IPv6&lt;/h2&gt;
+&lt;p&gt;With WiFi up and an IPv4 address in hand, I tried to open the OMV web UI. Nothing on port 80. The nginx service was failing to start:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-log&quot;&gt;-- Unit nginx.service has begun starting up.
+Jun 02 14:46:27 nginx[5069]: nginx: [emerg] socket() [::]:80 failed (97: Address family not supported by protocol)
+Jun 02 14:46:27 nginx[5069]: nginx: configuration file /etc/nginx/nginx.conf test failed
+Jun 02 14:46:27 systemd[1]: nginx.service: Control process exited, code=exited status=1
+Jun 02 14:46:27 systemd[1]: Failed to start A high performance web server and a reverse proxy server.
+-- Subject: Unit nginx.service has failed
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The reason: OMV&apos;s nginx config binds to &lt;code&gt;[::]:80&lt;/code&gt; (the IPv6 wildcard) by default. But I had booted with &lt;code&gt;ipv6.disable=1&lt;/code&gt; on the kernel command line, my router doesn&apos;t provide any IPv6: so IPv6 is not available. Nginx tries to listen on &lt;code&gt;[::]:80&lt;/code&gt;, gets &amp;quot;Address family not supported by protocol,&amp;quot; and dies.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The fix:&lt;/strong&gt; Edit the nginx site config to remove the IPv6 listen directive:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nano /etc/nginx/sites-enabled/openmediavault-webgui
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Comment out the line &lt;code&gt;listen [::]:80;&lt;/code&gt; (but keep the &lt;code&gt;listen 80;&lt;/code&gt; line used for IPv4). Then restart nginx:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;systemctl restart nginx
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The web UI comes up. Log in, with the default credentials (&lt;code&gt;admin&lt;/code&gt; / &lt;code&gt;openmediavault&lt;/code&gt;), go to Network → Interfaces, configure your WiFi interface (me &lt;code&gt;wlp2s0&lt;/code&gt;) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer uses the faulty IPv6.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-network-config.webp&quot; alt=&quot;OMV network config with IPv6 disabled&quot; /&gt;
+    &lt;figcaption&gt;Saved working network with IPv6 disabled&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;Finally :)&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;Storage: Btrfs RAID1 on the two HDDs&lt;/h2&gt;
+&lt;p&gt;With the OS running on the SSD, the two 1TB drives become the data pool. I used &lt;a href=&quot;https://btrfs.readthedocs.io/en/latest/&quot;&gt;Btrfs&lt;/a&gt; in RAID1.&lt;/p&gt;
+&lt;p&gt;Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and native RAID support. For a NAS, the checksums detect silent data corruption, snapshots let you roll back files if someone overwrites them, and RAID1 keeps your data alive if one drive fails (both disks are mirrored, I lose a lot of space, but I&apos;m less likely to lose data). OMV handles all of this through the UI.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Storage&lt;/li&gt;
+&lt;li&gt;File Systems&lt;/li&gt;
+&lt;li&gt;Press the blue button &lt;em&gt;Create&lt;/em&gt;.&lt;/li&gt;
+&lt;li&gt;Select &lt;code&gt;BTRFS&lt;/code&gt; from the dropdown.&lt;/li&gt;
+&lt;li&gt;Select your desired &lt;em&gt;Profile&lt;/em&gt; (&lt;code&gt;RAID1&lt;/code&gt; for me).&lt;/li&gt;
+&lt;li&gt;Select both HDDs.&lt;/li&gt;
+&lt;li&gt;Hit create, wait a few minutes, then mount it.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-btrfs.webp&quot; alt=&quot;OMV FS configured with BTRFS and displaying 1TB of usable storage&quot; /&gt;
+    &lt;figcaption&gt;Saved working network with IPv6 disabled&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;After that, create a shared folder on the volume and enable SMB, NFS and other network protocols under &lt;code&gt;Services&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;One thing to not forget to ease the management of the NAS is to set up a regular (monthly) scrub to catch silent data corruption. OMV 8 doesn&apos;t expose this in the UI, so use a scheduled task:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;System → Scheduled Tasks → Add
+Schedule: Monthly (0 2 1 * * for 2am on the 1st)
+Command: btrfs scrub start /srv/dev-disk-by-uuid-XXXX
+&lt;/code&gt;&lt;/pre&gt;
+&lt;hr&gt;
+&lt;h2&gt;Issue 4: Some Windows 11 machines refuse to connect&lt;/h2&gt;
+&lt;p&gt;The goal for this NAS is simple: anyone in the lab walks in with their own machine, opens the file manager, find the NAS in their &lt;em&gt;Network&lt;/em&gt; file tab, and gets in. No passwords, no account creation, no IT support. I configured the SMB share with &lt;strong&gt;Guests allowed&lt;/strong&gt;, meaning anyone can connect as a guest and access files. I also enabled NFS and other protocols for the Linux (me 😁) and macOS machines in the lab.&lt;/p&gt;
+&lt;p&gt;Everything worked on every Linux machine&lt;s&gt;s&lt;/s&gt;. Everything worked on all macOS machines. It worked on the first Windows 11 machines. But other Windows 11 popped up a credential prompt that rejected everything I threw at it. Blank username, &lt;code&gt;guest&lt;/code&gt;, random names. Nothing worked, no error message, no hint, just an endless login loop.&lt;/p&gt;
+&lt;p&gt;The probable cause: &lt;strong&gt;Windows 11 24H2&lt;/strong&gt; changed two SMB security defaults. Microsoft now requires SMB signing on all connections, and Windows 11 Pro disables insecure guest logons[^1]. Earlier builds (23H2 and before) still allowed guest fallback. 24H2 does not, and the behavior is inconsistent. Some 24H2 machines on my network connected fine, others refused. I couldn&apos;t find a pattern.&lt;/p&gt;
+&lt;p&gt;I tried the obvious OMV-side fixes. &lt;code&gt;Guests only&lt;/code&gt; (force anonymous access). &lt;code&gt;Guests allowed&lt;/code&gt; with &lt;code&gt;nobody&lt;/code&gt; given full ACL permissions. None of it mattered. The Windows machines that locked down guest access wouldn&apos;t connect without a valid credential, and OMV didn&apos;t have any credential to connect with.&lt;/p&gt;
+&lt;p&gt;I saw on internet the possibility to use some admin PowerShell commands that I did not try. The whole point of this NAS is that it works from any machine in the lab without touching the client. Running around to every Windows computer to change security settings is not an acceptable fix.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The fix:&lt;/strong&gt; Create a single shared user in OMV.&lt;/p&gt;
+&lt;p&gt;In the OMV web UI:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Users → Users → Add&lt;/li&gt;
+&lt;li&gt;Username: &lt;code&gt;lab&lt;/code&gt; (or whatever, I won&apos;t write on internet the one we use :) )&lt;/li&gt;
+&lt;li&gt;Password: &lt;code&gt;password&lt;/code&gt; (something simple everyone in the lab can remember, but maybe not that..)&lt;/li&gt;
+&lt;li&gt;No admin rights needed&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Then in your SMB share settings, set Public to &lt;strong&gt;Guests allowed&lt;/strong&gt; and give the &lt;code&gt;lab&lt;/code&gt; user read/write permissions on the shared folder.&lt;/p&gt;
+&lt;p&gt;On each Windows machine, when the credential prompt appears:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Username: &lt;code&gt;lab&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Password: &lt;code&gt;password&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Windows caches the credentials after the first successful connection. You enter them once per machine and you won&apos;t need to enter them again.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-final.webp&quot; alt=&quot;OMV dashboard with plenty of stats&quot; /&gt;
+    &lt;figcaption&gt;The dashboard of the NAS with plenty of stats but nobody using it there&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;Two weeks in, the NAS just works. The Windows machines all connect, the scrubs run monthly (I hope), and everyone&apos;s happy about it.&lt;/p&gt;
+&lt;!-- --- --&gt;
+&lt;p&gt;[^1]: Microsoft made this change in Windows 11 24H2, released in late 2024. It affects both the SMB signing requirement and guest logon behavior on Pro and Enterprise editions. See &lt;a href=&quot;https://techcommunity.microsoft.com/blog/filecab/accessing-a-third-party-nas-with-smb-in-windows-11-24h2-may-fail/4154300&quot;&gt;Microsoft&apos;s official guidance on SMB signing and guest authentication&lt;/a&gt;.&lt;/p&gt;
+</content:encoded></item><item><title>Packaging a Node.js application with SEA and native binaries</title><link>https://arthurbrugiere.fr/blog/2026/05/packaging-nodejs-windows-sea/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/05/packaging-nodejs-windows-sea/</guid><description>How a filename on Windows broke my full packaged application</description><pubDate>Fri, 29 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Packaging a Node.js application into a single executable sounds like a solved problem. Tools exist. You build your JavaScript, bundle your assets, point a packager at your entry file, and you get a binary. On macOS and Linux, this workflow delivers. On Windows, with a native WebSocket module in your dependency tree, the same workflow produces a file that crashes before it prints a single log line.&lt;/p&gt;
+&lt;p&gt;I spent several days in that gap between &amp;quot;possible on paper&amp;quot; and &amp;quot;working in practice.&amp;quot; The project is &lt;a href=&quot;https://github.com/project-SIMPLE/simple.webplatform&quot;&gt;SIMPLE Webplatform&lt;/a&gt;, a Node.js application that bundles a web frontend, a WebSocket server (via &lt;code&gt;uWebSockets.js&lt;/code&gt;, the fastest WebSocket implementation for Node.js with a minimal memory footprint), and all the background logic and streaming layer into one stack. Shipping it meant producing a single file that a researcher or developer could download and double-click without installing Node.js, opening a terminal, or running &lt;code&gt;npm install&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;A previous attempt had used &lt;a href=&quot;http://github.com/yao-pkg/pkg&quot;&gt;&lt;code&gt;@yao-pkg/pkg&lt;/code&gt;&lt;/a&gt;, a community fork of the now-deprecated &lt;code&gt;pkg&lt;/code&gt;, to build binaries for Linux, macOS and Windows from NodeJS applcaition. Those 2 first binaries worked. The Windows binary exited with code &lt;code&gt;0xC0000005&lt;/code&gt; (access violation) the instant you ran it. No output. No stack trace. Just a segfault.&lt;/p&gt;
+&lt;p&gt;This is the story of how I fixed it, and the two Windows behaviors you will not find in any documentation.&lt;/p&gt;
+&lt;h2&gt;The Setup: What I was working with&lt;/h2&gt;
+&lt;p&gt;The application uses &lt;code&gt;uWebSockets.js&lt;/code&gt; for its WebSocket and HTTP servers. This library is written in C++ and exposes a native &lt;code&gt;.node&lt;/code&gt; binary that hooks deep into the Node.js event loop. That detail, &lt;em&gt;native module&lt;/em&gt;, turns out to be the entire problem.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;@yao-pkg/pkg&lt;/code&gt; works by embedding your JavaScript and assets into a modified &lt;code&gt;node.exe&lt;/code&gt;, then patching &lt;code&gt;process.dlopen&lt;/code&gt; (Node.js&apos;s low-level function for loading native &lt;code&gt;.node&lt;/code&gt; binaries, similar to &lt;code&gt;LoadLibrary&lt;/code&gt; on Windows) so it can load native modules from an in-memory snapshot rather than the filesystem. On Linux and macOS, this patch is transparent. On Windows, it crashes during &lt;code&gt;uWebSockets.js&lt;/code&gt; initialization.&lt;/p&gt;
+&lt;p&gt;I confirmed this through isolation. The &lt;code&gt;.node&lt;/code&gt; file extracted from the snapshot was valid. You could load it with regular Node.js without issue. The crash happened inside &lt;code&gt;@yao-pkg/pkg&lt;/code&gt;&apos;s patched &lt;code&gt;dlopen&lt;/code&gt; the moment &lt;code&gt;uWebSockets.js&lt;/code&gt; tried to register its NAPI callbacks (functions that bridge between C++ code and the JavaScript engine) with the runtime. The module was incompatible with the patched loader on Windows, full stop.&lt;/p&gt;
+&lt;p&gt;Replacing &lt;code&gt;uWebSockets.js&lt;/code&gt; with the pure-JavaScript &lt;code&gt;ws&lt;/code&gt; library was not an option. The project depends on &lt;code&gt;uWebSockets.js&lt;/code&gt; for its throughput and memory efficiency (it handles an order of magnitude more concurrent connections than &lt;code&gt;ws&lt;/code&gt; with a fraction of the RAM). I needed a packaging tool that leaves &lt;code&gt;process.dlopen&lt;/code&gt; untouched.&lt;/p&gt;
+&lt;h2&gt;The pivot to Node.js SEA&lt;/h2&gt;
+&lt;p&gt;Node.js 20 introduced &lt;a href=&quot;https://nodejs.org/api/single-executable-applications.html&quot;&gt;Single Executable Applications&lt;/a&gt; (SEA), a native mechanism for embedding your application into a copy of &lt;code&gt;node.exe&lt;/code&gt;. SEA does not patch &lt;code&gt;process.dlopen&lt;/code&gt;. It uses &lt;code&gt;postject&lt;/code&gt; (a CLI tool that injects a binary blob as a new section into an existing executable) to embed your code and assets as a PE (Portable Executable, the standard binary format for Windows) / Mach-O section into an unmodified Node.js binary. The runtime stays stock. Native modules load through the same path they would in a normal Node.js process.&lt;/p&gt;
+&lt;p&gt;I rewrote the build pipeline:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Vite bundles the frontend and backend as before&lt;/li&gt;
+&lt;li&gt;A Node.js script collects all frontend assets plus the &lt;code&gt;uWebSockets.js&lt;/code&gt; &lt;code&gt;.node&lt;/code&gt; file into a SEA configuration&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;node --experimental-sea-config&lt;/code&gt; generates the blob&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;postject&lt;/code&gt; injects the blob into a Windows &lt;code&gt;node.exe&lt;/code&gt; copy&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The resulting binary was 103 MB and crashed on launch. The crash was not the same &lt;code&gt;0xC0000005&lt;/code&gt; from &lt;code&gt;pkg&lt;/code&gt;. This time, the issue was that SEA mode replaces the standard &lt;code&gt;require()&lt;/code&gt; with an internal &lt;code&gt;embedderRequire&lt;/code&gt; that cannot load &lt;code&gt;.node&lt;/code&gt; files from arbitrary paths. The &lt;code&gt;.node&lt;/code&gt; file was embedded in the SEA asset bundle, but &lt;code&gt;require(tmpFile)&lt;/code&gt; failed because &lt;code&gt;embedderRequire&lt;/code&gt; does not know how to handle a native module path in SEA context.&lt;/p&gt;
+&lt;h2&gt;Discovery #1: The &lt;em&gt;filename&lt;/em&gt; is the fix&lt;/h2&gt;
+&lt;p&gt;This was the moment the investigation turned from frustrating to non-sense. I had been testing hypotheses about Control Flow Guard flags, Authenticode signature corruption, and DLL load paths. None of them panned out. Then I ran a test I should have tried hours earlier. I took a plain, unmodified &lt;code&gt;node.exe&lt;/code&gt;, with no SEA blob, no injection, nothing, copied it to the same directory, renamed the copy to &lt;code&gt;plain-node.exe&lt;/code&gt;, and tried to load &lt;code&gt;uWebSockets.js&lt;/code&gt; from it.&lt;/p&gt;
+&lt;p&gt;It crashed.&lt;/p&gt;
+&lt;p&gt;I renamed that exact same file back to &lt;code&gt;node.exe&lt;/code&gt;. It worked.&lt;/p&gt;
+&lt;p&gt;Same bytes. Same directory. Same everything except the filename. One crashed, one did not.&lt;/p&gt;
+&lt;p&gt;Windows maintains an &lt;a href=&quot;https://learn.microsoft.com/en-us/windows/compatibility/application-technology-apps&quot;&gt;Application Compatibility database&lt;/a&gt;, a set of shims that apply behavioral fixes to specific executables based on their name. One of those shims targets &lt;code&gt;node.exe&lt;/code&gt; and alters how DLLs are loaded to support Node.js native modules. When you rename the executable to anything else, &lt;code&gt;simple-win.exe&lt;/code&gt;, &lt;code&gt;app.exe&lt;/code&gt;, anything, that shim disappears, and &lt;code&gt;uWebSockets.js&lt;/code&gt;&apos;s NAPI initialization hits a code path that triggers an access violation.&lt;/p&gt;
+&lt;p&gt;This is not documented anywhere obvious. You will not find it in the Node.js SEA guide or the &lt;code&gt;postject&lt;/code&gt; README. You find it by accident, after stripping a binary down to nothing and watching a plain &lt;code&gt;node.exe&lt;/code&gt; copy fail because you generated the artifact file with a meaningful name.&lt;/p&gt;
+&lt;p&gt;The build script now outputs the SEA binary to &lt;code&gt;bin/win/node.exe&lt;/code&gt;. Not &lt;code&gt;simple-win.exe&lt;/code&gt;. Not &lt;code&gt;app.exe&lt;/code&gt;. The application &lt;em&gt;must&lt;/em&gt; be named &lt;code&gt;node.exe&lt;/code&gt; for the Windows AppCompat shim to activate.&lt;/p&gt;
+&lt;h2&gt;Discovery #2: SEA asset loading for native modules&lt;/h2&gt;
+&lt;p&gt;With the name fixed, the binary started. But &lt;code&gt;uWebSockets.js&lt;/code&gt; was not loading from the SEA asset bundle yet. SEA provides two ways to access embedded assets: &lt;code&gt;sea.getAsset()&lt;/code&gt; returns the raw bytes, and &lt;code&gt;require()&lt;/code&gt; in SEA mode uses an internal &lt;code&gt;embedderRequire&lt;/code&gt; that cannot load &lt;code&gt;.node&lt;/code&gt; files from arbitrary paths.&lt;/p&gt;
+&lt;p&gt;The fix was a Vite plugin that transforms every &lt;code&gt;require(&amp;quot;uWebSockets.js&amp;quot;)&lt;/code&gt; in the compiled bundle into a self-contained loader (not the real code, but a comprehensive snippet):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-javascript&quot;&gt;// In SEA mode:
+
+// Load the SEA module (only available inside SEA binaries)
+const sea = require(&apos;node:sea&apos;);
+// Build a versioned temp path for the .node file
+const tmpFile = path.join(os.tmpdir(), &apos;uws-&apos; + process.versions.modules + &apos;.node&apos;);
+// Extract the native module from the embedded asset blob to disk
+fs.writeFileSync(tmpFile, Buffer.from(sea.getAsset(&apos;uws_win32_x64_137.node&apos;)));
+// Create an empty module object for dlopen to populate
+const mod = { exports: {} };
+// Load the .node file directly via the C-level loader (bypasses SEA&apos;s embedderRequire)
+process.dlopen(mod, tmpFile);
+// Return the loaded module to the caller
+module.exports = mod.exports;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In development or standard packaging, it falls back to a normal &lt;code&gt;require(&apos;uWebSockets.js&apos;)&lt;/code&gt;. The &lt;code&gt;.node&lt;/code&gt; file gets extracted to a temp directory once and loaded through the unmodified &lt;code&gt;process.dlopen&lt;/code&gt;. Because the parent binary is named &lt;code&gt;node.exe&lt;/code&gt;, this now works.&lt;/p&gt;
+&lt;h2&gt;The problem of the fix filename&lt;/h2&gt;
+&lt;p&gt;Shipping an application called &lt;code&gt;node.exe&lt;/code&gt; is not a good user experience. Users see a generic name in their download folder, their task manager, and their desktop shortcuts. I needed a user-facing binary with a proper name that still resulted in a process named &lt;code&gt;node.exe&lt;/code&gt; running under the AppCompat shim.&lt;/p&gt;
+&lt;p&gt;The solution is a launcher, a thin wrapper that extracts the real binary and runs it. I chose Go because it compiles to a statically linked native Windows executable with zero runtime dependencies. Three extra megabytes for the launcher is a fair trade for shipping a single file that needs nothing installed on the user&apos;s machine.&lt;/p&gt;
+&lt;p&gt;The launcher, written in Go:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Opens its own executable file and reads a 12-byte footer from the end&lt;/li&gt;
+&lt;li&gt;The footer contains the size of the embedded &lt;code&gt;node.exe&lt;/code&gt; payload and a magic number to verify validity&lt;/li&gt;
+&lt;li&gt;It extracts &lt;code&gt;node.exe&lt;/code&gt; to &lt;code&gt;%TEMP%\swp-node-&amp;lt;size&amp;gt;\node.exe&lt;/code&gt; (preserving the critical name)&lt;/li&gt;
+&lt;li&gt;On subsequent launches, it compares the cached file size against the embedded payload and skips extraction if they match&lt;/li&gt;
+&lt;li&gt;It spawns the extracted &lt;code&gt;node.exe&lt;/code&gt; with all command-line arguments forwarded, inherits stdout/stderr, and exits with the same code&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The build pipeline compiles the Go launcher, appends the &lt;code&gt;node.exe&lt;/code&gt; SEA binary, writes the footer, and produces a single file: &lt;code&gt;simple-win.exe&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;First launch takes a few seconds as 103 MB extracts to temp. Every launch after that is instant.&lt;/p&gt;
+&lt;h2&gt;Unifying all platforms on SEA&lt;/h2&gt;
+&lt;p&gt;With Windows solved, I looked at the remaining packaging infrastructure. &lt;code&gt;@yao-pkg/pkg&lt;/code&gt; was still building Linux and macOS binaries through a cross-compilation pipeline that required QEMU user-mode emulation and &lt;code&gt;ldid&lt;/code&gt; for macOS code signing. It worked, but it was a maintained fork of an abandoned project, running emulated architectures on an Ubuntu CI runner: Not very easy to maintain.&lt;/p&gt;
+&lt;p&gt;Since SEA was now working for Windows and is a native Node.js feature, the question became: why maintain two packaging systems? I migrated Linux and macOS to SEA as well. The same build script template works on all three platforms with minor platform-specific flags (&lt;code&gt;--macho-segment-name&lt;/code&gt; for macOS, ad-hoc codesigning after injection). Cross-compilation disappears, since each platform builds on its own native GitHub Actions runner, but the project is open source and the runners are free.&lt;/p&gt;
+&lt;p&gt;The CI pipeline now has three parallel jobs: &lt;code&gt;ubuntu-latest&lt;/code&gt; for Linux, &lt;code&gt;macos-latest&lt;/code&gt; for macOS, and &lt;code&gt;windows-latest&lt;/code&gt; for Windows. Each produces one binary using the same Node.js SEA mechanism. No more QEMU. No more &lt;code&gt;ldid&lt;/code&gt;. No more &lt;code&gt;pkg&lt;/code&gt;.&lt;/p&gt;
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;The SIMPLE Webplatform now ships as a single executable on all three platforms. Windows uses a Go self-extracting launcher that bundles a SEA-built &lt;code&gt;node.exe&lt;/code&gt; and extracts it to temp on first run. Linux and macOS use native SEA binaries without wrappers. The packaging pipeline relies on Node.js built-in tools plus &lt;code&gt;postject&lt;/code&gt; and Go. No deprecated third-party packagers, no emulation layers, no platform-specific native module patching.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/packaging-nodejs-windows-sea-compilation.webp&quot; alt=&quot;Compilation logs of the windows binary&quot; /&gt;
+    &lt;figcaption&gt;Compilation logs of the windows binary on Github Actions&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;If you are packaging a Node.js application with native modules for Windows, use &lt;em&gt;Node.js SEA&lt;/em&gt; (it&apos;s been in beta for very long time, but it really works fine nowadays), name your binary &lt;code&gt;node.exe&lt;/code&gt;, and wrap it with a launcher if your users need a branded filename. Those three things would have saved me days of debugging.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;The full implementation is in &lt;a href=&quot;https://github.com/project-SIMPLE/simple.webplatform/pull/151&quot;&gt;project-SIMPLE/simple.webplatform#151&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;
+</content:encoded></item><item><title>Using Your MacBook as a Local WiFi Access Point</title><link>https://arthurbrugiere.fr/blog/2026/05/macbook-air-access-point/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/05/macbook-air-access-point/</guid><description>How I&apos;ve been able to use a MacBook Air as a router without internet connection.</description><pubDate>Mon, 25 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;The Problem&lt;/h2&gt;
 &lt;p&gt;I needed my MacBook Air M2 (Sonoma) to broadcast its own WiFi network, being a WiFi server instead of a client. Not to share an internet connection, just to create a local wireless network so other devices could connect to it and talk to each other. Think local development and setting up a private LAN without carrying a router.&lt;/p&gt;
 &lt;p&gt;macOS has a built-in &lt;strong&gt;Internet Sharing&lt;/strong&gt; feature (&lt;a href=&quot;https://support.apple.com/en-vn/guide/mac-help/mchlp1540/mac&quot;&gt;documentation&lt;/a&gt;), but it&apos;s designed to share an existing internet connection (like Ethernet or Bluetooth tethering) over another network (such as WiFi).&lt;/p&gt;
 &lt;p&gt;On a MacBook with only a WiFi card and no wired connection, creating a &lt;em&gt;standalone&lt;/em&gt; access point is not straightforward.&lt;/p&gt;
@@ -13,21 +404,21 @@
 &lt;li&gt;Accepted the warning popup&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Everything appeared enabled. No error messages. No warnings. But &lt;strong&gt;the WiFi network simply never appeared&lt;/strong&gt;. Not on my phone, not on any other device. macOS accepted the configuration but silently refused to actually broadcast the signal.&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/macbook-air-access-point-wifi-not-working.webp&amp;quot; alt=&amp;quot;Internet sharing is enabled, but not wifi is broadcasted&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;Internet sharing is enabled, but not wifi is broadcasted (it should be displayed here as we will see later)&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-not-working.webp&quot; alt=&quot;Internet sharing is enabled, but not wifi is broadcasted&quot; /&gt;
+    &lt;figcaption&gt;Internet sharing is enabled, but not wifi is broadcasted (it should be displayed here as we will see later)&lt;/figcaption&gt;
+&lt;/figure&gt;
 &lt;p&gt;The reason: macOS Internet Sharing is built to share an &lt;em&gt;existing&lt;/em&gt; (i.e. activated, up) connection, not blindly bridge one network stack to another. Without an active upstream connection that the system recognizes as active, the underlying service doesn&apos;t actually bring up the access point, even though the UI lets you enable everything.&lt;/p&gt;
 &lt;h2&gt;The hack: Faking a connection with a loopback interface&lt;/h2&gt;
-&lt;p&gt;The solution came from a gist by &lt;code&gt;@zhuhuilin&lt;/code&gt;: &lt;strong&gt;&amp;lt;a href=&amp;quot;https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2&amp;quot; target=&amp;quot;_blank&amp;quot;&amp;gt;macOS Internet Sharing Without Internet Connection&amp;lt;/a&amp;gt;&lt;/strong&gt;[^note].&lt;/p&gt;
+&lt;p&gt;The solution came from a gist by &lt;code&gt;@zhuhuilin&lt;/code&gt;: &lt;strong&gt;&lt;a href=&quot;https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2&quot; target=&quot;_blank&quot;&gt;macOS Internet Sharing Without Internet Connection&lt;/a&gt;&lt;/strong&gt;[^note].&lt;/p&gt;
 &lt;p&gt;The trick is to create a new network service on the loopback interface (&lt;code&gt;lo0&lt;/code&gt;). macOS only checks that the network service has an IP address (which is apparently how it determines whether a connection is active) before allowing Internet Sharing. It doesn&apos;t verify that the connection reaches the real internet. By assigning a static IP to &lt;code&gt;lo0&lt;/code&gt; and registering it as a network service, macOS happily accepts it as a valid source.&lt;/p&gt;
 &lt;p&gt;The gist provides the exact commands to run in Terminal:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -L https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2/raw/setup-adhoc-network.sh | bash
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/macbook-air-access-point-wifi-terminal.webp&amp;quot; alt=&amp;quot;Running zhuhuilin&apos;s setup script&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;Running zhuhuilin&apos;s setup script&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-terminal.webp&quot; alt=&quot;Running zhuhuilin&apos;s setup script&quot; /&gt;
+    &lt;figcaption&gt;Running zhuhuilin&apos;s setup script&lt;/figcaption&gt;
+&lt;/figure&gt;
 &lt;p&gt;This will automatically:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Find your active internet connection&lt;/li&gt;
@@ -35,18 +426,18 @@
 &lt;li&gt;Assign the Mac the IP &lt;code&gt;10.10.10.1&lt;/code&gt; on this new service&lt;/li&gt;
 &lt;li&gt;Save state for safe removal&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/macbook-air-access-point-wifi-AdHoc-setup.webp&amp;quot; alt=&amp;quot;MacOS Settings window with the Internet Sharing configured with the AdHoc interface&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;Internet Sharing configured with the AdHoc interface, just need to enable it now&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-AdHoc-setup.webp&quot; alt=&quot;MacOS Settings window with the Internet Sharing configured with the AdHoc interface&quot; /&gt;
+    &lt;figcaption&gt;Internet Sharing configured with the AdHoc interface, just need to enable it now&lt;/figcaption&gt;
+&lt;/figure&gt;
 &lt;p&gt;Then you can select this &lt;code&gt;AdHoc&lt;/code&gt; service as your source in Internet Sharing. Once configured, macOS actually brings up the WiFi access point, and devices can see and connect to it.&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;[!CAUTION]
 The WiFi should be enabled on MacOS to have the beacon activated. But it should not be connected to any networks.&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/macbook-air-access-point-wifi-enabled.webp&amp;quot; alt=&amp;quot;Keeping wifi enabled and seeing the shared network broadcasted&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;WiFi is enabled, and is showing the &amp;quot;Internet Sharing&amp;quot; on Channel 11&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;figure&gt;
+   &lt;img src=&quot;https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-enabled.webp&quot; alt=&quot;Keeping wifi enabled and seeing the shared network broadcasted&quot; /&gt;
+   &lt;figcaption&gt;WiFi is enabled, and is showing the &quot;Internet Sharing&quot; on Channel 11&lt;/figcaption&gt;
+&lt;/figure&gt;
 &lt;/blockquote&gt;
 &lt;h2&gt;Changing the DHCP range&lt;/h2&gt;
 &lt;p&gt;By default, macOS Internet Sharing assigns connected devices to the &lt;code&gt;192.168.2.0/24&lt;/code&gt; range. I needed mine to be &lt;code&gt;192.168.68.0/24&lt;/code&gt; to match my existing setup.&lt;/p&gt;
@@ -67,10 +458,10 @@ Settings seems to cache these parameters. Quit the Settings application before a
 &lt;p&gt;The whole thing works reliably once the loopback trick is in place. The &lt;code&gt;AdHoc&lt;/code&gt; service survives reboots, and the DHCP range sticks as long as you don&apos;t reset the NAT preferences. The one thing to keep in mind: if you do have an actual upstream connection available (Ethernet, USB tethering), you can use that directly as the Internet Sharing source and skip the loopback hack entirely, it&apos;s only needed when you want to have an access point from macOS without internet.&lt;/p&gt;
 &lt;p&gt;[^note]: I made a backup of &lt;em&gt;Zhuhuilin&lt;/em&gt;&apos;s scripts &lt;a href=&quot;https://git.arthurbrugiere.fr/roiarthurb/macOS_Internet-Sharing_Without_Internet-Connection&quot;&gt;here&lt;/a&gt;&lt;/p&gt;
 </content:encoded></item><item><title>Making ADB Wireless more *accessible* on Meta Quest headsets</title><link>https://arthurbrugiere.fr/blog/2026/05/mq3-wireless-adb/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/05/mq3-wireless-adb/</guid><description>How I&apos;ve been able to enable ADB Wireless without user interaction.</description><pubDate>Thu, 21 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Meta Quest headsets have a nasty habit of forgetting your wireless ADB trust relationship every time they reboot. For a research project deploying ten headsets to a classroom of teachers who&apos;ve never touched a terminal, &lt;em&gt;&amp;quot;just run &lt;code&gt;adb tcpip 5555&lt;/code&gt; again&amp;quot;&lt;/em&gt; isn&apos;t a solution, it&apos;s a support ticket generator at best. I spent weeks trying to automate the &amp;quot;Allow wireless debugging?&amp;quot; popup out of existence. The path involved dead ends, Android security walls, and finally a brute-force accessibility hack that actually works.&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/mq3-wireless-adb.webp&amp;quot; alt=&amp;quot;ADB Wireless Popup visible in a Meta Quest 3 headset&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;The &amp;quot;Allow wireless debugging?&amp;quot; popup on a Meta Quest 3.&amp;lt;br/&amp;gt;Credit: Image from &amp;lt;a href=&amp;quot;https://www.quest-games-optimizer.com/how-to-enable-adb-from-your-meta-quest&amp;quot;&amp;gt;QGO&amp;lt;/a&amp;gt;&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/mq3-wireless-adb.webp&quot; alt=&quot;ADB Wireless Popup visible in a Meta Quest 3 headset&quot; /&gt;
+    &lt;figcaption&gt;The &quot;Allow wireless debugging?&quot; popup on a Meta Quest 3.&lt;br/&gt;Credit: Image from &lt;a href=&quot;https://www.quest-games-optimizer.com/how-to-enable-adb-from-your-meta-quest&quot;&gt;QGO&lt;/a&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
 &lt;h2&gt;The Problem That Shouldn&apos;t Exist&lt;/h2&gt;
 &lt;p&gt;Wireless ADB on stock Android is straightforward: enable it once, pair your machine, and the phone remembers. Meta&apos;s Quest OS, built on Android but heavily modified, treats this differently: On every reboot, the system clears its in-memory list of trusted wireless debugging fingerprints. The &lt;code&gt;adb_wifi_enabled&lt;/code&gt; setting flips to 0 (which is normal). Reconnect, and you&apos;re greeted with the same permission dialog asking if you trust this network.&lt;/p&gt;
 &lt;p&gt;For the &lt;a href=&quot;https://project-simple.eu&quot;&gt;SIMPLE project&lt;/a&gt; — a swarm of six &lt;a href=&quot;https://www.meta.com/quest/quest-3/&quot;&gt;Meta Quest 3&lt;/a&gt; headsets streaming video via &lt;a href=&quot;https://github.com/Genymobile/scrcpy&quot;&gt;scrcpy&lt;/a&gt; and receiving commands from a central controller — this was a deployment blocker. We can&apos;t send a technician to every school every morning to click one popup in each headset...&lt;/p&gt;
@@ -151,403 +542,12 @@ private void sendKey(int keyCode) {
 &lt;h2&gt;The Result&lt;/h2&gt;
 &lt;p&gt;The app is a single APK, granted &lt;code&gt;WRITE_SECURE_SETTINGS&lt;/code&gt; once via ADB after installing the app. After that, teachers power on the headsets, the service starts automatically, and wireless ADB is ready within seconds after the headset connect to the network without anyone touching the controllers.&lt;/p&gt;
 &lt;p&gt;Repository is here if you&apos;re fighting the same fight: &lt;a href=&quot;https://github.com/project-SIMPLE/adb-auto-enable&quot;&gt;https://github.com/project-SIMPLE/adb-auto-enable&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;video controls style=&amp;quot;width:100%&amp;quot;&amp;gt;
-&amp;lt;source src=&amp;quot;/videos/mq3-wireless-adb.mp4&amp;quot; type=&amp;quot;video/mp4&amp;quot;&amp;gt;
-&amp;lt;/video&amp;gt;
-&amp;lt;figcaption&amp;gt;Demo: headset auto-enabling/accepting the ADB Wireless popup.&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
+&lt;figure&gt;
+    &lt;video controls style=&quot;width:100%&quot;&gt;
+        &lt;source src=&quot;https://arthurbrugiere.fr/videos/mq3-wireless-adb.mp4&quot; type=&quot;video/mp4&quot;&gt;
+    &lt;/video&gt;
+    &lt;figcaption&gt;Demo: headset auto-enabling/accepting the ADB Wireless popup.&lt;/figcaption&gt;
+&lt;/figure&gt;
 &lt;h2&gt;Conclusion&lt;/h2&gt;
 &lt;p&gt;If Meta ever exposes a system property or hidden API to persist wireless debugging trust, this whole accessibility dance becomes unnecessary. Some developers already filed feedback through their developer channels for, maybe, years, but I&apos;m not holding my breath. For now, abusing the accessibility framework for input injection is the least-worst option.&lt;/p&gt;
-</content:encoded></item><item><title>Packaging a Node.js application with SEA and native binaries</title><link>https://arthurbrugiere.fr/blog/2026/05/packaging-nodejs-windows-sea/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/05/packaging-nodejs-windows-sea/</guid><description>How a filename on Windows broke my full packaged application</description><pubDate>Fri, 29 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Packaging a Node.js application into a single executable sounds like a solved problem. Tools exist. You build your JavaScript, bundle your assets, point a packager at your entry file, and you get a binary. On macOS and Linux, this workflow delivers. On Windows, with a native WebSocket module in your dependency tree, the same workflow produces a file that crashes before it prints a single log line.&lt;/p&gt;
-&lt;p&gt;I spent several days in that gap between &amp;quot;possible on paper&amp;quot; and &amp;quot;working in practice.&amp;quot; The project is &lt;a href=&quot;https://github.com/project-SIMPLE/simple.webplatform&quot;&gt;SIMPLE Webplatform&lt;/a&gt;, a Node.js application that bundles a web frontend, a WebSocket server (via &lt;code&gt;uWebSockets.js&lt;/code&gt;, the fastest WebSocket implementation for Node.js with a minimal memory footprint), and all the background logic and streaming layer into one stack. Shipping it meant producing a single file that a researcher or developer could download and double-click without installing Node.js, opening a terminal, or running &lt;code&gt;npm install&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;A previous attempt had used &lt;a href=&quot;http://github.com/yao-pkg/pkg&quot;&gt;&lt;code&gt;@yao-pkg/pkg&lt;/code&gt;&lt;/a&gt;, a community fork of the now-deprecated &lt;code&gt;pkg&lt;/code&gt;, to build binaries for Linux, macOS and Windows from NodeJS applcaition. Those 2 first binaries worked. The Windows binary exited with code &lt;code&gt;0xC0000005&lt;/code&gt; (access violation) the instant you ran it. No output. No stack trace. Just a segfault.&lt;/p&gt;
-&lt;p&gt;This is the story of how I fixed it, and the two Windows behaviors you will not find in any documentation.&lt;/p&gt;
-&lt;h2&gt;The Setup: What I was working with&lt;/h2&gt;
-&lt;p&gt;The application uses &lt;code&gt;uWebSockets.js&lt;/code&gt; for its WebSocket and HTTP servers. This library is written in C++ and exposes a native &lt;code&gt;.node&lt;/code&gt; binary that hooks deep into the Node.js event loop. That detail, &lt;em&gt;native module&lt;/em&gt;, turns out to be the entire problem.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;@yao-pkg/pkg&lt;/code&gt; works by embedding your JavaScript and assets into a modified &lt;code&gt;node.exe&lt;/code&gt;, then patching &lt;code&gt;process.dlopen&lt;/code&gt; (Node.js&apos;s low-level function for loading native &lt;code&gt;.node&lt;/code&gt; binaries, similar to &lt;code&gt;LoadLibrary&lt;/code&gt; on Windows) so it can load native modules from an in-memory snapshot rather than the filesystem. On Linux and macOS, this patch is transparent. On Windows, it crashes during &lt;code&gt;uWebSockets.js&lt;/code&gt; initialization.&lt;/p&gt;
-&lt;p&gt;I confirmed this through isolation. The &lt;code&gt;.node&lt;/code&gt; file extracted from the snapshot was valid. You could load it with regular Node.js without issue. The crash happened inside &lt;code&gt;@yao-pkg/pkg&lt;/code&gt;&apos;s patched &lt;code&gt;dlopen&lt;/code&gt; the moment &lt;code&gt;uWebSockets.js&lt;/code&gt; tried to register its NAPI callbacks (functions that bridge between C++ code and the JavaScript engine) with the runtime. The module was incompatible with the patched loader on Windows, full stop.&lt;/p&gt;
-&lt;p&gt;Replacing &lt;code&gt;uWebSockets.js&lt;/code&gt; with the pure-JavaScript &lt;code&gt;ws&lt;/code&gt; library was not an option. The project depends on &lt;code&gt;uWebSockets.js&lt;/code&gt; for its throughput and memory efficiency (it handles an order of magnitude more concurrent connections than &lt;code&gt;ws&lt;/code&gt; with a fraction of the RAM). I needed a packaging tool that leaves &lt;code&gt;process.dlopen&lt;/code&gt; untouched.&lt;/p&gt;
-&lt;h2&gt;The pivot to Node.js SEA&lt;/h2&gt;
-&lt;p&gt;Node.js 20 introduced &lt;a href=&quot;https://nodejs.org/api/single-executable-applications.html&quot;&gt;Single Executable Applications&lt;/a&gt; (SEA), a native mechanism for embedding your application into a copy of &lt;code&gt;node.exe&lt;/code&gt;. SEA does not patch &lt;code&gt;process.dlopen&lt;/code&gt;. It uses &lt;code&gt;postject&lt;/code&gt; (a CLI tool that injects a binary blob as a new section into an existing executable) to embed your code and assets as a PE (Portable Executable, the standard binary format for Windows) / Mach-O section into an unmodified Node.js binary. The runtime stays stock. Native modules load through the same path they would in a normal Node.js process.&lt;/p&gt;
-&lt;p&gt;I rewrote the build pipeline:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Vite bundles the frontend and backend as before&lt;/li&gt;
-&lt;li&gt;A Node.js script collects all frontend assets plus the &lt;code&gt;uWebSockets.js&lt;/code&gt; &lt;code&gt;.node&lt;/code&gt; file into a SEA configuration&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;node --experimental-sea-config&lt;/code&gt; generates the blob&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;postject&lt;/code&gt; injects the blob into a Windows &lt;code&gt;node.exe&lt;/code&gt; copy&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;The resulting binary was 103 MB and crashed on launch. The crash was not the same &lt;code&gt;0xC0000005&lt;/code&gt; from &lt;code&gt;pkg&lt;/code&gt;. This time, the issue was that SEA mode replaces the standard &lt;code&gt;require()&lt;/code&gt; with an internal &lt;code&gt;embedderRequire&lt;/code&gt; that cannot load &lt;code&gt;.node&lt;/code&gt; files from arbitrary paths. The &lt;code&gt;.node&lt;/code&gt; file was embedded in the SEA asset bundle, but &lt;code&gt;require(tmpFile)&lt;/code&gt; failed because &lt;code&gt;embedderRequire&lt;/code&gt; does not know how to handle a native module path in SEA context.&lt;/p&gt;
-&lt;h2&gt;Discovery #1: The &lt;em&gt;filename&lt;/em&gt; is the fix&lt;/h2&gt;
-&lt;p&gt;This was the moment the investigation turned from frustrating to non-sense. I had been testing hypotheses about Control Flow Guard flags, Authenticode signature corruption, and DLL load paths. None of them panned out. Then I ran a test I should have tried hours earlier. I took a plain, unmodified &lt;code&gt;node.exe&lt;/code&gt;, with no SEA blob, no injection, nothing, copied it to the same directory, renamed the copy to &lt;code&gt;plain-node.exe&lt;/code&gt;, and tried to load &lt;code&gt;uWebSockets.js&lt;/code&gt; from it.&lt;/p&gt;
-&lt;p&gt;It crashed.&lt;/p&gt;
-&lt;p&gt;I renamed that exact same file back to &lt;code&gt;node.exe&lt;/code&gt;. It worked.&lt;/p&gt;
-&lt;p&gt;Same bytes. Same directory. Same everything except the filename. One crashed, one did not.&lt;/p&gt;
-&lt;p&gt;Windows maintains an &lt;a href=&quot;https://learn.microsoft.com/en-us/windows/compatibility/application-technology-apps&quot;&gt;Application Compatibility database&lt;/a&gt;, a set of shims that apply behavioral fixes to specific executables based on their name. One of those shims targets &lt;code&gt;node.exe&lt;/code&gt; and alters how DLLs are loaded to support Node.js native modules. When you rename the executable to anything else, &lt;code&gt;simple-win.exe&lt;/code&gt;, &lt;code&gt;app.exe&lt;/code&gt;, anything, that shim disappears, and &lt;code&gt;uWebSockets.js&lt;/code&gt;&apos;s NAPI initialization hits a code path that triggers an access violation.&lt;/p&gt;
-&lt;p&gt;This is not documented anywhere obvious. You will not find it in the Node.js SEA guide or the &lt;code&gt;postject&lt;/code&gt; README. You find it by accident, after stripping a binary down to nothing and watching a plain &lt;code&gt;node.exe&lt;/code&gt; copy fail because you generated the artifact file with a meaningful name.&lt;/p&gt;
-&lt;p&gt;The build script now outputs the SEA binary to &lt;code&gt;bin/win/node.exe&lt;/code&gt;. Not &lt;code&gt;simple-win.exe&lt;/code&gt;. Not &lt;code&gt;app.exe&lt;/code&gt;. The application &lt;em&gt;must&lt;/em&gt; be named &lt;code&gt;node.exe&lt;/code&gt; for the Windows AppCompat shim to activate.&lt;/p&gt;
-&lt;h2&gt;Discovery #2: SEA asset loading for native modules&lt;/h2&gt;
-&lt;p&gt;With the name fixed, the binary started. But &lt;code&gt;uWebSockets.js&lt;/code&gt; was not loading from the SEA asset bundle yet. SEA provides two ways to access embedded assets: &lt;code&gt;sea.getAsset()&lt;/code&gt; returns the raw bytes, and &lt;code&gt;require()&lt;/code&gt; in SEA mode uses an internal &lt;code&gt;embedderRequire&lt;/code&gt; that cannot load &lt;code&gt;.node&lt;/code&gt; files from arbitrary paths.&lt;/p&gt;
-&lt;p&gt;The fix was a Vite plugin that transforms every &lt;code&gt;require(&amp;quot;uWebSockets.js&amp;quot;)&lt;/code&gt; in the compiled bundle into a self-contained loader (not the real code, but a comprehensive snippet):&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-javascript&quot;&gt;// In SEA mode:
-
-// Load the SEA module (only available inside SEA binaries)
-const sea = require(&apos;node:sea&apos;);
-// Build a versioned temp path for the .node file
-const tmpFile = path.join(os.tmpdir(), &apos;uws-&apos; + process.versions.modules + &apos;.node&apos;);
-// Extract the native module from the embedded asset blob to disk
-fs.writeFileSync(tmpFile, Buffer.from(sea.getAsset(&apos;uws_win32_x64_137.node&apos;)));
-// Create an empty module object for dlopen to populate
-const mod = { exports: {} };
-// Load the .node file directly via the C-level loader (bypasses SEA&apos;s embedderRequire)
-process.dlopen(mod, tmpFile);
-// Return the loaded module to the caller
-module.exports = mod.exports;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;In development or standard packaging, it falls back to a normal &lt;code&gt;require(&apos;uWebSockets.js&apos;)&lt;/code&gt;. The &lt;code&gt;.node&lt;/code&gt; file gets extracted to a temp directory once and loaded through the unmodified &lt;code&gt;process.dlopen&lt;/code&gt;. Because the parent binary is named &lt;code&gt;node.exe&lt;/code&gt;, this now works.&lt;/p&gt;
-&lt;h2&gt;The problem of the fix filename&lt;/h2&gt;
-&lt;p&gt;Shipping an application called &lt;code&gt;node.exe&lt;/code&gt; is not a good user experience. Users see a generic name in their download folder, their task manager, and their desktop shortcuts. I needed a user-facing binary with a proper name that still resulted in a process named &lt;code&gt;node.exe&lt;/code&gt; running under the AppCompat shim.&lt;/p&gt;
-&lt;p&gt;The solution is a launcher, a thin wrapper that extracts the real binary and runs it. I chose Go because it compiles to a statically linked native Windows executable with zero runtime dependencies. Three extra megabytes for the launcher is a fair trade for shipping a single file that needs nothing installed on the user&apos;s machine.&lt;/p&gt;
-&lt;p&gt;The launcher, written in Go:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Opens its own executable file and reads a 12-byte footer from the end&lt;/li&gt;
-&lt;li&gt;The footer contains the size of the embedded &lt;code&gt;node.exe&lt;/code&gt; payload and a magic number to verify validity&lt;/li&gt;
-&lt;li&gt;It extracts &lt;code&gt;node.exe&lt;/code&gt; to &lt;code&gt;%TEMP%\swp-node-&amp;lt;size&amp;gt;\node.exe&lt;/code&gt; (preserving the critical name)&lt;/li&gt;
-&lt;li&gt;On subsequent launches, it compares the cached file size against the embedded payload and skips extraction if they match&lt;/li&gt;
-&lt;li&gt;It spawns the extracted &lt;code&gt;node.exe&lt;/code&gt; with all command-line arguments forwarded, inherits stdout/stderr, and exits with the same code&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;The build pipeline compiles the Go launcher, appends the &lt;code&gt;node.exe&lt;/code&gt; SEA binary, writes the footer, and produces a single file: &lt;code&gt;simple-win.exe&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;First launch takes a few seconds as 103 MB extracts to temp. Every launch after that is instant.&lt;/p&gt;
-&lt;h2&gt;Unifying all platforms on SEA&lt;/h2&gt;
-&lt;p&gt;With Windows solved, I looked at the remaining packaging infrastructure. &lt;code&gt;@yao-pkg/pkg&lt;/code&gt; was still building Linux and macOS binaries through a cross-compilation pipeline that required QEMU user-mode emulation and &lt;code&gt;ldid&lt;/code&gt; for macOS code signing. It worked, but it was a maintained fork of an abandoned project, running emulated architectures on an Ubuntu CI runner: Not very easy to maintain.&lt;/p&gt;
-&lt;p&gt;Since SEA was now working for Windows and is a native Node.js feature, the question became: why maintain two packaging systems? I migrated Linux and macOS to SEA as well. The same build script template works on all three platforms with minor platform-specific flags (&lt;code&gt;--macho-segment-name&lt;/code&gt; for macOS, ad-hoc codesigning after injection). Cross-compilation disappears, since each platform builds on its own native GitHub Actions runner, but the project is open source and the runners are free.&lt;/p&gt;
-&lt;p&gt;The CI pipeline now has three parallel jobs: &lt;code&gt;ubuntu-latest&lt;/code&gt; for Linux, &lt;code&gt;macos-latest&lt;/code&gt; for macOS, and &lt;code&gt;windows-latest&lt;/code&gt; for Windows. Each produces one binary using the same Node.js SEA mechanism. No more QEMU. No more &lt;code&gt;ldid&lt;/code&gt;. No more &lt;code&gt;pkg&lt;/code&gt;.&lt;/p&gt;
-&lt;h2&gt;Summary&lt;/h2&gt;
-&lt;p&gt;The SIMPLE Webplatform now ships as a single executable on all three platforms. Windows uses a Go self-extracting launcher that bundles a SEA-built &lt;code&gt;node.exe&lt;/code&gt; and extracts it to temp on first run. Linux and macOS use native SEA binaries without wrappers. The packaging pipeline relies on Node.js built-in tools plus &lt;code&gt;postject&lt;/code&gt; and Go. No deprecated third-party packagers, no emulation layers, no platform-specific native module patching.&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/packaging-nodejs-windows-sea-compilation.webp&amp;quot; alt=&amp;quot;Compilation logs of the windows binary&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;Compilation logs of the windows binary on Github Actions&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
-&lt;p&gt;If you are packaging a Node.js application with native modules for Windows, use &lt;em&gt;Node.js SEA&lt;/em&gt; (it&apos;s been in beta for very long time, but it really works fine nowadays), name your binary &lt;code&gt;node.exe&lt;/code&gt;, and wrap it with a launcher if your users need a branded filename. Those three things would have saved me days of debugging.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;The full implementation is in &lt;a href=&quot;https://github.com/project-SIMPLE/simple.webplatform/pull/151&quot;&gt;project-SIMPLE/simple.webplatform#151&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;
-</content:encoded></item><item><title>Installing OpenMediaVault without IPv6</title><link>https://arthurbrugiere.fr/blog/2026/06/install-omv-8-without-ipv6/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/06/install-omv-8-without-ipv6/</guid><description>When IPv6 is the future, but you can&apos;t connect to it</description><pubDate>Thu, 04 Jun 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I needed a &lt;a href=&quot;https://en.wikipedia.org/wiki/Network-attached_storage&quot;&gt;&lt;em&gt;Network Attached Storage&lt;/em&gt;&lt;/a&gt; (&lt;em&gt;NAS&lt;/em&gt;) for my lab. I had a Dell Vostro 3888 sitting around, an i3-10100 with 20GB RAM, one SSD, and two 1TB HDDs. &lt;a href=&quot;https://www.openmediavault.org&quot;&gt;OpenMediaVault&lt;/a&gt; (&lt;em&gt;OMV&lt;/em&gt;) seemed like the obvious choice. The install should have taken twenty minutes. It took most of an afternoon, because I had no IPv6, and other issues.&lt;/p&gt;
-&lt;p&gt;Here is every issue I ran into, in order, so you don&apos;t have to repeat my mistakes.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;[!NOTE]
-This &lt;em&gt;&amp;quot;guide&amp;quot;&lt;/em&gt; is describing the struggle I had to install &lt;strong&gt;OMV 8.0.7 (stable)&lt;/strong&gt; on a machine in a network with IPv6 disabled.&lt;/p&gt;
-&lt;p&gt;If you&apos;re using another version of OMV, your mileage may vary :)&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;hr&gt;
-&lt;h2&gt;Issue 1: The installer blue-screens after WiFi connection&lt;/h2&gt;
-&lt;p&gt;I do have some experience installing Linux systems, so I pretty much followed the same steps as described in the &lt;a href=&quot;https://docs.openmediavault.org/en/latest/installation/via_iso.html&quot;&gt;official documentation&lt;/a&gt;: Downloaded the iso, flashed a USB stick, boot the OMV ISO, follow the first steps, connect to your WiFi network, type the password, see the &amp;quot;Configuring DHCP&amp;quot; loading screen, see the &amp;quot;Configuring DHCP&lt;strong&gt;v6&lt;/strong&gt;&amp;quot; loading screen...&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-dhcp.webp&amp;quot; alt=&amp;quot;Debian installer DHCP loading screen&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;I don&apos;t have ways to capture my installation screen, imagine it&apos;s written &lt;code&gt;DHCPv6&lt;/code&gt; please....&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
-&lt;p&gt;The popup closes. You&apos;re staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and displays them on the screen, but nothing happens.&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-bsod.webp&amp;quot; alt=&amp;quot;Debian installer blue screen&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;The BSOD (Blue Screen Of &amp;lt;s&amp;gt;Death&amp;lt;/s&amp;gt; Debian), not my most useful illustration...&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
-&lt;p&gt;The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request timed out with no response or got an unexpected message... Anyway, the installer broke and after waiting 1 hour, I tried to fix it: I disabled IPv6 at the kernel level for this boot only.&lt;/p&gt;
-&lt;p&gt;To do so, at the GRUB boot menu, press &lt;code&gt;e&lt;/code&gt; to edit the current entry. Find the &lt;code&gt;linux&lt;/code&gt; line and append &lt;code&gt;ipv6.disable=1&lt;/code&gt; to the end:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;linux /install/vmlinuz vga=normal quiet file=/cdrom/preseed.cfg ipv6.disable=1
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Press &lt;code&gt;Ctrl+X&lt;/code&gt; or &lt;code&gt;F10&lt;/code&gt; to boot. The installer skips DHCPv6 and proceeds.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;[!TIP]
-Editing in GRUB with &lt;code&gt;e&lt;/code&gt; changes the boot parameters for this session only. Nothing gets written to disk. If it doesn&apos;t work, reboot and try something else. Once you confirm the fix, you can make it permanent later.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h2&gt;Issue 2: No network after first boot&lt;/h2&gt;
-&lt;p&gt;OMV installs, reboots, and the WiFi interface (&lt;code&gt;wlp2s0&lt;/code&gt; in my case) has no IPv4 address. The web UI is, obviously, unreachable. The &lt;code&gt;ipv6.disable=1&lt;/code&gt; fix was only for the installer boot, and the freshly installed system tries to negotiate IPv6 on the network. My router still has IPv6 disabled, so the negotiation fails and the interface gets no usable IP at all.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;The fix:&lt;/strong&gt; Again, boot with &lt;code&gt;ipv6.disable=1&lt;/code&gt; added from GRUB (press &lt;code&gt;e&lt;/code&gt; at the boot menu, add it to the kernel line, &lt;code&gt;Ctrl+X&lt;/code&gt; to boot).&lt;/p&gt;
-&lt;p&gt;After this, nothing is magically working yet. I had to manually bring the WiFi up with a few commands:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Generate WPA config
-wpa_passphrase &amp;quot;YourSSID&amp;quot; &amp;quot;YourPassword&amp;quot; &amp;gt; /etc/wpa_supplicant/wpa_supplicant.conf
-
-# Connect my wifi interface using the generated config
-wpa_supplicant -B -i wlp2s0 -c /etc/wpa_supplicant/wpa_supplicant.conf
-
-# Request an IPv4 address to the network&apos;s DHCP.
-dhcpcd wlp2s0
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;You should now have an IPv4 address and be able to ping the machine, but you won&apos;t be able to reach the web UI at &lt;code&gt;http://&amp;lt;machine-ip&amp;gt;&lt;/code&gt; yet...&lt;/p&gt;
-&lt;h2&gt;Issue 3: nginx fails to start because of IPv6&lt;/h2&gt;
-&lt;p&gt;With WiFi up and an IPv4 address in hand, I tried to open the OMV web UI. Nothing on port 80. The nginx service was failing to start:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-log&quot;&gt;-- Unit nginx.service has begun starting up.
-Jun 02 14:46:27 nginx[5069]: nginx: [emerg] socket() [::]:80 failed (97: Address family not supported by protocol)
-Jun 02 14:46:27 nginx[5069]: nginx: configuration file /etc/nginx/nginx.conf test failed
-Jun 02 14:46:27 systemd[1]: nginx.service: Control process exited, code=exited status=1
-Jun 02 14:46:27 systemd[1]: Failed to start A high performance web server and a reverse proxy server.
--- Subject: Unit nginx.service has failed
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The reason: OMV&apos;s nginx config binds to &lt;code&gt;[::]:80&lt;/code&gt; (the IPv6 wildcard) by default. But I had booted with &lt;code&gt;ipv6.disable=1&lt;/code&gt; on the kernel command line, my router doesn&apos;t provide any IPv6: so IPv6 is not available. Nginx tries to listen on &lt;code&gt;[::]:80&lt;/code&gt;, gets &amp;quot;Address family not supported by protocol,&amp;quot; and dies.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;The fix:&lt;/strong&gt; Edit the nginx site config to remove the IPv6 listen directive:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nano /etc/nginx/sites-enabled/openmediavault-webgui
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Comment out the line &lt;code&gt;listen [::]:80;&lt;/code&gt; (but keep the &lt;code&gt;listen 80;&lt;/code&gt; line used for IPv4). Then restart nginx:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;systemctl restart nginx
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The web UI comes up. Log in, with the default credentials (&lt;code&gt;admin&lt;/code&gt; / &lt;code&gt;openmediavault&lt;/code&gt;), go to Network → Interfaces, configure your WiFi interface (me &lt;code&gt;wlp2s0&lt;/code&gt;) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer uses the faulty IPv6.&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-network-config.webp&amp;quot; alt=&amp;quot;OMV network config with IPv6 disabled&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;Saved working network with IPv6 disabled&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
-&lt;p&gt;Finally :)&lt;/p&gt;
-&lt;hr&gt;
-&lt;h2&gt;Storage: Btrfs RAID1 on the two HDDs&lt;/h2&gt;
-&lt;p&gt;With the OS running on the SSD, the two 1TB drives become the data pool. I used &lt;a href=&quot;https://btrfs.readthedocs.io/en/latest/&quot;&gt;Btrfs&lt;/a&gt; in RAID1.&lt;/p&gt;
-&lt;p&gt;Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and native RAID support. For a NAS, the checksums detect silent data corruption, snapshots let you roll back files if someone overwrites them, and RAID1 keeps your data alive if one drive fails (both disks are mirrored, I lose a lot of space, but I&apos;m less likely to lose data). OMV handles all of this through the UI.&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Storage&lt;/li&gt;
-&lt;li&gt;File Systems&lt;/li&gt;
-&lt;li&gt;Press the blue button &lt;em&gt;Create&lt;/em&gt;.&lt;/li&gt;
-&lt;li&gt;Select &lt;code&gt;BTRFS&lt;/code&gt; from the dropdown.&lt;/li&gt;
-&lt;li&gt;Select your desired &lt;em&gt;Profile&lt;/em&gt; (&lt;code&gt;RAID1&lt;/code&gt; for me).&lt;/li&gt;
-&lt;li&gt;Select both HDDs.&lt;/li&gt;
-&lt;li&gt;Hit create, wait a few minutes, then mount it.&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-btrfs.webp&amp;quot; alt=&amp;quot;OMV FS configured with BTRFS and displaying 1TB of usable storage&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;Saved working network with IPv6 disabled&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
-&lt;p&gt;After that, create a shared folder on the volume and enable SMB, NFS and other network protocols under &lt;code&gt;Services&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;One thing to not forget to ease the management of the NAS is to set up a regular (monthly) scrub to catch silent data corruption. OMV 8 doesn&apos;t expose this in the UI, so use a scheduled task:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;System → Scheduled Tasks → Add
-Schedule: Monthly (0 2 1 * * for 2am on the 1st)
-Command: btrfs scrub start /srv/dev-disk-by-uuid-XXXX
-&lt;/code&gt;&lt;/pre&gt;
-&lt;hr&gt;
-&lt;h2&gt;Issue 4: Some Windows 11 machines refuse to connect&lt;/h2&gt;
-&lt;p&gt;The goal for this NAS is simple: anyone in the lab walks in with their own machine, opens the file manager, find the NAS in their &lt;em&gt;Network&lt;/em&gt; file tab, and gets in. No passwords, no account creation, no IT support. I configured the SMB share with &lt;strong&gt;Guests allowed&lt;/strong&gt;, meaning anyone can connect as a guest and access files. I also enabled NFS and other protocols for the Linux (me 😁) and macOS machines in the lab.&lt;/p&gt;
-&lt;p&gt;Everything worked on every Linux machine&lt;s&gt;s&lt;/s&gt;. Everything worked on all macOS machines. It worked on the first Windows 11 machines. But other Windows 11 popped up a credential prompt that rejected everything I threw at it. Blank username, &lt;code&gt;guest&lt;/code&gt;, random names. Nothing worked, no error message, no hint, just an endless login loop.&lt;/p&gt;
-&lt;p&gt;The probable cause: &lt;strong&gt;Windows 11 24H2&lt;/strong&gt; changed two SMB security defaults. Microsoft now requires SMB signing on all connections, and Windows 11 Pro disables insecure guest logons[^1]. Earlier builds (23H2 and before) still allowed guest fallback. 24H2 does not, and the behavior is inconsistent. Some 24H2 machines on my network connected fine, others refused. I couldn&apos;t find a pattern.&lt;/p&gt;
-&lt;p&gt;I tried the obvious OMV-side fixes. &lt;code&gt;Guests only&lt;/code&gt; (force anonymous access). &lt;code&gt;Guests allowed&lt;/code&gt; with &lt;code&gt;nobody&lt;/code&gt; given full ACL permissions. None of it mattered. The Windows machines that locked down guest access wouldn&apos;t connect without a valid credential, and OMV didn&apos;t have any credential to connect with.&lt;/p&gt;
-&lt;p&gt;I saw on internet the possibility to use some admin PowerShell commands that I did not try. The whole point of this NAS is that it works from any machine in the lab without touching the client. Running around to every Windows computer to change security settings is not an acceptable fix.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;The fix:&lt;/strong&gt; Create a single shared user in OMV.&lt;/p&gt;
-&lt;p&gt;In the OMV web UI:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Users → Users → Add&lt;/li&gt;
-&lt;li&gt;Username: &lt;code&gt;lab&lt;/code&gt; (or whatever, I won&apos;t write on internet the one we use :) )&lt;/li&gt;
-&lt;li&gt;Password: &lt;code&gt;password&lt;/code&gt; (something simple everyone in the lab can remember, but maybe not that..)&lt;/li&gt;
-&lt;li&gt;No admin rights needed&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Then in your SMB share settings, set Public to &lt;strong&gt;Guests allowed&lt;/strong&gt; and give the &lt;code&gt;lab&lt;/code&gt; user read/write permissions on the shared folder.&lt;/p&gt;
-&lt;p&gt;On each Windows machine, when the credential prompt appears:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Username: &lt;code&gt;lab&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;Password: &lt;code&gt;password&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Windows caches the credentials after the first successful connection. You enter them once per machine and you won&apos;t need to enter them again.&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/install-omv-8-without-ipv6-final.webp&amp;quot; alt=&amp;quot;OMV dashboard with plenty of stats&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;The dashboard of the NAS with plenty of stats but nobody using it there&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
-&lt;p&gt;Two weeks in, the NAS just works. The Windows machines all connect, the scrubs run monthly (I hope), and everyone&apos;s happy about it.&lt;/p&gt;
-&lt;p&gt;&amp;lt;!-- --- --&amp;gt;&lt;/p&gt;
-&lt;p&gt;[^1]: Microsoft made this change in Windows 11 24H2, released in late 2024. It affects both the SMB signing requirement and guest logon behavior on Pro and Enterprise editions. See &lt;a href=&quot;https://techcommunity.microsoft.com/blog/filecab/accessing-a-third-party-nas-with-smb-in-windows-11-24h2-may-fail/4154300&quot;&gt;Microsoft&apos;s official guidance on SMB signing and guest authentication&lt;/a&gt;.&lt;/p&gt;
-</content:encoded></item><item><title>Disabling a touchscreen for good on X11 desktop</title><link>https://arthurbrugiere.fr/blog/2026/08/disabling-a-touchscreen-for-good/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/08/disabling-a-touchscreen-for-good/</guid><description>A @reboot cron never disabled my laptop touchscreen. Finding the layer that does.</description><pubDate>Thu, 13 Aug 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I own an old &lt;a href=&quot;https://www.dell.com/support/product-details/en-vn/product/inspiron-11-3158-laptop/overview&quot;&gt;&lt;em&gt;Dell Inspiron 2-in-1 11-3158&lt;/em&gt;&lt;/a&gt; that I bought at a flea market years ago and made my travel machine: an i3-6100U running &lt;a href=&quot;https://mxlinux.org/&quot;&gt;MX Linux&lt;/a&gt; with &lt;a href=&quot;https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)&quot;&gt;Cinnamon&lt;/a&gt;, maxed at 8GB of DDR3 RAM[^1].&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/disabling-a-touchscreen-for-good-laptop.webp&amp;quot; alt=&amp;quot;My Inspiron laptop covered with stickers&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;My Inspiron laptop covered with stickers, I love stickers!&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
-&lt;p&gt;As it&apos;s a convertible (&lt;em&gt;2-in-1&lt;/em&gt; model), it has a touchscreen, but it&apos;s broken and sometimes it bugs and blocks the cursor clicking in the upper corner, which makes it impossible to use. So I wanted to disable the touchscreen from that machine, for good.&lt;/p&gt;
-&lt;p&gt;Killing it for the current session is simple. Making that stick across reboots meant working out which layer of the input stack owns the device, and it&apos;s been a little more complicated than I expected.&lt;/p&gt;
-&lt;h2&gt;What I tried first&lt;/h2&gt;
-&lt;p&gt;Playing a bit with &lt;code&gt;xinput&lt;/code&gt; I made a little bash script which catches the touchscreen and disables it by ID automatically:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;#!/bin/bash
-# Disable the touchscreen every time X11 starts
-
-# Try to find the device by name (more robust than a fixed id)
-DEV_ID=$(xinput list --id-only &amp;quot;ELAN Touchscreen&amp;quot;)   # ID of the touchscreen
-
-if [ -n &amp;quot;$DEV_ID&amp;quot; ]; then
-    xinput disable &amp;quot;$DEV_ID&amp;quot;
-fi
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The stuck cursor stops, until the next login where I have to relaunch the script. Easy, but it can be automated so I don&apos;t have to think about it anymore. The obvious next step is a &lt;code&gt;@reboot&lt;/code&gt; &lt;a href=&quot;https://en.wikipedia.org/wiki/Cron&quot;&gt;cron&lt;/a&gt; entry to run the script automatically and fix the problem forever, so I wrote one, rebooted, and the corner ate my clicks again.&lt;/p&gt;
-&lt;p&gt;It&apos;s not working...&lt;/p&gt;
-&lt;p&gt;After some documentation digging, I found out that &lt;code&gt;@reboot&lt;/code&gt; fires when cron starts (normal), which &lt;strong&gt;happens &lt;em&gt;before&lt;/em&gt; Xorg runs&lt;/strong&gt; and before my login session exists. &lt;code&gt;xinput&lt;/code&gt; is an X client: it opens a connection to a running display and asks the server to flip a property. With no display nor server to connect to, it has nothing to ask. The command runs, fails, and cron discards the output where I won&apos;t read it.&lt;/p&gt;
-&lt;h2&gt;The Xorg layer&lt;/h2&gt;
-&lt;p&gt;As said, this laptop is using &lt;em&gt;Cinnamon&lt;/em&gt;, which runs on X11, so on this machine I get the good old X11 stack.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;[!NOTE]
-Little precision on the vocabulary:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;X11&lt;/code&gt; is a protocol: a socket, plus a vocabulary for &amp;quot;give me a window&amp;quot; and &amp;quot;here is a click at these coordinates&amp;quot;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;X server&lt;/code&gt; is the process on the other end of that socket, the one holding the hardware and reading your keyboard and touchscreen&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;Xorg&lt;/code&gt; is the implementation of that server almost every Linux desktop has run for decades&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;They are all tightly linked and that&apos;s why the three names get used for each other.&lt;/p&gt;
-&lt;p&gt;Cinnamon, Firefox and &lt;code&gt;xinput&lt;/code&gt; are &lt;code&gt;X clients&lt;/code&gt;: they own no hardware and ask the server for everything, so a client that starts before the server has nobody to ask.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;The X server reads files in &lt;code&gt;/etc/X11/xorg.conf.d/&lt;/code&gt; at its own startup, before any session loads, so a rule there applies from the first frame:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Section &amp;quot;InputClass&amp;quot;
-    Identifier      &amp;quot;Disable ELAN touchscreen&amp;quot;
-    MatchProduct    &amp;quot;ELAN Touchscreen&amp;quot;
-    MatchIsTouchscreen &amp;quot;on&amp;quot;
-    Option          &amp;quot;Ignore&amp;quot; &amp;quot;on&amp;quot;
-EndSection
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;code&gt;Section &amp;quot;InputClass&amp;quot;&lt;/code&gt; opens a block of settings that Xorg applies to every input device matching the &lt;code&gt;Match*&lt;/code&gt; lines inside it, at the moment the server enumerates devices. &lt;code&gt;Identifier&lt;/code&gt; is a free-form name for the block, and it shows up in &lt;code&gt;/var/log/Xorg.0.log&lt;/code&gt; when the rule fires, which is how you check the match worked. &lt;code&gt;MatchProduct&lt;/code&gt; compares against the device name as a substring, and &lt;code&gt;MatchIsTouchscreen&lt;/code&gt; restricts the block to devices udev has already tagged as a touchscreen. &lt;code&gt;Option&lt;/code&gt; carries the payload: the setting applied to whatever survived the match.&lt;/p&gt;
-&lt;p&gt;Matching on the product name plus &lt;code&gt;MatchIsTouchscreen&lt;/code&gt; leaves the Synaptics touchpad and my other pointers untouched. &lt;code&gt;Option &amp;quot;Ignore&amp;quot; &amp;quot;on&amp;quot;&lt;/code&gt; makes X drop the device before anything can use it, which covers all the event nodes the touchscreen exposes without having to name them.&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ sudo cp 99-disable-touchscreen.conf /etc/X11/xorg.conf.d/
-$ xinput list | grep -i elan   # after a reboot or a display manager restart: nothing
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Everything works perfectly now: the touchscreen is disabled forever.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;&amp;quot;Forever&amp;quot;&lt;/em&gt; in this context means &amp;quot;until I migrate to Wayland&amp;quot;, as that configuration file is only used by an X11 session. Switching protocol creates no warning and no logs, simply nothing reads it, the broken corner comes back, and I&apos;ll have to fix it again.&lt;/p&gt;
-&lt;p&gt;Even if &lt;em&gt;Cinnamon&lt;/em&gt; is currently using X11 by default, it will be migrating to Wayland soon. The Wayland session has been &lt;a href=&quot;https://forums.linuxmint.com/viewtopic.php?t=411761&quot;&gt;marked as experimental&lt;/a&gt; since Cinnamon 6.0, and the Mint team &lt;a href=&quot;https://www.phoronix.com/news/LinuxMint-Cinnamon-Wayland-Good&quot;&gt;announced in June 2026&lt;/a&gt; that the label goes away in Cinnamon 6.8, where both X11 and Wayland will be fully supported. So this fix won&apos;t work for me much longer.&lt;/p&gt;
-&lt;h2&gt;Wayland reads none of that&lt;/h2&gt;
-&lt;p&gt;Wayland has been pushed as a replacement to Xorg and, even if it has a compatibility layer, it&apos;s not an X server, so &lt;code&gt;/etc/X11/xorg.conf.d/&lt;/code&gt; never gets opened. Under Wayland the compositor itself (Mutter, KWin, sway, and others) talks to &lt;code&gt;libinput&lt;/code&gt;, and there is no shared config file across compositors for killing a device.&lt;/p&gt;
-&lt;p&gt;I want a universal fix, so I won&apos;t go and write one config file per compositor. The way out is to go one abstraction layer below, under any display server, to the part of the stack they share.&lt;/p&gt;
-&lt;p&gt;That level is &lt;code&gt;libinput&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;The kernel exposes the touchscreen as an &lt;em&gt;event node&lt;/em&gt;, &lt;code&gt;udev&lt;/code&gt; enumerates it and tags it with everything it knows about the hardware. &lt;code&gt;libinput&lt;/code&gt; reads those tags and turns raw events into the pointer and touch data its consumers ask for. Xorg is one of those consumers through the &lt;code&gt;xf86-input-libinput&lt;/code&gt; driver, and every Wayland compositor is another. So killing the device at the &lt;code&gt;libinput&lt;/code&gt; level is a universal fix covering X11, Wayland and everything else at once, as that doesn&apos;t care which session I boot into.&lt;/p&gt;
-&lt;p&gt;A &lt;code&gt;udev&lt;/code&gt; rule setting &lt;code&gt;LIBINPUT_IGNORE_DEVICE=1&lt;/code&gt; makes &lt;code&gt;libinput&lt;/code&gt; hand back nothing for that device, so my Cinnamon session never sees it. The rule keys on the USB ID, &lt;code&gt;04f3:036e&lt;/code&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;# Permanently disable the ELAN Touchscreen (USB 04f3:036e).
-# Compatible Wayland compositor AND X11 when it uses the xf86-input-libinput driver. 
-# Applied at device enumeration on every boot and hotplug -- no session hook required.
-SUBSYSTEM==&amp;quot;input&amp;quot;, ATTRS{idVendor}==&amp;quot;04f3&amp;quot;, ATTRS{idProduct}==&amp;quot;036e&amp;quot;, ENV{ID_INPUT_TOUCHSCREEN}==&amp;quot;1&amp;quot;, ENV{LIBINPUT_IGNORE_DEVICE}=&amp;quot;1&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The &lt;code&gt;04f3:036e&lt;/code&gt; is the USB &lt;em&gt;vendor:product ID&lt;/em&gt; baked into the touchscreen hardware itself, and &lt;code&gt;lsusb&lt;/code&gt; prints it for every device on the machine. It&apos;s more stable than the event node name (&lt;code&gt;/dev/input/event7&lt;/code&gt; might shuffle around) and more precise than matching by name alone.&lt;/p&gt;
-&lt;p&gt;Once written, the rule goes in the &lt;code&gt;udev&lt;/code&gt; rules folder, and a quick &lt;code&gt;udevadm control --reload-rules &amp;amp;&amp;amp; udevadm trigger&lt;/code&gt; applies it without rebooting.&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ sudo cp 99-disable-touchscreen.rules /etc/udev/rules.d/
-# Apply new rule without rebooting
-$ sudo udevadm control --reload-rules &amp;amp;&amp;amp; sudo udevadm trigger --subsystem-match=input --action=change
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Verify on either session type:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ xinput list | grep -i elan                 # X11
-# Nothing
-$ sudo libinput list-devices | grep -i elan  # X11 and Wayland
-# Nothing
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h2&gt;What I kept&lt;/h2&gt;
-&lt;p&gt;The &lt;code&gt;udev&lt;/code&gt; rule, on its own. It covers the X11 session I run today and a Wayland switch later, and X11 on this machine goes through &lt;code&gt;libinput&lt;/code&gt; anyway: every &lt;code&gt;xinput&lt;/code&gt; property on the device carries a &lt;code&gt;libinput ...&lt;/code&gt; prefix, which is what makes the &lt;code&gt;udev&lt;/code&gt; rule bite under Xorg too. The Xorg file is redundant on top of it, and I removed it to avoid any weird conflict.&lt;/p&gt;
-&lt;p&gt;Rolling back is deleting &lt;code&gt;/etc/udev/rules.d/99-disable-touchscreen.rules&lt;/code&gt; and running the same reload and trigger pair, which brings the device back without a reboot.&lt;/p&gt;
-&lt;p&gt;There is one more floor below &lt;code&gt;udev&lt;/code&gt;: unbinding the kernel driver, or blacklisting its module, which kills the touchscreen at a TTY login before any GUI starts. That would have worked too, but the broken corner only bothers me inside a desktop session, so I stopped at &lt;code&gt;udev&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;&amp;lt;!-- --- --&amp;gt;&lt;/p&gt;
-&lt;p&gt;[^1]: It&apos;s a 10-year-old machine, not the most powerful one, but it works very well and is good enough as a travel laptop 🧔‍♂️&lt;/p&gt;
-</content:encoded></item><item><title>Auto-configuring Meta Quest headsets for classroom use with ADB</title><link>https://arthurbrugiere.fr/blog/2026/08/quest-adb-setup-simple/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/08/quest-adb-setup-simple/</guid><description>How Meta Quest headsets are setup for classroom use in the SIMPLE Project.</description><pubDate>Mon, 10 Aug 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;To run a demo with some Meta Quest headsets, you need to be able to keep them connected to WiFi and keep their display on. Unfortunately, they ship with consumer defaults that fight you on that. The &lt;a href=&quot;https://project-simple.eu/&quot;&gt;&lt;em&gt;SIMPLE Project&lt;/em&gt;&lt;/a&gt; handles this by pushing a complete ADB configuration profile every time a headset connects to the platform. Here&apos;s what the headset tries to do, why it breaks your demo, and how SIMPLE stops it.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;[!NOTE]
-Precisely, the use in the &lt;em&gt;SIMPLE Project&lt;/em&gt; is by bringing a &lt;a href=&quot;https://github.com/project-SIMPLE/M2L2&quot;&gt;&lt;em&gt;M2L2&lt;/em&gt;&lt;/a&gt; (an all-in-one device including an offline WiFi router, six Meta Quest headsets, and a computer running software; everything interconnected) into classrooms to easily use VR in ASEAN schools.&lt;/p&gt;
-&lt;p&gt;Most of the configuration presented here is made precisely for this use case.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h2&gt;WiFi disconnects on networks without internet&lt;/h2&gt;
-&lt;p&gt;If your setup runs on a local network with no internet access, the Quest will eventually disconnect. Android continuously tests whether WiFi has internet access, and when the check fails, it flags the network as bad, shows a &lt;code&gt;No internet access&lt;/code&gt; warning.
-On regular Android that&apos;s not too much of an issue, but Meta hates that (they want your data) and auto-disconnects to &amp;quot;avoid the inconvenience of not having internet&amp;quot; or something. Also Meta disable the automatic connection to a network tagged as &lt;code&gt;No internet access&lt;/code&gt;, being a major issue in a game session to run LAN games...&lt;/p&gt;
-&lt;p&gt;SIMPLE fixes this by disabling the network probes entirely, so no wifi network can be flagged.&lt;/p&gt;
-&lt;h3&gt;Disabling &lt;em&gt;Captive Portal&lt;/em&gt; detection&lt;/h3&gt;
-&lt;p&gt;Android pings Google servers to check for captive portals, the login pages you see at hotels and airports. On an offline network, these requests time out, and Android interprets that as a connectivity problem. To spoof this, I simply disabled captive portal detection and points the probe URLs at localhost so they always answer instead of failing outward:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;captive_portal_detection_enabled: 0
-captive_portal_mode: 0
-captive_portal_server: &amp;quot;localhost&amp;quot;
-captive_portal_https_url: &amp;quot;https://localhost&amp;quot;
-captive_portal_http_url: &amp;quot;http://localhost&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;code&gt;private_dns_mode: &amp;quot;off&amp;quot;&lt;/code&gt; handles a related issue: Android&apos;s private DNS feature (DNS-over-TLS) tries to connect to hardcoded DNS servers. On an offline network, these connections fail and can trigger additional disconnect logic. Turning it off removes that failure path.&lt;/p&gt;
-&lt;h3&gt;Disabling every WiFi auto-switcher&lt;/h3&gt;
-&lt;p&gt;Even with captive portal detection disabled, Android has multiple watchdog services that will abandon a network they don&apos;t like. SIMPLE disables all of them:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;wifi_watchdog_on: 0
-wifi_watchdog_poor_network_test_enabled: 0
-network_recommendations_enabled: 0
-network_avoid_bad_wifi: 0
-wifi_passpoint_enabled: 0
-wifi_enhance_network_while_sleeping: 0
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The WiFi watchdog roams to another network or drops the connection when it thinks quality is poor. &lt;code&gt;network_avoid_bad_wifi&lt;/code&gt; does exactly what it says: it disconnects from networks without internet. &lt;code&gt;network_recommendations_enabled&lt;/code&gt; pops up suggestions to switch networks, which is disruptive mid-demo. &lt;code&gt;wifi_passpoint_enabled&lt;/code&gt; disables automatic authentication with carrier hotspot networks, which is irrelevant in most setups but removes another background process that could interfere.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;wifi_sleep_policy: 2&lt;/code&gt; keeps WiFi active when the device sleeps. Without this, a headset that &lt;a href=&quot;https://en.wikipedia.org/wiki/Android_Marshmallow#DOZE&quot;&gt;dozes&lt;/a&gt; briefly drops its connection and you have to manually reconnect it. Annoying.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;wifi_networks_available_notification_on: 0&lt;/code&gt; and &lt;code&gt;netstats_enabled: 0&lt;/code&gt; remove the last two sources of network-related noise: popups about other nearby networks, and background data usage tracking. Less background activity means fewer opportunities for the system to interrupt the connection.&lt;/p&gt;
-&lt;h2&gt;The headset goes to sleep mid-session&lt;/h2&gt;
-&lt;p&gt;A Meta Quest headset is quite battery hungry because of all the processing it has to do (6 DOF, heavy graphical computing, etc), and having 30~60 minutes of battery life is bad press. So a Meta Quest headset is the laziest device in the world and try to sleep as much as it can.&lt;/p&gt;
-&lt;p&gt;For instance, a stock Quest falls asleep after a few minutes of idle time. In any demo or session, &amp;quot;idle&amp;quot; happens constantly as someone waiting for instructions, a discussion, a presenter demonstrating something on the projector. If the headset sleeps, the player drops from the simulation (disconnect from the backend server) and has to wake it, reconnect, and rejoin. SIMPLE prevents this at three layers.&lt;/p&gt;
-&lt;h3&gt;Set Android to never sleeps&lt;/h3&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;stay_on_while_plugged_in: 15
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;This is a bitmask. Each bit controls a different power source:&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Bit&lt;/th&gt;
-&lt;th&gt;Value&lt;/th&gt;
-&lt;th&gt;Power Source&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;0&lt;/td&gt;
-&lt;td&gt;1&lt;/td&gt;
-&lt;td&gt;AC adapter&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;1&lt;/td&gt;
-&lt;td&gt;2&lt;/td&gt;
-&lt;td&gt;USB&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2&lt;/td&gt;
-&lt;td&gt;4&lt;/td&gt;
-&lt;td&gt;Wireless charging&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;3&lt;/td&gt;
-&lt;td&gt;8&lt;/td&gt;
-&lt;td&gt;Docked&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;&lt;code&gt;1 + 2 + 4 + 8 = 15&lt;/code&gt;, so the screen stays on across all four conditions. In a setup where headsets sit on USB charging cables or charging stands between uses, this alone prevents most mid-session blackouts.&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;screen_off_timeout: 86400000  // 24 hours
-sleep_timeout: -1             // Disabled entirely
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;code&gt;screen_off_timeout&lt;/code&gt; lives in the &lt;code&gt;system&lt;/code&gt; settings namespace and controls when the display subsystem turns off the screen. &lt;code&gt;sleep_timeout&lt;/code&gt; lives in the &lt;code&gt;secure&lt;/code&gt; namespace and governs when the entire device enters deep sleep. SIMPLE sets both to never trigger.
-&amp;lt;!-- Modifying secure settings requires &lt;code&gt;WRITE_SECURE_SETTINGS&lt;/code&gt; permission, which is why SIMPLE installs a companion app with that privilege.--&amp;gt;&lt;/p&gt;
-&lt;h3&gt;Meta&apos;s OVR Layer: Four-hours safety window&lt;/h3&gt;
-&lt;p&gt;Meta adds its own logical layer, touching obviously to the &lt;s&gt;lazyness&lt;/s&gt; sleep logic on top of Android, controlled through the &lt;code&gt;PreferencesService&lt;/code&gt; binder interface:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;idle_time_threshold: 14400   // Display off after 4 hours
-autosleep_time: 14400        // Sleep mode after 4 hours
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Both values are in seconds. Four hours covers a full session with breaks, but still lets a forgotten headset power down eventually instead of sitting awake overnight. The code checks the current value via &lt;code&gt;getprop&lt;/code&gt; and only writes if it changed, so repeated reconnections don&apos;t waste calls.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;[!NOTE]
-You can also set &lt;code&gt;autosleep_time&lt;/code&gt; through the headset&apos;s system settings GUI, it&apos;s probably the only setting from this entire article that&apos;s exposed in the interface. But SIMPLE sets it via ADB anyway as part of the automated configuration.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h3&gt;The proximity sensor blacks out the display&lt;/h3&gt;
-&lt;p&gt;This one is interesting! 😋&lt;/p&gt;
-&lt;p&gt;When you remove a Quest headset, a proximity sensor detects the gap and blacks out the display to save power (or doze if you didn&apos;t applied any of the above parameters, remember: lazy device). In any multi-user setup, demo, else, headsets get passed around or set on charging stations between activities. If the display blacks out, the streaming session breaks and the next person sees a dark screen instead of the simulation.&lt;/p&gt;
-&lt;p&gt;&amp;lt;figure&amp;gt;
-&amp;lt;img src=&amp;quot;/images/quest-adb-setup-simple-sensor.webp&amp;quot; alt=&amp;quot;Picture of proximity sensors inside of a meta quest headset&amp;quot; /&amp;gt;
-&amp;lt;figcaption&amp;gt;This captor exists in both &amp;lt;i&amp;gt;Meta Quest 2&amp;lt;/i&amp;gt; and &amp;lt;i&amp;gt;Meta Quest 3&amp;lt;/i&amp;gt; (not the 3s)&amp;lt;/figcaption&amp;gt;
-&amp;lt;/figure&amp;gt;&lt;/p&gt;
-&lt;p&gt;SIMPLE disable this behavior by sending a broadcast on each headset&apos;s boot:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;am broadcast -a com.oculus.vrpowermanager.prox_close
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;This forces the power manager to treat the headset as currently worn. The display stays on even when the headset is sitting on a charging stand or being handed from one user to the next, so the stream keeps flowing uninterrupted. The disadvantage is the battery life which is the most impacted by it.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;[!NOTE]
-A lot of people (as well as us first) are putting opaque tape &lt;a href=&quot;https://www.reddit.com/r/OculusQuest/comments/1laug5p/i_found_a_solve_to_the_quest_2_proximity_sensor/&quot;&gt;or similar&lt;/a&gt; on the sensor to fake it. But, from our experience, it&apos;s not that much reliable and created a lot of instability on some units. This method is better.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h2&gt;Maintenance: Keeping the fleet in a static state&lt;/h2&gt;
-&lt;p&gt;Beyond the session fixes, SIMPLE tweaks the devices with a &lt;em&gt;maintenance layer&lt;/em&gt; that keeps the equipment stable over time. I don&apos;t want any new firmware changes overnight or connection drift breaking my setup in the morning of an exhibition...&lt;/p&gt;
-&lt;h3&gt;Restrict firmware updates&lt;/h3&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;ota_disable_automatic_update: 1
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;A system update downloading during a session, or worse, forcing an unexpected reboot, can end a demo. This stops &lt;a href=&quot;https://en.wikipedia.org/wiki/Over-the-air_update&quot;&gt;Android&apos;s OTA&lt;/a&gt; updates from triggering automatically.&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;am set-standby-bucket com.oculus.updater restricted
-am set-standby-bucket com.oculus.nux.ota restricted
-cmd appops set com.oculus.updater RUN_ANY_IN_BACKGROUND deny
-cmd appops set com.oculus.nux.ota RUN_ANY_IN_BACKGROUND deny
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;code&gt;com.oculus.updater&lt;/code&gt; and &lt;code&gt;com.oculus.nux.ota&lt;/code&gt; handle Meta&apos;s layer for firmware updates and telemetry. With restricted standby buckets and background execution denied, they cannot wake the headset. This pairs with &lt;code&gt;ota_disable_automatic_update: 1&lt;/code&gt; at the global settings level makes a two-layer defense against a fleet of headsets deciding to search and download a system update at anypoint.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;[!CAUTION]
-Disabling auto-updates keeps your fleet in a known software state, which is what you want for reproducible demos. Just remember to manually update the headsets between projects if you need security patches or new features.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h3&gt;Keep the ADB session alive&lt;/h3&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;adb_allowed_connection_time: 9007199254740991  // ~285 years, effectively never
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Meta&apos;s Android build times out ADB debugging sessions. When it expires, the headset drops from the platform and you have to re-authorize the host (to make this point clear, it&apos;s not ADB which is not up, but it refuses to connect with old paired device, ie. the server). Setting this to &lt;code&gt;MAX_SAFE_INTEGER&lt;/code&gt; means the session survives indefinitely.&lt;/p&gt;
-&lt;p&gt;SIMPLE also installs &lt;code&gt;eu.project_simple.adbautoenable&lt;/code&gt;, a companion app that keeps the ADB connection alive and handles re-authorization automatically. I already presented how it works in a previous article : https://arthurbrugiere.fr/blog/mq3-wireless-adb/&lt;/p&gt;
-&lt;h2&gt;Conclusion&lt;/h2&gt;
-&lt;p&gt;You pretty much broke all the engineering Meta put in their devices to give the players a nice experience, but you succeed to have device which works as you would expect in an exhibition or a classroom.&lt;/p&gt;
-&lt;p&gt;At least I&apos;m happy to run them in the project now 😁&lt;/p&gt;
 </content:encoded></item></channel></rss>

@@ -20,10 +20,10 @@
 		<category term="udev" />
 		<summary type="html">A @reboot cron never disabled my laptop touchscreen. Finding the layer that does.</summary>
 		<content type="html"><![CDATA[<p>I own an old <a href="https://www.dell.com/support/product-details/en-vn/product/inspiron-11-3158-laptop/overview"><em>Dell Inspiron 2-in-1 11-3158</em></a> that I bought at a flea market years ago and made my travel machine: an i3-6100U running <a href="https://mxlinux.org/">MX Linux</a> with <a href="https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)">Cinnamon</a>, maxed at 8GB of DDR3 RAM[^1].</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/disabling-a-touchscreen-for-good-laptop.webp&quot; alt=&quot;My Inspiron laptop covered with stickers&quot; /&gt;
-&lt;figcaption&gt;My Inspiron laptop covered with stickers, I love stickers!&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/disabling-a-touchscreen-for-good-laptop.webp" alt="My Inspiron laptop covered with stickers" />
+    <figcaption>My Inspiron laptop covered with stickers, I love stickers!</figcaption>
+</figure>
 <p>As it's a convertible (<em>2-in-1</em> model), it has a touchscreen, but it's broken and sometimes it bugs and blocks the cursor clicking in the upper corner, which makes it impossible to use. So I wanted to disable the touchscreen from that machine, for good.</p>
 <p>Killing it for the current session is simple. Making that stick across reboots meant working out which layer of the input stack owns the device, and it's been a little more complicated than I expected.</p>
 <h2>What I tried first</h2>
@@ -97,7 +97,7 @@ $ sudo libinput list-devices | grep -i elan  # X11 and Wayland
 <p>The <code>udev</code> rule, on its own. It covers the X11 session I run today and a Wayland switch later, and X11 on this machine goes through <code>libinput</code> anyway: every <code>xinput</code> property on the device carries a <code>libinput ...</code> prefix, which is what makes the <code>udev</code> rule bite under Xorg too. The Xorg file is redundant on top of it, and I removed it to avoid any weird conflict.</p>
 <p>Rolling back is deleting <code>/etc/udev/rules.d/99-disable-touchscreen.rules</code> and running the same reload and trigger pair, which brings the device back without a reboot.</p>
 <p>There is one more floor below <code>udev</code>: unbinding the kernel driver, or blacklisting its module, which kills the touchscreen at a TTY login before any GUI starts. That would have worked too, but the broken corner only bothers me inside a desktop session, so I stopped at <code>udev</code>.</p>
-<p>&lt;!-- --- --&gt;</p>
+<!-- --- -->
 <p>[^1]: It's a 10-year-old machine, not the most powerful one, but it works very well and is good enough as a travel laptop 🧔‍♂️</p>
 ]]></content>
 	</entry>
@@ -185,8 +185,8 @@ wifi_enhance_network_while_sleeping: 0
 <pre><code class="language-txt">screen_off_timeout: 86400000  // 24 hours
 sleep_timeout: -1             // Disabled entirely
 </code></pre>
-<p><code>screen_off_timeout</code> lives in the <code>system</code> settings namespace and controls when the display subsystem turns off the screen. <code>sleep_timeout</code> lives in the <code>secure</code> namespace and governs when the entire device enters deep sleep. SIMPLE sets both to never trigger.
-&lt;!-- Modifying secure settings requires <code>WRITE_SECURE_SETTINGS</code> permission, which is why SIMPLE installs a companion app with that privilege.--&gt;</p>
+<p><code>screen_off_timeout</code> lives in the <code>system</code> settings namespace and controls when the display subsystem turns off the screen. <code>sleep_timeout</code> lives in the <code>secure</code> namespace and governs when the entire device enters deep sleep. SIMPLE sets both to never trigger.</p>
+<!-- Modifying secure settings requires `WRITE_SECURE_SETTINGS` permission, which is why SIMPLE installs a companion app with that privilege.-->
 <h3>Meta's OVR Layer: Four-hours safety window</h3>
 <p>Meta adds its own logical layer, touching obviously to the <s>lazyness</s> sleep logic on top of Android, controlled through the <code>PreferencesService</code> binder interface:</p>
 <pre><code class="language-txt">idle_time_threshold: 14400   // Display off after 4 hours
@@ -200,10 +200,10 @@ You can also set <code>autosleep_time</code> through the headset's system settin
 <h3>The proximity sensor blacks out the display</h3>
 <p>This one is interesting! 😋</p>
 <p>When you remove a Quest headset, a proximity sensor detects the gap and blacks out the display to save power (or doze if you didn't applied any of the above parameters, remember: lazy device). In any multi-user setup, demo, else, headsets get passed around or set on charging stations between activities. If the display blacks out, the streaming session breaks and the next person sees a dark screen instead of the simulation.</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/quest-adb-setup-simple-sensor.webp&quot; alt=&quot;Picture of proximity sensors inside of a meta quest headset&quot; /&gt;
-&lt;figcaption&gt;This captor exists in both &lt;i&gt;Meta Quest 2&lt;/i&gt; and &lt;i&gt;Meta Quest 3&lt;/i&gt; (not the 3s)&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/quest-adb-setup-simple-sensor.webp" alt="Picture of proximity sensors inside of a meta quest headset" />
+    <figcaption>This captor exists in both <i>Meta Quest 2</i> and <i>Meta Quest 3</i> (not the 3s)</figcaption>
+</figure>
 <p>SIMPLE disable this behavior by sending a broadcast on each headset's boot:</p>
 <pre><code class="language-txt">am broadcast -a com.oculus.vrpowermanager.prox_close
 </code></pre>
@@ -259,15 +259,15 @@ This <em>&quot;guide&quot;</em> is describing the struggle I had to install <str
 <hr>
 <h2>Issue 1: The installer blue-screens after WiFi connection</h2>
 <p>I do have some experience installing Linux systems, so I pretty much followed the same steps as described in the <a href="https://docs.openmediavault.org/en/latest/installation/via_iso.html">official documentation</a>: Downloaded the iso, flashed a USB stick, boot the OMV ISO, follow the first steps, connect to your WiFi network, type the password, see the &quot;Configuring DHCP&quot; loading screen, see the &quot;Configuring DHCP<strong>v6</strong>&quot; loading screen...</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/install-omv-8-without-ipv6-dhcp.webp&quot; alt=&quot;Debian installer DHCP loading screen&quot; /&gt;
-&lt;figcaption&gt;I don't have ways to capture my installation screen, imagine it's written <code>DHCPv6</code> please....&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-dhcp.webp" alt="Debian installer DHCP loading screen" />
+    <figcaption>I don't have ways to capture my installation screen, imagine it's written `DHCPv6` please....</figcaption>
+</figure>
 <p>The popup closes. You're staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and displays them on the screen, but nothing happens.</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/install-omv-8-without-ipv6-bsod.webp&quot; alt=&quot;Debian installer blue screen&quot; /&gt;
-&lt;figcaption&gt;The BSOD (Blue Screen Of &lt;s&gt;Death&lt;/s&gt; Debian), not my most useful illustration...&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-bsod.webp" alt="Debian installer blue screen" />
+    <figcaption>The BSOD (Blue Screen Of <s>Death</s> Debian), not my most useful illustration...</figcaption>
+</figure>
 <p>The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request timed out with no response or got an unexpected message... Anyway, the installer broke and after waiting 1 hour, I tried to fix it: I disabled IPv6 at the kernel level for this boot only.</p>
 <p>To do so, at the GRUB boot menu, press <code>e</code> to edit the current entry. Find the <code>linux</code> line and append <code>ipv6.disable=1</code> to the end:</p>
 <pre><code>linux /install/vmlinuz vga=normal quiet file=/cdrom/preseed.cfg ipv6.disable=1
@@ -308,10 +308,10 @@ Jun 02 14:46:27 systemd[1]: Failed to start A high performance web server and a 
 <pre><code class="language-bash">systemctl restart nginx
 </code></pre>
 <p>The web UI comes up. Log in, with the default credentials (<code>admin</code> / <code>openmediavault</code>), go to Network → Interfaces, configure your WiFi interface (me <code>wlp2s0</code>) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer uses the faulty IPv6.</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/install-omv-8-without-ipv6-network-config.webp&quot; alt=&quot;OMV network config with IPv6 disabled&quot; /&gt;
-&lt;figcaption&gt;Saved working network with IPv6 disabled&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-network-config.webp" alt="OMV network config with IPv6 disabled" />
+    <figcaption>Saved working network with IPv6 disabled</figcaption>
+</figure>
 <p>Finally :)</p>
 <hr>
 <h2>Storage: Btrfs RAID1 on the two HDDs</h2>
@@ -326,10 +326,10 @@ Jun 02 14:46:27 systemd[1]: Failed to start A high performance web server and a 
 <li>Select both HDDs.</li>
 <li>Hit create, wait a few minutes, then mount it.</li>
 </ol>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/install-omv-8-without-ipv6-btrfs.webp&quot; alt=&quot;OMV FS configured with BTRFS and displaying 1TB of usable storage&quot; /&gt;
-&lt;figcaption&gt;Saved working network with IPv6 disabled&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-btrfs.webp" alt="OMV FS configured with BTRFS and displaying 1TB of usable storage" />
+    <figcaption>Saved working network with IPv6 disabled</figcaption>
+</figure>
 <p>After that, create a shared folder on the volume and enable SMB, NFS and other network protocols under <code>Services</code>.</p>
 <p>One thing to not forget to ease the management of the NAS is to set up a regular (monthly) scrub to catch silent data corruption. OMV 8 doesn't expose this in the UI, so use a scheduled task:</p>
 <pre><code>System → Scheduled Tasks → Add
@@ -358,12 +358,12 @@ Command: btrfs scrub start /srv/dev-disk-by-uuid-XXXX
 <li>Password: <code>password</code></li>
 </ul>
 <p>Windows caches the credentials after the first successful connection. You enter them once per machine and you won't need to enter them again.</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/install-omv-8-without-ipv6-final.webp&quot; alt=&quot;OMV dashboard with plenty of stats&quot; /&gt;
-&lt;figcaption&gt;The dashboard of the NAS with plenty of stats but nobody using it there&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-final.webp" alt="OMV dashboard with plenty of stats" />
+    <figcaption>The dashboard of the NAS with plenty of stats but nobody using it there</figcaption>
+</figure>
 <p>Two weeks in, the NAS just works. The Windows machines all connect, the scrubs run monthly (I hope), and everyone's happy about it.</p>
-<p>&lt;!-- --- --&gt;</p>
+<!-- --- -->
 <p>[^1]: Microsoft made this change in Windows 11 24H2, released in late 2024. It affects both the SMB signing requirement and guest logon behavior on Pro and Enterprise editions. See <a href="https://techcommunity.microsoft.com/blog/filecab/accessing-a-third-party-nas-with-smb-in-windows-11-24h2-may-fail/4154300">Microsoft's official guidance on SMB signing and guest authentication</a>.</p>
 ]]></content>
 	</entry>
@@ -444,10 +444,10 @@ module.exports = mod.exports;
 <p>The CI pipeline now has three parallel jobs: <code>ubuntu-latest</code> for Linux, <code>macos-latest</code> for macOS, and <code>windows-latest</code> for Windows. Each produces one binary using the same Node.js SEA mechanism. No more QEMU. No more <code>ldid</code>. No more <code>pkg</code>.</p>
 <h2>Summary</h2>
 <p>The SIMPLE Webplatform now ships as a single executable on all three platforms. Windows uses a Go self-extracting launcher that bundles a SEA-built <code>node.exe</code> and extracts it to temp on first run. Linux and macOS use native SEA binaries without wrappers. The packaging pipeline relies on Node.js built-in tools plus <code>postject</code> and Go. No deprecated third-party packagers, no emulation layers, no platform-specific native module patching.</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/packaging-nodejs-windows-sea-compilation.webp&quot; alt=&quot;Compilation logs of the windows binary&quot; /&gt;
-&lt;figcaption&gt;Compilation logs of the windows binary on Github Actions&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/packaging-nodejs-windows-sea-compilation.webp" alt="Compilation logs of the windows binary" />
+    <figcaption>Compilation logs of the windows binary on Github Actions</figcaption>
+</figure>
 <p>If you are packaging a Node.js application with native modules for Windows, use <em>Node.js SEA</em> (it's been in beta for very long time, but it really works fine nowadays), name your binary <code>node.exe</code>, and wrap it with a launcher if your users need a branded filename. Those three things would have saved me days of debugging.</p>
 <p><em>The full implementation is in <a href="https://github.com/project-SIMPLE/simple.webplatform/pull/151">project-SIMPLE/simple.webplatform#151</a>.</em></p>
 ]]></content>
@@ -477,21 +477,21 @@ module.exports = mod.exports;
 <li>Accepted the warning popup</li>
 </ul>
 <p>Everything appeared enabled. No error messages. No warnings. But <strong>the WiFi network simply never appeared</strong>. Not on my phone, not on any other device. macOS accepted the configuration but silently refused to actually broadcast the signal.</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/macbook-air-access-point-wifi-not-working.webp&quot; alt=&quot;Internet sharing is enabled, but not wifi is broadcasted&quot; /&gt;
-&lt;figcaption&gt;Internet sharing is enabled, but not wifi is broadcasted (it should be displayed here as we will see later)&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-not-working.webp" alt="Internet sharing is enabled, but not wifi is broadcasted" />
+    <figcaption>Internet sharing is enabled, but not wifi is broadcasted (it should be displayed here as we will see later)</figcaption>
+</figure>
 <p>The reason: macOS Internet Sharing is built to share an <em>existing</em> (i.e. activated, up) connection, not blindly bridge one network stack to another. Without an active upstream connection that the system recognizes as active, the underlying service doesn't actually bring up the access point, even though the UI lets you enable everything.</p>
 <h2>The hack: Faking a connection with a loopback interface</h2>
-<p>The solution came from a gist by <code>@zhuhuilin</code>: <strong>&lt;a href=&quot;https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2&quot; target=&quot;_blank&quot;&gt;macOS Internet Sharing Without Internet Connection&lt;/a&gt;</strong>[^note].</p>
+<p>The solution came from a gist by <code>@zhuhuilin</code>: <strong><a href="https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2" target="_blank">macOS Internet Sharing Without Internet Connection</a></strong>[^note].</p>
 <p>The trick is to create a new network service on the loopback interface (<code>lo0</code>). macOS only checks that the network service has an IP address (which is apparently how it determines whether a connection is active) before allowing Internet Sharing. It doesn't verify that the connection reaches the real internet. By assigning a static IP to <code>lo0</code> and registering it as a network service, macOS happily accepts it as a valid source.</p>
 <p>The gist provides the exact commands to run in Terminal:</p>
 <pre><code class="language-bash">curl -L https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2/raw/setup-adhoc-network.sh | bash
 </code></pre>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/macbook-air-access-point-wifi-terminal.webp&quot; alt=&quot;Running zhuhuilin's setup script&quot; /&gt;
-&lt;figcaption&gt;Running zhuhuilin's setup script&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-terminal.webp" alt="Running zhuhuilin's setup script" />
+    <figcaption>Running zhuhuilin's setup script</figcaption>
+</figure>
 <p>This will automatically:</p>
 <ul>
 <li>Find your active internet connection</li>
@@ -499,18 +499,18 @@ module.exports = mod.exports;
 <li>Assign the Mac the IP <code>10.10.10.1</code> on this new service</li>
 <li>Save state for safe removal</li>
 </ul>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/macbook-air-access-point-wifi-AdHoc-setup.webp&quot; alt=&quot;MacOS Settings window with the Internet Sharing configured with the AdHoc interface&quot; /&gt;
-&lt;figcaption&gt;Internet Sharing configured with the AdHoc interface, just need to enable it now&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-AdHoc-setup.webp" alt="MacOS Settings window with the Internet Sharing configured with the AdHoc interface" />
+    <figcaption>Internet Sharing configured with the AdHoc interface, just need to enable it now</figcaption>
+</figure>
 <p>Then you can select this <code>AdHoc</code> service as your source in Internet Sharing. Once configured, macOS actually brings up the WiFi access point, and devices can see and connect to it.</p>
 <blockquote>
 <p>[!CAUTION]
 The WiFi should be enabled on MacOS to have the beacon activated. But it should not be connected to any networks.</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/macbook-air-access-point-wifi-enabled.webp&quot; alt=&quot;Keeping wifi enabled and seeing the shared network broadcasted&quot; /&gt;
-&lt;figcaption&gt;WiFi is enabled, and is showing the &quot;Internet Sharing&quot; on Channel 11&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+   <img src="https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-enabled.webp" alt="Keeping wifi enabled and seeing the shared network broadcasted" />
+   <figcaption>WiFi is enabled, and is showing the "Internet Sharing" on Channel 11</figcaption>
+</figure>
 </blockquote>
 <h2>Changing the DHCP range</h2>
 <p>By default, macOS Internet Sharing assigns connected devices to the <code>192.168.2.0/24</code> range. I needed mine to be <code>192.168.68.0/24</code> to match my existing setup.</p>
@@ -544,10 +544,10 @@ Settings seems to cache these parameters. Quit the Settings application before a
 		<category term="network" />
 		<summary type="html">How I&apos;ve been able to enable ADB Wireless without user interaction.</summary>
 		<content type="html"><![CDATA[<p>Meta Quest headsets have a nasty habit of forgetting your wireless ADB trust relationship every time they reboot. For a research project deploying ten headsets to a classroom of teachers who've never touched a terminal, <em>&quot;just run <code>adb tcpip 5555</code> again&quot;</em> isn't a solution, it's a support ticket generator at best. I spent weeks trying to automate the &quot;Allow wireless debugging?&quot; popup out of existence. The path involved dead ends, Android security walls, and finally a brute-force accessibility hack that actually works.</p>
-<p>&lt;figure&gt;
-&lt;img src=&quot;/images/mq3-wireless-adb.webp&quot; alt=&quot;ADB Wireless Popup visible in a Meta Quest 3 headset&quot; /&gt;
-&lt;figcaption&gt;The &quot;Allow wireless debugging?&quot; popup on a Meta Quest 3.&lt;br/&gt;Credit: Image from &lt;a href=&quot;https://www.quest-games-optimizer.com/how-to-enable-adb-from-your-meta-quest&quot;&gt;QGO&lt;/a&gt;&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/mq3-wireless-adb.webp" alt="ADB Wireless Popup visible in a Meta Quest 3 headset" />
+    <figcaption>The "Allow wireless debugging?" popup on a Meta Quest 3.<br/>Credit: Image from <a href="https://www.quest-games-optimizer.com/how-to-enable-adb-from-your-meta-quest">QGO</a></figcaption>
+</figure>
 <h2>The Problem That Shouldn't Exist</h2>
 <p>Wireless ADB on stock Android is straightforward: enable it once, pair your machine, and the phone remembers. Meta's Quest OS, built on Android but heavily modified, treats this differently: On every reboot, the system clears its in-memory list of trusted wireless debugging fingerprints. The <code>adb_wifi_enabled</code> setting flips to 0 (which is normal). Reconnect, and you're greeted with the same permission dialog asking if you trust this network.</p>
 <p>For the <a href="https://project-simple.eu">SIMPLE project</a> — a swarm of six <a href="https://www.meta.com/quest/quest-3/">Meta Quest 3</a> headsets streaming video via <a href="https://github.com/Genymobile/scrcpy">scrcpy</a> and receiving commands from a central controller — this was a deployment blocker. We can't send a technician to every school every morning to click one popup in each headset...</p>
@@ -628,12 +628,12 @@ private void sendKey(int keyCode) {
 <h2>The Result</h2>
 <p>The app is a single APK, granted <code>WRITE_SECURE_SETTINGS</code> once via ADB after installing the app. After that, teachers power on the headsets, the service starts automatically, and wireless ADB is ready within seconds after the headset connect to the network without anyone touching the controllers.</p>
 <p>Repository is here if you're fighting the same fight: <a href="https://github.com/project-SIMPLE/adb-auto-enable">https://github.com/project-SIMPLE/adb-auto-enable</a></p>
-<p>&lt;figure&gt;
-&lt;video controls style=&quot;width:100%&quot;&gt;
-&lt;source src=&quot;/videos/mq3-wireless-adb.mp4&quot; type=&quot;video/mp4&quot;&gt;
-&lt;/video&gt;
-&lt;figcaption&gt;Demo: headset auto-enabling/accepting the ADB Wireless popup.&lt;/figcaption&gt;
-&lt;/figure&gt;</p>
+<figure>
+    <video controls style="width:100%">
+        <source src="https://arthurbrugiere.fr/videos/mq3-wireless-adb.mp4" type="video/mp4">
+    </video>
+    <figcaption>Demo: headset auto-enabling/accepting the ADB Wireless popup.</figcaption>
+</figure>
 <h2>Conclusion</h2>
 <p>If Meta ever exposes a system property or hidden API to persist wireless debugging trust, this whole accessibility dance becomes unnecessary. Some developers already filed feedback through their developer channels for, maybe, years, but I'm not holding my breath. For now, abusing the accessibility framework for input injection is the least-worst option.</p>
 ]]></content>
