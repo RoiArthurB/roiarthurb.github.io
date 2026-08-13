@@ -39,6 +39,7 @@ export async function getStaticPaths() {
             author: SITE_TITLE,
             icon: 'book',
             bgImage: post.data.heroImage ? resolveBlogHeroImage(post.data.heroImage.src) : undefined,
+            seed: post.id,
         },
     }));
 
@@ -50,6 +51,7 @@ export async function getStaticPaths() {
             author: SITE_TITLE,
             icon: 'flask',
             bgImage: project.heroImage ? resolveProjectImage(project.heroImage) : undefined,
+            seed: project.id,
         },
     }));
 
@@ -64,6 +66,7 @@ export const GET: APIRoute = async ({ props }) => {
             author: props.author as string | undefined,
             icon: props.icon as OgOptions['icon'],
             bgImage: props.bgImage as string | undefined,
+            seed: props.seed as string | undefined,
         }),
         { headers: { "Content-Type": "image/webp" } }
     );

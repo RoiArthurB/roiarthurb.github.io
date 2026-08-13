@@ -4,6 +4,7 @@ import satori from 'satori';
 import { html } from 'satori-html';
 import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
+import { ogPalette } from './ogPalette';
 
 async function loadLocalFont(filename: string) {
     const buf = await readFile(resolve(process.cwd(), 'public/fonts/inter', filename));
@@ -16,6 +17,7 @@ export interface OgOptions {
     icon?: 'book' | 'folder' | 'code' | 'flask';  // bottom-right icon — hidden if absent
     fontSize?: number;  // title font size override — if absent keeps 84px + overflow:hidden + max-height
     bgImage?: string;   // absolute path to a background image — falls back to dark CSS background if absent or unreadable
+    seed?: string;      // hashes to a per-entry hue — if absent keeps the site's amber palette
 }
 
 async function encodeImageAsDataUri(source: string): Promise<string | null> {
@@ -47,6 +49,7 @@ export async function generateOgImage(title: string, subtitle: string, options: 
     const fontDataRegular = await loadLocalFont('Inter-Regular.ttf');
     const fontDataBold = await loadLocalFont('Inter-Bold.ttf');
     const bgDataUri = options.bgImage ? await encodeImageAsDataUri(options.bgImage) : null;
+    const palette = ogPalette(options.seed);
 
     const baseFontSize = options.fontSize || (title.length > 40 ? 64 : 84);
     const titleStyle = `font-size: ${baseFontSize}px; flex-wrap: wrap; text-align: center; justify-content: center;`;
@@ -80,15 +83,15 @@ export async function generateOgImage(title: string, subtitle: string, options: 
     ` : '';
 
     const markup = html(`
-        <div style="background-color: #1f1f1e; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; font-family: 'Inter';">
+        <div style="background-color: ${palette.base}; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; font-family: 'Inter';">
 
             ${bgDataUri ? `<img src="${bgDataUri}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" />` : ''}
             ${bgDataUri 
             ? 
-                `<div style="display: flex; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.65);"></div>`
+                `<div style="display: flex; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: ${palette.overlay};"></div>`
             :
-                `<div style="display: flex; position: absolute; top: -150px; right: -50px; width: 600px; height: 600px; background-image: linear-gradient(135deg, rgba(255, 171, 0, 0.35), rgba(255, 171, 0, 0)); border-radius: 50%;"></div>
-                <div style="display: flex; position: absolute; bottom: -150px; left: -50px; width: 600px; height: 600px; background-image: linear-gradient(45deg, rgba(196, 127, 0, 0.25), rgba(196, 127, 0, 0)); border-radius: 50%;"></div>` 
+                `<div style="display: flex; position: absolute; top: -150px; right: -50px; width: 600px; height: 600px; background-image: ${palette.blob1}; border-radius: 50%;"></div>
+                <div style="display: flex; position: absolute; bottom: -150px; left: -50px; width: 600px; height: 600px; background-image: ${palette.blob2}; border-radius: 50%;"></div>`
             }
 
             <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 80px; width: 100%; height: 100%;">
