@@ -8,9 +8,9 @@
 	<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/" />
 	<author><name>Arthur Brugière</name></author>
 	<entry>
-		<id>https://arthurbrugiere.fr/blog/disabling-a-touchscreen-for-good/</id>
+		<id>https://arthurbrugiere.fr/blog/2026/08/disabling-a-touchscreen-for-good/</id>
 		<title>Disabling a touchscreen for good on X11 desktop</title>
-		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/disabling-a-touchscreen-for-good/" />
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/2026/08/disabling-a-touchscreen-for-good/" />
 		<published>2026-08-13T00:00:00.000Z</published>
 		<updated>2026-08-13T00:00:00.000Z</updated>
 		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
@@ -102,9 +102,9 @@ $ sudo libinput list-devices | grep -i elan  # X11 and Wayland
 ]]></content>
 	</entry>
 	<entry>
-		<id>https://arthurbrugiere.fr/blog/quest-adb-setup-simple/</id>
+		<id>https://arthurbrugiere.fr/blog/2026/08/quest-adb-setup-simple/</id>
 		<title>Auto-configuring Meta Quest headsets for classroom use with ADB</title>
-		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/quest-adb-setup-simple/" />
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/2026/08/quest-adb-setup-simple/" />
 		<published>2026-08-10T00:00:00.000Z</published>
 		<updated>2026-08-10T00:00:00.000Z</updated>
 		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
@@ -239,9 +239,9 @@ Disabling auto-updates keeps your fleet in a known software state, which is what
 ]]></content>
 	</entry>
 	<entry>
-		<id>https://arthurbrugiere.fr/blog/install-omv-8-without-ipv6/</id>
+		<id>https://arthurbrugiere.fr/blog/2026/06/install-omv-8-without-ipv6/</id>
 		<title>Installing OpenMediaVault without IPv6</title>
-		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/install-omv-8-without-ipv6/" />
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/2026/06/install-omv-8-without-ipv6/" />
 		<published>2026-06-04T00:00:00.000Z</published>
 		<updated>2026-06-04T00:00:00.000Z</updated>
 		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
@@ -368,9 +368,9 @@ Command: btrfs scrub start /srv/dev-disk-by-uuid-XXXX
 ]]></content>
 	</entry>
 	<entry>
-		<id>https://arthurbrugiere.fr/blog/packaging-nodejs-windows-sea/</id>
+		<id>https://arthurbrugiere.fr/blog/2026/05/packaging-nodejs-windows-sea/</id>
 		<title>Packaging a Node.js application with SEA and native binaries</title>
-		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/packaging-nodejs-windows-sea/" />
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/2026/05/packaging-nodejs-windows-sea/" />
 		<published>2026-05-29T00:00:00.000Z</published>
 		<updated>2026-05-29T00:00:00.000Z</updated>
 		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
@@ -453,9 +453,9 @@ module.exports = mod.exports;
 ]]></content>
 	</entry>
 	<entry>
-		<id>https://arthurbrugiere.fr/blog/macbook-air-access-point/</id>
+		<id>https://arthurbrugiere.fr/blog/2026/05/macbook-air-access-point/</id>
 		<title>Using Your MacBook as a Local WiFi Access Point</title>
-		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/macbook-air-access-point/" />
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/2026/05/macbook-air-access-point/" />
 		<published>2026-05-25T00:00:00.000Z</published>
 		<updated>2026-05-25T00:00:00.000Z</updated>
 		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
@@ -533,9 +533,9 @@ Settings seems to cache these parameters. Quit the Settings application before a
 ]]></content>
 	</entry>
 	<entry>
-		<id>https://arthurbrugiere.fr/blog/mq3-wireless-adb/</id>
+		<id>https://arthurbrugiere.fr/blog/2026/05/mq3-wireless-adb/</id>
 		<title>Making ADB Wireless more *accessible* on Meta Quest headsets</title>
-		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/mq3-wireless-adb/" />
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/2026/05/mq3-wireless-adb/" />
 		<published>2026-05-21T00:00:00.000Z</published>
 		<updated>2026-05-21T00:00:00.000Z</updated>
 		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
