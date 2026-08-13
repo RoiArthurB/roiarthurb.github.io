@@ -19,7 +19,7 @@
 		<category term="X11" />
 		<category term="udev" />
 		<summary type="html">A @reboot cron never disabled my laptop touchscreen. Finding the layer that does.</summary>
-		<content type="html"><![CDATA[<p>I own an old <a href="https://www.dell.com/support/product-details/en-vn/product/inspiron-11-3158-laptop/overview"><em>Dell Inspiron 2-in-1 11-3158</em></a> that I bought at a flea market years ago and I made it as my travel machine: an i3-6100U running <a href="https://mxlinux.org/">MX Linux</a> with <a href="https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)">Cinnamon</a>, maxed at 8GB of DDR3 RAM[^1].</p>
+		<content type="html"><![CDATA[<p>I own an old <a href="https://www.dell.com/support/product-details/en-vn/product/inspiron-11-3158-laptop/overview"><em>Dell Inspiron 2-in-1 11-3158</em></a> that I bought at a flea market years ago and made my travel machine: an i3-6100U running <a href="https://mxlinux.org/">MX Linux</a> with <a href="https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)">Cinnamon</a>, maxed at 8GB of DDR3 RAM[^1].</p>
 <p>&lt;figure&gt;
 &lt;img src=&quot;/images/disabling-a-touchscreen-for-good-laptop.webp&quot; alt=&quot;My Inspiron laptop covered with stickers&quot; /&gt;
 &lt;figcaption&gt;My Inspiron laptop covered with stickers, I love stickers!&lt;/figcaption&gt;
@@ -27,7 +27,7 @@
 <p>As it's a convertible (<em>2-in-1</em> model), it has a touchscreen, but it's broken and sometimes it bugs and blocks the cursor clicking in the upper corner, which makes it impossible to use. So I wanted to disable the touchscreen from that machine, for good.</p>
 <p>Killing it for the current session is simple. Making that stick across reboots meant working out which layer of the input stack owns the device, and it's been a little more complicated than I expected.</p>
 <h2>What I tried first</h2>
-<p>Playing a bit with <code>xinput</code> I made a little bash script which catch the touchscreen, and disable it's ID automatically:</p>
+<p>Playing a bit with <code>xinput</code> I made a little bash script which catches the touchscreen and disables it by ID automatically:</p>
 <pre><code class="language-bash">#!/bin/bash
 # Disable the touchscreen every time X11 starts
 
@@ -38,11 +38,11 @@ if [ -n &quot;$DEV_ID&quot; ]; then
     xinput disable &quot;$DEV_ID&quot;
 fi
 </code></pre>
-<p>The stuck cursor stops, until the next login where I had to relaunch the script. Easy, but can be automated to not have to think about it anymore, so the obvious next step is a <code>@reboot</code> <a href="https://en.wikipedia.org/wiki/Cron">cron</a> entry to run the script automatically and fix the problem forever, so I wrote one, rebooted, and the corner ate my clicks again.</p>
+<p>The stuck cursor stops, until the next login where I have to relaunch the script. Easy, but it can be automated so I don't have to think about it anymore. The obvious next step is a <code>@reboot</code> <a href="https://en.wikipedia.org/wiki/Cron">cron</a> entry to run the script automatically and fix the problem forever, so I wrote one, rebooted, and the corner ate my clicks again.</p>
 <p>It's not working...</p>
-<p>After some documentation digging, I found out that <code>@reboot</code> fires when cron starts (normal), which <strong>happens <em>before</em> Xorg runs</strong> and before my login session exists. <code>xinput</code> is an X client: it opens a connection to a running display and asks to flip a property to the server. With no display nor server to connect to, it has nothing to ask. The command runs, fails, and cron discards the output where I won't read it.</p>
+<p>After some documentation digging, I found out that <code>@reboot</code> fires when cron starts (normal), which <strong>happens <em>before</em> Xorg runs</strong> and before my login session exists. <code>xinput</code> is an X client: it opens a connection to a running display and asks the server to flip a property. With no display nor server to connect to, it has nothing to ask. The command runs, fails, and cron discards the output where I won't read it.</p>
 <h2>The Xorg layer</h2>
-<p>As said, this laptop is using <em>Cinnamon</em> which runs on X11, so on this machine I get the good old X11 stack.</p>
+<p>As said, this laptop is using <em>Cinnamon</em>, which runs on X11, so on this machine I get the good old X11 stack.</p>
 <blockquote>
 <p>[!NOTE]
 Little precision on the vocabulary:</p>
@@ -52,7 +52,7 @@ Little precision on the vocabulary:</p>
 <li><code>Xorg</code> is the implementation of that server almost every Linux desktop has run for decades</li>
 </ul>
 <p>They are all tightly linked and that's why the three names get used for each other.</p>
-<p>Cinnamon, Firefox and <code>xinput</code> are <code>X clients</code>: they own no hardware and ask the server for everything, so a client that starts before the server has nobody to ask to.</p>
+<p>Cinnamon, Firefox and <code>xinput</code> are <code>X clients</code>: they own no hardware and ask the server for everything, so a client that starts before the server has nobody to ask.</p>
 </blockquote>
 <p>The X server reads files in <code>/etc/X11/xorg.conf.d/</code> at its own startup, before any session loads, so a rule there applies from the first frame:</p>
 <pre><code>Section &quot;InputClass&quot;
@@ -66,24 +66,23 @@ EndSection
 <p>Matching on the product name plus <code>MatchIsTouchscreen</code> leaves the Synaptics touchpad and my other pointers untouched. <code>Option &quot;Ignore&quot; &quot;on&quot;</code> makes X drop the device before anything can use it, which covers all the event nodes the touchscreen exposes without having to name them.</p>
 <pre><code class="language-bash">$ sudo cp 99-disable-touchscreen.conf /etc/X11/xorg.conf.d/
 $ xinput list | grep -i elan   # after a reboot or a display manager restart: nothing
-
 </code></pre>
-<p>Everything works perfectly now: The touchscreen is disabled forever.</p>
-<p><em>&quot;Forever&quot;</em> in this context means &quot;until I migrate to Wayland&quot;, as that configuration file is only used by X11 session. So changing protocol creates no warning or logs, simply nothing reads it, the broken corner comes back, and I'll have to fix it again.</p>
-<p>Even if <em>Cinnamon</em> is currently using X11 by default, it will be migrating to Wayland soon (it is still <a href="https://forums.linuxmint.com/viewtopic.php?t=411761">marked as experimental</a>, but <a href="https://9to5linux.com/cinnamon-6-0-desktop-environment-arrives-with-initial-wayland-support">should arrive with the next major 6.0</a>). So this fix will soon won't work anymore for me.</p>
+<p>Everything works perfectly now: the touchscreen is disabled forever.</p>
+<p><em>&quot;Forever&quot;</em> in this context means &quot;until I migrate to Wayland&quot;, as that configuration file is only used by an X11 session. Switching protocol creates no warning and no logs, simply nothing reads it, the broken corner comes back, and I'll have to fix it again.</p>
+<p>Even if <em>Cinnamon</em> is currently using X11 by default, it will be migrating to Wayland soon. The Wayland session has been <a href="https://forums.linuxmint.com/viewtopic.php?t=411761">marked as experimental</a> since Cinnamon 6.0, and the Mint team <a href="https://www.phoronix.com/news/LinuxMint-Cinnamon-Wayland-Good">announced in June 2026</a> that the label goes away in Cinnamon 6.8, where both X11 and Wayland will be fully supported. So this fix won't work for me much longer.</p>
 <h2>Wayland reads none of that</h2>
-<p>Wayland has been pushed as a replacement to Xorg and, even if it has a compatibility layer, it's not a X server, so <code>/etc/X11/xorg.conf.d/</code> never gets opened. Under Wayland the compositor itself (Mutter, KWin, sway, else) talks to <code>libinput</code>, and there is no shared config file across compositors for killing a device.</p>
-<p>I want a universal fix, so I won't go and write one config file per compositor. The way out is to go one abstraction layer below, under any display servers level, to the part of the stack they share.</p>
+<p>Wayland has been pushed as a replacement to Xorg and, even if it has a compatibility layer, it's not an X server, so <code>/etc/X11/xorg.conf.d/</code> never gets opened. Under Wayland the compositor itself (Mutter, KWin, sway, and others) talks to <code>libinput</code>, and there is no shared config file across compositors for killing a device.</p>
+<p>I want a universal fix, so I won't go and write one config file per compositor. The way out is to go one abstraction layer below, under any display server, to the part of the stack they share.</p>
 <p>That level is <code>libinput</code>.</p>
-<p>The kernel exposes the touchscreen as an <em>event node</em>, <code>udev</code> enumerates it and tags it with everything it knows about the hardware. <code>libinput</code> reads those tags and turns raw events into the pointer and touch data its consumers ask for. Xorg is one of those consumers through the <code>xf86-input-libinput</code> driver, and every Wayland compositor is another. So killing the device at the <code>libinput</code> level is a universal fix covering both X11, Wayland, and everything else at once, as that doesn't care which session I boot into.</p>
-<p>A <code>udev</code> rule setting <code>LIBINPUT_IGNORE_DEVICE=1</code> makes <code>libinput</code> hand back nothing for that device to my Cinnamon session. The rule keys on the USB ID, <code>04f3:036e</code>:</p>
+<p>The kernel exposes the touchscreen as an <em>event node</em>, <code>udev</code> enumerates it and tags it with everything it knows about the hardware. <code>libinput</code> reads those tags and turns raw events into the pointer and touch data its consumers ask for. Xorg is one of those consumers through the <code>xf86-input-libinput</code> driver, and every Wayland compositor is another. So killing the device at the <code>libinput</code> level is a universal fix covering X11, Wayland and everything else at once, as that doesn't care which session I boot into.</p>
+<p>A <code>udev</code> rule setting <code>LIBINPUT_IGNORE_DEVICE=1</code> makes <code>libinput</code> hand back nothing for that device, so my Cinnamon session never sees it. The rule keys on the USB ID, <code>04f3:036e</code>:</p>
 <pre><code># Permanently disable the ELAN Touchscreen (USB 04f3:036e).
 # Compatible Wayland compositor AND X11 when it uses the xf86-input-libinput driver. 
 # Applied at device enumeration on every boot and hotplug -- no session hook required.
 SUBSYSTEM==&quot;input&quot;, ATTRS{idVendor}==&quot;04f3&quot;, ATTRS{idProduct}==&quot;036e&quot;, ENV{ID_INPUT_TOUCHSCREEN}==&quot;1&quot;, ENV{LIBINPUT_IGNORE_DEVICE}=&quot;1&quot;
 </code></pre>
-<p>The <code>04f3:036e</code> is the USB <em>vendor:product ID</em> baked into the touchscreen hardware itself. It's more stable than the event node name (<code>/dev/input/event7</code> might shuffle around) and more precise than matching by name alone.</p>
-<p>After writing the rule, we place it in the <code>udev</code> rules folder, a quick <code>udevadm control --reload-rules &amp;&amp; udevadm trigger</code> applies it without rebooting and we should be good to go.</p>
+<p>The <code>04f3:036e</code> is the USB <em>vendor:product ID</em> baked into the touchscreen hardware itself, and <code>lsusb</code> prints it for every device on the machine. It's more stable than the event node name (<code>/dev/input/event7</code> might shuffle around) and more precise than matching by name alone.</p>
+<p>Once written, the rule goes in the <code>udev</code> rules folder, and a quick <code>udevadm control --reload-rules &amp;&amp; udevadm trigger</code> applies it without rebooting.</p>
 <pre><code class="language-bash">$ sudo cp 99-disable-touchscreen.rules /etc/udev/rules.d/
 # Apply new rule without rebooting
 $ sudo udevadm control --reload-rules &amp;&amp; sudo udevadm trigger --subsystem-match=input --action=change
@@ -99,7 +98,7 @@ $ sudo libinput list-devices | grep -i elan  # X11 and Wayland
 <p>Rolling back is deleting <code>/etc/udev/rules.d/99-disable-touchscreen.rules</code> and running the same reload and trigger pair, which brings the device back without a reboot.</p>
 <p>There is one more floor below <code>udev</code>: unbinding the kernel driver, or blacklisting its module, which kills the touchscreen at a TTY login before any GUI starts. That would have worked too, but the broken corner only bothers me inside a desktop session, so I stopped at <code>udev</code>.</p>
 <p>&lt;!-- --- --&gt;</p>
-<p>[^1]: It's a 10 years-old machine, it's not the most powerful machine, but it works very good and is good enough as a travel laptop 🧔‍♂️</p>
+<p>[^1]: It's a 10-year-old machine, not the most powerful one, but it works very well and is good enough as a travel laptop 🧔‍♂️</p>
 ]]></content>
 	</entry>
 	<entry>
