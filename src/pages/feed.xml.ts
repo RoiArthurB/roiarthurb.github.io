@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
-import { getCollection } from 'astro:content';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import authorsData from '../data/authors.json';
 import { renderPostHtml } from '../utils/feed';
 import { url } from '../utils/paths';
+import { getPublishedPosts } from '../utils/posts';
 
 const escapeXml = (value: string) =>
 	value
@@ -20,9 +20,7 @@ export const GET: APIRoute = async ({ site, request }) => {
 	const origin = site ?? new URL(request.url);
 	const absolute = (path: string) => new URL(url(path), origin).href;
 
-	const posts = (await getCollection('blog')).filter((post) => post.data.publish === true);
-	// Sort by pubDate descending (newest first)
-	posts.sort((a, b) => new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime());
+	const posts = await getPublishedPosts();
 
 	const authorFor = (id: string) => authorsData.find((author) => author.id === id);
 

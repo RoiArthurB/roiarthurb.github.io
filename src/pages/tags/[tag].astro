@@ -1,6 +1,5 @@
 ---
 import { Image } from 'astro:assets';
-import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
@@ -8,17 +7,17 @@ import FormattedDate from '../../components/FormattedDate.astro';
 import AuthorLink from '../../components/AuthorLink.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import { url } from '../../utils/paths';
+import { getPublishedPosts } from '../../utils/posts';
 
 export async function getStaticPaths() {
-	const posts = (await getCollection('blog')).filter((post) => post.data.publish === true);
+	// Already newest-first, and filtering preserves that order.
+	const posts = await getPublishedPosts();
 	const tags = [...new Set(posts.flatMap((post) => post.data.tags || []))];
 
 	return tags.map((tag) => ({
 		params: { tag },
 		props: {
-			posts: posts
-				.filter((post) => post.data.tags?.includes(tag))
-				.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+			posts: posts.filter((post) => post.data.tags?.includes(tag)),
 		},
 	}));
 }

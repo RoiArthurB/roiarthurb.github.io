@@ -5,69 +5,9 @@ import Footer from '../components/Footer.astro';
 import { SITE_TITLE } from '../consts';
 import AuthorLink from '../components/AuthorLink.astro';
 import bibFileRaw from '../data/publications.bib?raw';
+import { type Author, formatAuthor, parsePublications } from '../utils/bibtex';
 
-interface Author {
-    first: string;
-    last: string;
-}
-
-interface BibEntry {
-    type: string;
-    key: string;
-    fields: Record<string, string>;
-    authors: Author[];
-}
-
-function parseBibTeX(input: string): BibEntry[] {
-    const entries: BibEntry[] = [];
-    const rawEntries = input.split(/@(\w+)\s*\{/g).slice(1);
-
-    for (let i = 0; i < rawEntries.length; i += 2) {
-        const type = rawEntries[i].trim();
-        const body = rawEntries[i+1];
-        if (!body) continue;
-
-        const keyMatch = body.match(/^\s*([^,]+),/);
-        const key = keyMatch ? keyMatch[1].trim() : 'unknown';
-        
-        const fields: Record<string, string> = { title: "Untitled", year: "0000" };
-        
-        const fieldRegex = /(\w+)\s*=\s*(?:\{((?:[^{}]|{[^{}]*})*)\}|"((?:[^"]|\\")*)"|(\d+))/g;
-        
-        let match;
-        while ((match = fieldRegex.exec(body)) !== null) {
-            const fieldKey = match[1].toLowerCase();
-            const val = match[2] || match[3] || match[4] || "";
-            fields[fieldKey] = val.replace(/\s+/g, ' ').trim();
-        }
-
-        let authors: Author[] = [];
-        if (fields.author) {
-            authors = fields.author.split(/\s+and\s+/i).map(str => {
-                const parts = str.split(',');
-                if (parts.length > 1) {
-                    return { first: parts[1].trim(), last: parts[0].trim() };
-                } else {
-                    const names = str.trim().split(' ');
-                    const last = names.pop() || "";
-                    const first = names.join(' ');
-                    return { first, last };
-                }
-            });
-        }
-
-        entries.push({ type, key, fields, authors });
-    }
-    return entries;
-}
-
-const publications = parseBibTeX(bibFileRaw).sort((a, b) => {
-    return (parseInt(b.fields.year) || 0) - (parseInt(a.fields.year) || 0);
-});
-
-const formatAuthor = (auth: Author) => {
-    return auth.first ? `${auth.first} ${auth.last}` : auth.last;
-};
+const publications = parsePublications(bibFileRaw);
 ---
 
 <!doctype html>
