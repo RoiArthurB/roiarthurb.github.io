@@ -96,6 +96,8 @@ export default defineConfig({
 		],
 	},
 	build: {
-		inlineStylesheets: 'always',
+		// 'auto' inlines only small stylesheets and emits the rest as a shared,
+		// cacheable file. 'always' re-sent the full CSS with every page.
+		inlineStylesheets: 'auto',
 	},
 });
