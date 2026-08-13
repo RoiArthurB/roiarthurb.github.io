@@ -90,8 +90,9 @@ export async function generateOgImage(title: string, subtitle: string, options: 
             ? 
                 `<div style="display: flex; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: ${palette.overlay};"></div>`
             :
-                `<div style="display: flex; position: absolute; top: -150px; right: -50px; width: 600px; height: 600px; background-image: ${palette.blob1}; border-radius: 50%;"></div>
-                <div style="display: flex; position: absolute; bottom: -150px; left: -50px; width: 600px; height: 600px; background-image: ${palette.blob2}; border-radius: 50%;"></div>`
+                palette.blobs.map((blob) =>
+                    `<div style="display: flex; position: absolute; ${blob.position} width: ${blob.size}px; height: ${blob.size}px; background-image: ${blob.gradient}; border-radius: 50%;"></div>`
+                ).join('')
             }
 
             <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 80px; width: 100%; height: 100%;">
