@@ -6,8 +6,10 @@ import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 import { ogPalette } from './ogPalette';
 
+// Build-time only: Satori rasterises OG cards on the server, so these fonts live
+// outside `public/` to keep them out of the published output.
 async function loadLocalFont(filename: string) {
-    const buf = await readFile(resolve(process.cwd(), 'public/fonts/inter', filename));
+    const buf = await readFile(resolve(process.cwd(), 'src/assets/fonts/inter', filename));
     return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 }
 
