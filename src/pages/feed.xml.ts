@@ -1,11 +1,9 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
-import MarkdownIt from 'markdown-it';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import authorsData from '../data/authors.json';
+import { renderPostHtml } from '../utils/feed';
 import { url } from '../utils/paths';
-
-const md = new MarkdownIt();
 
 const escapeXml = (value: string) =>
 	value
@@ -59,7 +57,7 @@ export const GET: APIRoute = async ({ site, request }) => {
 			...authorTags,
 			...categories,
 			`\t\t<summary type="html">${escapeXml(post.data.description)}</summary>`,
-			`\t\t<content type="html">${cdata(md.render(post.body ?? ''))}</content>`,
+			`\t\t<content type="html">${cdata(renderPostHtml(post.body, origin))}</content>`,
 			'\t</entry>',
 		].join('\n');
 	});
