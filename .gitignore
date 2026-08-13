@@ -26,6 +26,5 @@ pnpm-debug.log*
 # CUSTOM
 *.bak
 public/avatars
-activitypub-private-key.pem
 
 .pi
