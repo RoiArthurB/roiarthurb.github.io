@@ -177,6 +177,6 @@ Windows caches the credentials after the first successful connection. You enter 
 
 Two weeks in, the NAS just works. The Windows machines all connect, the scrubs run monthly (I hope), and everyone's happy about it.
 
----
+<!-- --- -->
 
 [^1]: Microsoft made this change in Windows 11 24H2, released in late 2024. It affects both the SMB signing requirement and guest logon behavior on Pro and Enterprise editions. See [Microsoft's official guidance on SMB signing and guest authentication](https://techcommunity.microsoft.com/blog/filecab/accessing-a-third-party-nas-with-smb-in-windows-11-24h2-may-fail/4154300).
