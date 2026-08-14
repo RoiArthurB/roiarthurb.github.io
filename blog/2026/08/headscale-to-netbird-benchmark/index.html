@@ -226,11 +226,32 @@
 <p>Tailscale keeps every pair in the netmap alive, with keepalives and periodic handshake attempts running for peers a machine speaks to twice a month. On a homelab that peaked around ten nodes for me, most of that work exists for nothing. It never broke anything and it never cost me an outage, just it eats more resources than an idle mesh should ask for.</p>
 <p>NetBird brings a tunnel up when traffic wants to flow and lets it drop afterwards. A peer I have not spoken to in a week sits in <code>Idle</code>, costs nothing while it waits, and pays a small setup penalty on the first packet I send it.</p>
 <p>Putting a number on that needs <code>tailscaled</code> against <code>netbird</code> CPU time over an hour of silence. I forgot to measure it for <em>Tailscale</em>, and I had already settled on one solution… Sorry, not sorry 🤷</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Machine</th><th>Netbird’s idle cost</th></tr></thead><tbody><tr><td>Intel NUC, x86_64</td><td>15 CPU-s per hour, 0.42% of one core</td></tr><tr><td>OnePlus 6 linux, arm64</td><td>13.2 CPU-s per hour, 0.37% of one core</td></tr><tr><td>Raspberry Pi 4</td><td>41.7 CPU-s per hour, 1.16% of one core</td></tr></tbody></table>
 <figure>
     <img src="/images/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5">
     <figcaption>Close to nothing on my Nuc machines while streaming music and homelabing.</figcaption>
 </figure>
-<h1 id="numbers----------------------------------------------------------------------------------------------">NUMBERS ---------------------------------------------------------------------------------------------</h1>
 <h2 id="the-one-column-derp-wins">The one column DERP wins</h2>
 <p>One result went the other way. Under a UDP flood, DERP degraded and survived where my own relay collapsed. DERP Hong Kong delivered 3.27 Mbps out of a 10 Mbps offer, dropped 67%, and stayed up, discarding the overflow and carrying on. On the NetBird path the receiver stopped getting bytes and the control socket died and docker restarted the container.</p>
 <p>I did not chase it further. That test produces an artificial load I never generate: the heaviest real traffic on my mesh is Navidrome streaming, which sits comfortably inside what the relay handles without complaint.</p>
