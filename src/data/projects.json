@@ -19,7 +19,7 @@
     "authors": [],
     "ogLabel": "EVEIL",
     "link": "https://project-simple.eu/projects/eveil/",
-    "heroImage": "/src/assets/projects/simple-eveil.png"
+    "heroImage": "/src/assets/projects/simple-eveil.jpg"
   },
   {
     "id": "project-simple",
@@ -30,7 +30,7 @@
     "authors": [],
     "ogLabel": "SIMPLE",
     "link": "https://project-simple.eu",
-    "heroImage": "/src/assets/projects/simple.png"
+    "heroImage": "/src/assets/projects/simple.jpg"
   },
   {
     "id": "project-star-farm",
@@ -62,7 +62,7 @@
     "authors": [],
     "ogLabel": "COMOKIT",
     "link": "https://comokit.org",
-    "heroImage": "/src/assets/projects/COMOKIT.png"
+    "heroImage": "/src/assets/projects/COMOKIT.jpg"
   },
   {
     "id": "project-escape",
