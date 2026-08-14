@@ -20,6 +20,11 @@
 	--color-header-border: rgba(0, 0, 0, 0.08);
 	--color-bg-mobile-menu: rgba(255, 255, 255, 0.95);
 
+	/* Tables need more contrast than --color-border: a grid has to stay
+	   readable across a whole row, not just separate two blocks. */
+	--color-table-border: #ddd8cd;
+	--color-table-stripe: #f3f0e9;
+
 	/* Spacing & UI */
 	--max-width: 960px;
 	--radius: 8px;
@@ -41,6 +46,10 @@
     --color-border: #242424;          /* was #334155 — subtler borders */
     --color-header-border: rgba(255, 171, 0, 0.08); /* faint amber glow on header */
     --color-bg-mobile-menu: rgba(12, 12, 12, 0.95);
+
+    /* #242424 is nearly invisible on the #1f1f1e page — tables get their own. */
+    --color-table-border: #3d3b37;
+    --color-table-stripe: #272625;
 
 	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
 	--shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
