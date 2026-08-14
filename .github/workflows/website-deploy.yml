@@ -37,7 +37,8 @@ jobs:
           noreferrer: true
           external-target-blank: true
           strip-tracking-params: true
-          check-links: true
+          # Disable as a lot of false-positive flagged over Github Actions IPs
+          check-links: false
         
       - name: Add .nojekyll file
         run: touch ./dist/.nojekyll
