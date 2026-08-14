@@ -19,34 +19,34 @@
 		<category term="mesh-network" />
 		<summary type="html">Two mesh VPNs, one Viettel CGNAT line, and the four measurements that moved my homelab off Headscale.</summary>
 		<content type="html"><![CDATA[<p>My homelab is not in one place. Some boxes run in my apartment in Hanoi, others at my parents' house in France, plus a few VPSs. Most machines sit behind routers I do not administer, and my laptop and phone move around with me. Reaching any of it from anywhere else used to mean port forwarding, or publishing a service to the open internet behind a login form and hoping for the best.</p>
-<p>A Mesh <a href="https://en.wikipedia.org/wiki/Virtual_private_network">Virtual Private Network</a> (<em>mesh VPN</em> for short) solves that. Every machine gets a private address that belongs to it and an encrypted tunnel to every other machine, built peer-to-peer instead of routed through a central concentrator. <code>ssh my-server.internal</code> is the same command whether I type it from the living room or from a phone on 5G.</p>
-<p>Modern mesh VPNs split into two halves. The control plane is a small server that knows every peer, distributes keys, and tells each machine how to reach the others. The connection between each machine is, generally, done using <a href="https://www.wireguard.com/">WireGuard</a> running straight between the peers, and the control server stays out of it. WireGuard is what made this class of tool practical: short keys, no session negotiation, and little enough overhead that the tunnel disappears into the noise.</p>
+<p>A mesh <a href="https://en.wikipedia.org/wiki/Virtual_private_network">Virtual Private Network</a> (<em>mesh VPN</em> for short) solves that. Every machine gets a private address that belongs to it and an encrypted tunnel to every other machine, built peer-to-peer instead of routed through a central concentrator. <code>ssh my-server.internal</code> is the same command whether I type it from the living room or from a phone on 5G.</p>
+<p>Modern mesh VPNs split into two halves. The control plane is a small server that knows every peer, distributes keys, and tells each machine how to reach the others. The connection between machines is generally <a href="https://www.wireguard.com/">WireGuard</a> running straight between the peers, with the control server staying out of it. WireGuard is what made this class of tool practical: short keys, no session negotiation, and little enough overhead that the tunnel disappears into the noise.</p>
 <figure>
     <img src="https://arthurbrugiere.fr/images/headscale-to-netbird-benchmark-netbird-front.webp" alt="Architecture of Netbird's mesh VPN" />
-    <figcaption>Illustration of what's a mesh VPN layout. One central server to coordinate all the peers direct connections.<br/>Credits to <a href="https://netbird.io/" target="_blank">Netbird</a></figcaption>
+    <figcaption>Illustration of a mesh VPN layout. One central server coordinating direct connections between all the peers.<br/>Credits to <a href="https://netbird.io/" target="_blank">Netbird</a></figcaption>
 </figure>
 <p>Peers cannot always reach each other, and homes behind carrier NAT often cannot. When the direct tunnel fails to come up, traffic falls back to a relay server that both sides can reach. Hold on to that word, because it decides most of this article.</p>
-<p>It's been few years that I'm interested in that, I started by testing various solutions such as manual WireGuard's configuration, <a href="https://nebula.defined.net/docs/">Nebula</a>, Slack's take on the problem, etc. They mostly worked well, but it also wanted me to hand-manage every certificate and every host definition, which stopped fitting my needs as the node count grew. The most popular alternative on the internet for Mesh VPN is <a href="https://tailscale.com">Tailscale</a>. However, as a European citizen and as of 2026, I would rather not hand the control plane of my private network to a US company. Especially when a FOSS re-implementation of that server exists, so I self-hosted <a href="https://headscale.net/">Headscale</a> instead.</p>
+<p>I have been interested in this for a few years, and I started by testing various solutions: manual WireGuard configuration, <a href="https://nebula.defined.net/docs/">Nebula</a> (Slack's take on the problem), and others. They mostly worked well, but they all wanted me to hand-manage every certificate and every host definition, which stopped fitting my needs as the node count grew. The most popular mesh VPN out there is <a href="https://tailscale.com">Tailscale</a>. However, as a European citizen and as of 2026, I would rather not hand the control plane of my private network to a US company. Especially when a FOSS reimplementation of that server exists, so I self-hosted <a href="https://headscale.net/">Headscale</a> instead.</p>
 <p>Headscale ran the whole thing for about a year and a half without drama. Two things wore me down.</p>
 <ul>
-<li>The first was the gap that comes with reimplementing someone else's control protocol. Among other things: <a href="https://github.com/juanfont/headscale/issues/1307">Tailnet Lock</a> is still an open issue, the ACL support was rough at the time I needed it, and I never figured out how to get Point-to-Point working.</li>
+<li>The first was the gap that comes with reimplementing someone else's control protocol. Among other things: <a href="https://github.com/juanfont/headscale/issues/1307">Tailnet Lock</a> is still an open issue, the ACL support was rough at the time I needed it, and I never figured out how to get point-to-point working.</li>
 <li>The second was cost on small hardware: <code>tailscaled</code> sat in the top five processes on most of my servers, which is more than a mesh client should ask for when the mesh is idle[^4].</li>
 </ul>
 <blockquote>
 <p>[!NOTE]
-I didn't find much people complaining about any of that, so it might be a me problem and not a common thing. But, mainly for the first point, going about 10 nodes was really keeping Tailscale as one of the top process on each of my machines.</p>
-<p>Can't say if it was a Headscale's problem, a Tailscale's one, nor anything... You're milage might varry 🙃</p>
+I didn't find many people complaining about any of that, so it might be a me problem rather than a common one. But on the first point especially, going past ten nodes kept Tailscale as one of the top processes on each of my machines.</p>
+<p>Can't say whether it was a Headscale problem, a Tailscale one, or something else entirely... Your mileage might vary 🙃</p>
 </blockquote>
-<p><a href="https://netbird.io/">NetBird</a> is fundamentally working the same way (coordination server, WireGuard, relay, etc), but has a different shape. First thing, the whole stack is FOSS (server and clients). This ensure to fix my first complain. Then it's shipping with the <em>&quot;Batteries included&quot;</em>, meaning it ships with a nice integrated web interface instead of a config file and a CLI, plenty of simple access configuration and more. The newer additions are what caught my attention: <a href="https://docs.netbird.io/manage/reverse-proxy">a built-in reverse proxy</a>, and <a href="https://docs.netbird.io/manage/peers/lazy-connection">lazy peer connections</a> (fixing my second issue).</p>
-<p>I still had one reason to stay put. Tailscale's global <a href="https://tailscale.com/docs/reference/derp-servers">DERP server network</a> (network of high availability relay servers) is a real perk, especially from Vietnam where Viettel's <a href="https://en.wikipedia.org/wiki/Carrier-grade_NAT">CGNAT</a> pushes most of my traffic through relays. So I stood NetBird up alongside Headscale, ran both in parallel on my homelab, and measured.</p>
+<p><a href="https://netbird.io/">NetBird</a> works the same way underneath (coordination server, WireGuard, relay), but it has a different shape. First, the whole stack is FOSS, server and clients, which settles my first complaint. Then it comes with the batteries included: a nice integrated web interface instead of a config file and a CLI, straightforward access configuration, and more. The newer additions are what caught my attention: <a href="https://docs.netbird.io/manage/reverse-proxy">a built-in reverse proxy</a>, and <a href="https://docs.netbird.io/manage/peers/lazy-connection">lazy peer connections</a>, which settles my second complaint.</p>
+<p>I still had one reason to stay put. Tailscale's global <a href="https://tailscale.com/docs/reference/derp-servers">DERP server network</a> (a network of high-availability relay servers) is a real perk, especially from Vietnam where Viettel's <a href="https://en.wikipedia.org/wiki/Carrier-grade_NAT">CGNAT</a> pushes most of my traffic through relays. So I stood NetBird up alongside Headscale, ran both in parallel on my homelab, and measured.</p>
 <h2>The rig</h2>
-<p>For these tests, I decided to use the widest range of machines I have running:</p>
-<p>Two peers, both in Hanoi (on Viettel connections) in different parts of the city: an Intel NUC running <a href="https://www.debian.org/">Debian</a> on x86_64, and a OnePlus 6 running <a href="https://postmarketos.org/">postmarketOS</a>[^2] as a small ARM64 server. My trusty cheap <a href="https://www.ovh.com/">OVH</a> <a href="https://en.wikipedia.org/wiki/Virtual_private_server">VPS</a>[^1] in Singapore carries both control planes (Headscale and NetBird) during the parallel run, including NetBird's built-in relay. Tailscale's nearest DERP region for this path is Hong Kong.</p>
+<p>For these tests, I decided to use the widest range of machines I have running.</p>
+<p>Two peers, both in Hanoi on Viettel connections in different parts of the city: an Intel NUC running <a href="https://www.debian.org/">Debian</a> on x86_64, and a OnePlus 6 running <a href="https://postmarketos.org/">postmarketOS</a>[^2] as a small ARM64 server. My trusty cheap <a href="https://www.ovh.com/">OVH</a> <a href="https://en.wikipedia.org/wiki/Virtual_private_server">VPS</a>[^1] in Singapore carries both control planes (Headscale and NetBird) during the parallel run, including NetBird's built-in relay. Tailscale's nearest DERP region for this path is Hong Kong.</p>
 <figure>
     <img src="https://arthurbrugiere.fr/images/headscale-to-netbird-benchmark-architecture.webp" alt="Architecture of this series of tests" />
     <figcaption>Architecture of this series of tests.</figcaption>
 </figure>
-<p>That topology is what makes this comparison interesting, at least to me. Published comparisons of these tools tend to run between well-connected servers on clean paths — VPS to VPS over fiber — where every difference listed below rounds to zero. Half of my test rig is a phone with Android scraped off it, sitting behind a residential line in a city with flaky internet connectivity.</p>
+<p>That topology is what makes this comparison interesting, at least to me. Published comparisons of these tools tend to run between well-connected servers on clean paths (VPS to VPS over fiber), where every difference listed below rounds to zero. Half of my test rig is a phone with Android scraped off it, sitting behind a residential line in a city with flaky internet connectivity.</p>
 <p>I wanted four numbers out of the testing:</p>
 <ol>
 <li>Whether either stack can build a direct tunnel at all;</li>
@@ -56,11 +56,11 @@ I didn't find much people complaining about any of that, so it might be a me pro
 </ol>
 <blockquote>
 <p>[!NOTE]
-In this article I will name my <em>Headscale</em>'s network as <em>Tailscale</em> for the most part.</p>
-<p>The thing is, yes I'm running the <em>Headscale</em> coordination server, but the clients are Tailscale's one, the connection are relayed on Tailscale's server; and at the end of the day, none of my tests really involved Headscale code itself.</p>
+In this article I call my <em>Headscale</em> network <em>Tailscale</em> for the most part.</p>
+<p>The thing is, yes, I run the <em>Headscale</em> coordination server, but the clients are Tailscale's, the connections are relayed on Tailscale's servers, and at the end of the day none of my tests really involved Headscale code itself.</p>
 </blockquote>
 <h2>Everything gets relayed with CGNAT</h2>
-<p>No suspense: Neither stack builds a direct tunnel between these two peers, and neither one can.</p>
+<p>No suspense: neither stack builds a direct tunnel between these two peers, and neither one can.</p>
 <p>Viettel puts my connections behind <a href="https://en.wikipedia.org/wiki/Carrier-grade_NAT">Carrier-Grade NAT (CGNAT)</a>, and at least one side of this pair gets symmetric mapping: the carrier assigns a fresh source port for every destination a peer talks to. The public address a peer discovers for itself is therefore useless to anybody else, and the hole-punching both meshes attempt has nothing to aim at.</p>
 <p>Tailscale reached that conclusion on its own, which is what makes me believe it. Its NAT traversal is as good as this field gets, down to birthday-paradox port guessing against uncooperative carriers, and it still gave up and relayed. NetBird came to the same answer.</p>
 <p>So every number below compares one relay against another: NetBird through my own VPS in Singapore 🇸🇬, Tailscale through DERP Hong Kong 🇭🇰, both connecting clients in Vietnam 🇻🇳. That is how my mesh runs every day, which makes it the comparison I care about.</p>
@@ -84,11 +84,11 @@ In this article I will name my <em>Headscale</em>'s network as <em>Tailscale</em
 </tr>
 </tbody>
 </table>
-<p>Netbird looks to be a winner, but there's two other things explaining that gap. Geography comes first, since my own relay sits closer to both peers than Hong Kong does. The second is the OnePlus device: Tailscale ships userspace WireGuard while NetBird uses the Linux kernel's module, and on a phone SoC that per-packet cost compounds across a thirty-second run. More on that below.</p>
-<p>I tested by ignored any UDP figure I got out of <code>iperf3 -u -b 0</code> on a relayed path[^3].</p>
+<p>NetBird looks like the winner, but two other things explain that gap. Geography comes first, since my own relay sits closer to both peers than Hong Kong does. The second is the OnePlus device: Tailscale ships userspace WireGuard while NetBird uses the Linux kernel module, and on a phone SoC that per-packet cost compounds across a thirty-second run. More on that below.</p>
+<p>I ignored every UDP figure I got out of <code>iperf3 -u -b 0</code> on a relayed path[^3].</p>
 <h2>Latency</h2>
-<p>Latency is the important day-to-day number I'll see. Throughput matters when I copy a backup once a month; latency matters every time I type into an SSH session or load a web UI running on another machine.</p>
-<p>The main difference is at what level runs the WireGuard tunner, kernel or userspace. Tailscale's client always runs <code>wireguard-go</code> in userspace, which buys them a super wide compatibility in a single implementation but costs a trip out of the kernel and back for every packet. NetBird uses the kernel WireGuard module when Linux offers it, less good compatibility but better (native) performances. The difference runs from tens to a couple hundred microseconds per packet, which sounds like nothing but can quickly add up.</p>
+<p>Latency is the important day-to-day number I see. Throughput matters when I copy a backup once a month; latency matters every time I type into an SSH session or load a web UI running on another machine.</p>
+<p>The main difference is the level the WireGuard tunnel runs at, kernel or userspace. Tailscale's client always runs <code>wireguard-go</code> in userspace, which buys them very wide compatibility from a single implementation but costs a trip out of the kernel and back for every packet. NetBird uses the kernel WireGuard module when Linux offers it, which means weaker compatibility and better native performance. The difference runs from tens to a couple hundred microseconds per packet, which sounds like nothing but adds up.</p>
 <p>500 samples at 50 ms intervals, with a raw LAN baseline to anchor the two overlays:</p>
 <pre><code class="language-bash">ping -c 500 -i 0.05 nuc.local          # LAN, no overlay
 ping -c 500 -i 0.05 nuc.ts.internal    # Tailscale
@@ -130,18 +130,18 @@ ping -c 500 -i 0.05 nuc.nb.internal    # NetBird
 </tr>
 </tbody>
 </table>
-<p>500 samples is enough to erase most of the statistical noises (more won't give much more details), so the 1.3 ms gap between the two overlays is a real result. NetBird costs a quarter of a millisecond over raw LAN, about what kernel WireGuard encap and decap should cost. Tailscale's 1.56 ms is the userspace tax on this hardware. Same with the relayed connection.</p>
+<p>500 samples is enough to erase most of the statistical noise (more won't tell you much), so the 1.3 ms gap between the two overlays is a real result. NetBird costs a quarter of a millisecond over raw LAN, about what kernel WireGuard encap and decap should cost. Tailscale's 1.56 ms is the userspace tax on this hardware. The relayed pair keeps the same ordering.</p>
 <p>One detail I enjoyed: the LAN baseline's worst sample during those tests came in at 38.6 ms, higher than the maximum of either overlay on LAN. My WiFi throws bigger outliers than either mesh does 😅</p>
-<h2>The idle cost, which I never measured</h2>
+<h2>The idle cost, which I only half measured</h2>
 <p>Kernel WireGuard buys per-packet latency on a pair that is already talking. NetBird's lazy connections buy something else, and no ping test will show it.</p>
-<p>Tailscale keeps every pair in the netmap alive, with keepalives and periodic handshake attempts running for peers a machine speaks to twice a month. On a homelab that peaked around ten nodes for me, most of that work exists for nothing. It never broke anything and it never cost me an outage, just it eats more resources than an idle mesh should ask for.</p>
+<p>Tailscale keeps every pair in the netmap alive, with keepalives and periodic handshake attempts running for peers a machine speaks to twice a month. On a homelab that peaked around ten nodes for me, most of that work exists for nothing. It never broke anything and it never cost me an outage, it just eats more resources than an idle mesh should ask for.</p>
 <p>NetBird brings a tunnel up when traffic wants to flow and lets it drop afterwards. A peer I have not spoken to in a week sits in <code>Idle</code>, costs nothing while it waits, and pays a small setup penalty on the first packet I send it.</p>
-<p>Putting a number on that needs <code>tailscaled</code> against <code>netbird</code> CPU time over an hour of silence. I forgot to measure it for <em>Tailscale</em>, and I had already settled on one solution... Sorry, not sorry 🤷</p>
+<p>Putting a number on that needs <code>tailscaled</code> against <code>netbird</code> CPU time over an hour of silence. I forgot to measure the <em>Tailscale</em> side, and by then I had already settled on one solution... Sorry, not sorry 🤷</p>
 <table>
 <thead>
 <tr>
 <th>Machine</th>
-<th>Netbird's idle cost</th>
+<th>NetBird's idle cost</th>
 </tr>
 </thead>
 <tbody>
@@ -161,11 +161,11 @@ ping -c 500 -i 0.05 nuc.nb.internal    # NetBird
 </table>
 <figure>
     <img src="https://arthurbrugiere.fr/images/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5" />
-    <figcaption>Close to nothing on my Nuc machines while streaming music and homelabing.</figcaption>
+    <figcaption>Close to nothing on my NUC while streaming music and homelabbing.</figcaption>
 </figure>
 <h2>The one column DERP wins</h2>
-<p>One result went the other way. Under a UDP flood, DERP degraded and survived where my own relay collapsed. DERP Hong Kong delivered 3.27 Mbps out of a 10 Mbps offer, dropped 67%, and stayed up, discarding the overflow and carrying on. On the NetBird path the receiver stopped getting bytes and the control socket died and docker restarted the container.</p>
-<p>I did not chase it further. That test produces an artificial load I never generate: the heaviest real traffic on my mesh is Navidrome streaming, which sits comfortably inside what the relay handles without complaint.</p>
+<p>One result went the other way. Under a UDP flood, DERP degraded and survived where my own relay collapsed. DERP Hong Kong delivered 3.27 Mbps out of a 10 Mbps offer, dropped 67%, and stayed up, discarding the overflow and carrying on. On the NetBird path the receiver stopped getting bytes, the control socket died, and Docker restarted the container.</p>
+<p>I did not chase it further. That test produces an artificial load I never generate: the heaviest real traffic on my mesh is Navidrome streaming, which sits well inside what the relay handles.</p>
 <h2>Worth a weekend</h2>
 <table>
 <thead>
@@ -218,9 +218,9 @@ ping -c 500 -i 0.05 nuc.nb.internal    # NetBird
 </tr>
 </tbody>
 </table>
-<p>I'll admit that this comparaison is not perfect as Headscale offers a dedicated self-hosted DERP server (same as the winning Netbird) and that I forgot to measure plenty of other interesting stuff since I wasn't planning to exactly make an article about it at the time. But those metrics on top of all the nicer quality of life to administrate my mesh sold it to me.</p>
-<p>Reconfiguring everything took me a weekend or such. I reinstalled the clients, rebuilt the access rules in a web interface instead of a JSON file, and repointed the handful of services with old mesh addresses baked into their configs, been able to create and understand VPN-To-Site.</p>
-<p><em>Bref</em>, I now run my homelab FOSS from client to control plane, comes with nice features, and moves packets faster and lighter on the hardware I own.</p>
+<p>I'll admit this comparison is not perfect, since Headscale supports a dedicated self-hosted DERP server (the same setup that won it for NetBird) and I forgot to measure plenty of other interesting things, as I wasn't planning to write an article about it at the time. But those metrics, on top of all the nicer quality of life in administrating my mesh, sold it to me.</p>
+<p>Reconfiguring everything took me a weekend or so. I reinstalled the clients, rebuilt the access rules in a web interface instead of a JSON file, repointed the handful of services with old mesh addresses baked into their configs, and got site-to-site routing working in a way I understand.</p>
+<p><em>Bref</em>, my homelab now runs FOSS from client to control plane, comes with nice features, and moves packets faster and lighter on the hardware I own.</p>
 <!-- --- -->
 <p>[^1]: The old <a href="https://us.ovhcloud.com/resources/blog/vps-2020/"><em>Starter VPS 2020</em></a> offer, which doesn't exist anymore: 1 vCore, 2 GB of RAM and 20 GB of storage for a few euros per month. Honestly I don't know how it runs this well on those specs!
 [^2]: Yes, a smartphone with Android scraped away and turned into a full server. Maybe an article about that one day. 🤷 Maybe.
