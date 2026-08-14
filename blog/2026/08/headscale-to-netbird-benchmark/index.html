@@ -1,0 +1,444 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-tldeq5d5><head><meta charset="utf-8"><script data-cfasync="false">
+	(() => {
+		const root = document.documentElement;
+		const paintTheme = (theme) => {
+			const dark = theme === 'dark';
+			root.setAttribute('data-theme', dark ? 'dark' : 'light');
+			root.style.setProperty('background-color', 'var(--color-bg)');
+			root.style.colorScheme = dark ? 'dark' : 'light';
+		};
+		let theme = 'light';
+		try {
+			const s = localStorage.getItem('theme');
+			if (s === 'dark' || s === 'light') theme = s;
+			else if (matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+		} catch {
+			if (matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+		}
+		paintTheme(theme);
+		window.addEventListener('load', () => root.setAttribute('data-theme-ready', 'true'), { once: true });
+		window.__setPreferredTheme = paintTheme;
+	})();
+</script><style>
+	/* CSS variables inline — available immediately in all modes (dev + prod), before any external CSS */
+	:root {
+		--color-bg: #ffffff;
+		--color-bg-offset: #ffffff;
+		--color-bg-header: rgba(255, 255, 255, 0.85);
+		--color-text-main: #1a1a1a;
+		--color-text-muted: #555555;
+		--color-accent: #c47f00;
+		--color-border: #eaeaea;
+	}
+	[data-theme='dark'] {
+		--color-bg: #1f1f1e;
+		--color-bg-offset: #272726;
+		--color-bg-header: rgba(31, 31, 30, 0.85);
+		--color-text-main: #ddd4c0;
+		--color-text-muted: #6b6358;
+		--color-accent: #ffab00;
+		--color-border: #242424;
+	}
+	html, body { min-height: 100%; background-color: var(--color-bg); }
+	@media (prefers-color-scheme: dark) {
+		html:not([data-theme='light']), html:not([data-theme='light']) body { background-color: var(--color-bg); }
+	}
+	html[data-theme='dark'], html[data-theme='dark'] body { background-color: var(--color-bg); color-scheme: dark; }
+	html[data-theme='light'], html[data-theme='light'] body { background-color: var(--color-bg); color-scheme: light; }
+	/* Critical header layout — prevents FOUC before component CSS loads */
+	header {
+		position: sticky;
+		top: 0;
+		z-index: 100;
+		padding: 0 1em;
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+	}
+	header nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		max-width: 960px;
+		margin: 0 auto;
+		height: 4.5rem;
+	}
+	header { background-color: var(--color-bg-header); }
+	/* Critical card backgrounds — prevents white flash in dark mode */
+	.project-card, .interactive-card, .pi-card, .collab-card, .team-card {
+		background-color: var(--color-bg-offset);
+		border-color: var(--color-border);
+	}
+	.team-hero h1 { color: var(--color-text-main); }
+	.team-hero p { color: var(--color-text-muted); }
+	body {
+		background-color: var(--color-bg);
+		color: var(--color-text-main);
+		margin: 0;
+	}
+	/* Suppress all transitions until page is fully styled */
+	html:not([data-theme-ready]) *, html:not([data-theme-ready]) *::before, html:not([data-theme-ready]) *::after {
+		transition: none !important;
+		animation: none !important;
+	}
+</style><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/atom+xml" title="Arthur Brugière" href="https://arthurbrugiere.fr/feed.xml"><link rel="alternate" type="application/rss+xml" title="Arthur Brugière (RSS)" href="https://arthurbrugiere.fr/rss.xml"><meta name="generator" content="Astro v7.2.1"><meta name="color-scheme" content="light dark"><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/agina.otf" as="font" type="font/otf" crossorigin><link rel="preload" href="/fonts/Epical Comeback.otf" as="font" type="font/otf" crossorigin><style>
+		@font-face {
+			font-family: "Atkinson";
+			src: url("/fonts/atkinson-regular.woff") format("woff");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Atkinson";
+			src: url("/fonts/atkinson-bold.woff") format("woff");
+			font-weight: 700;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Agina";
+			src: url("/fonts/agina.otf") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Epical";
+			src: url("/fonts/Epical Comeback.otf") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+	</style><link rel="canonical" href="https://arthurbrugiere.fr/blog/2026/08/headscale-to-netbird-benchmark/"><title>I benchmarked Headscale against NetBird, then migrated</title><meta name="title" content="I benchmarked Headscale against NetBird, then migrated"><meta name="description" content="Two mesh VPNs, one Viettel CGNAT line, and the four measurements that moved my homelab off Headscale."><meta property="og:type" content="website"><meta property="og:url" content="https://arthurbrugiere.fr/blog/2026/08/headscale-to-netbird-benchmark/"><meta property="og:title" content="I benchmarked Headscale against NetBird, then migrated"><meta property="og:description" content="Two mesh VPNs, one Viettel CGNAT line, and the four measurements that moved my homelab off Headscale."><meta property="og:image" content="https://arthurbrugiere.fr/blog/2026/08/headscale-to-netbird-benchmark.webp"><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://arthurbrugiere.fr/blog/2026/08/headscale-to-netbird-benchmark/"><meta property="twitter:title" content="I benchmarked Headscale against NetBird, then migrated"><meta property="twitter:description" content="Two mesh VPNs, one Viettel CGNAT line, and the four measurements that moved my homelab off Headscale."><meta property="twitter:image" content="https://arthurbrugiere.fr/blog/2026/08/headscale-to-netbird-benchmark.webp"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://arthurbrugiere.fr/#website","url":"https://arthurbrugiere.fr","name":"Arthur Brugière","description":"Two mesh VPNs, one Viettel CGNAT line, and the four measurements that moved my homelab off Headscale.","inLanguage":"en"},{"@type":"Person","@id":"https://arthurbrugiere.fr/#person","name":"Arthur Brugière","jobTitle":"Computer Science Researcher / IT Geek","url":"https://arthurbrugiere.fr","sameAs":["https://github.com/RoiArthurB","https://orcid.org/0000-0001-7220-449X","https://scholar.google.com/citations?user=Zk8mYXoAAAAJ","https://www.linkedin.com/in/arthurbrugiere/"]}]}</script><link rel="stylesheet" href="/_astro/Header.Br8TgZRg.css"><link rel="stylesheet" href="/_astro/_..DO-udsM0.css"></head><body data-astro-cid-tldeq5d5><header data-astro-cid-nen7h5rs><nav data-astro-cid-nen7h5rs><h2 style="font-family: var(--font-serif);" data-astro-cid-nen7h5rs><a href="/" data-astro-cid-nen7h5rs>Arthur Brugière</a></h2><div class="internal-links" data-astro-cid-nen7h5rs><a href="/" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Home</a><a href="/projects" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Projects</a><a href="/software" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Software</a><a href="/publications" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Publications</a><div class="dropdown" data-astro-cid-nen7h5rs><a href="/blog" class="active" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Blog</a><div class="dropdown-content" data-astro-cid-nen7h5rs><!-- <HeaderLink href={url('/blog')}>News</HeaderLink> --><!-- <HeaderLink href={url('/tags')}>Tags</HeaderLink> --><a href="/archive" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Archive</a></div></div><a href="/resume.pdf" target="_blank" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>CV</a><a href="/slashes" style="color: var(--color-bg)" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>/</a></div><div class="header-actions" data-astro-cid-nen7h5rs><button id="search-toggle-desktop" class="search-toggle" aria-label="Search site" data-astro-cid-nen7h5rs><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><circle cx="11" cy="11" r="8" data-astro-cid-nen7h5rs></circle><line x1="21" y1="21" x2="16.65" y2="16.65" data-astro-cid-nen7h5rs></line></svg></button><button id="theme-toggle" aria-label="Toggle Dark Mode" data-astro-cid-nen7h5rs><svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><circle cx="12" cy="12" r="5" data-astro-cid-nen7h5rs></circle><line x1="12" y1="1" x2="12" y2="3" data-astro-cid-nen7h5rs></line><line x1="12" y1="21" x2="12" y2="23" data-astro-cid-nen7h5rs></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" data-astro-cid-nen7h5rs></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" data-astro-cid-nen7h5rs></line><line x1="1" y1="12" x2="3" y2="12" data-astro-cid-nen7h5rs></line><line x1="21" y1="12" x2="23" y2="12" data-astro-cid-nen7h5rs></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" data-astro-cid-nen7h5rs></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" data-astro-cid-nen7h5rs></line></svg><svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" data-astro-cid-nen7h5rs></path></svg></button><button id="menu-toggle" aria-label="Toggle Menu" data-astro-cid-nen7h5rs><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><line x1="3" y1="12" x2="21" y2="12" data-astro-cid-nen7h5rs></line><line x1="3" y1="6" x2="21" y2="6" data-astro-cid-nen7h5rs></line><line x1="3" y1="18" x2="21" y2="18" data-astro-cid-nen7h5rs></line></svg></button></div></nav><div id="mobile-menu" class="mobile-menu hidden" data-astro-cid-nen7h5rs><div class="mobile-menu-header" data-astro-cid-nen7h5rs><span class="mobile-menu-title" data-astro-cid-nen7h5rs>Menu</span><button id="search-toggle-mobile" class="search-toggle" aria-label="Search site" data-astro-cid-nen7h5rs><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><circle cx="11" cy="11" r="8" data-astro-cid-nen7h5rs></circle><line x1="21" y1="21" x2="16.65" y2="16.65" data-astro-cid-nen7h5rs></line></svg></button></div><a href="/" data-astro-cid-nen7h5rs>Home</a><a href="/projects" data-astro-cid-nen7h5rs>Projects</a><a href="/software" data-astro-cid-nen7h5rs>Software</a><a href="/publications" data-astro-cid-nen7h5rs>Publications</a><a href="/blog" class="mobile-menu-section" data-astro-cid-nen7h5rs>Blog</a><div class="mobile-submenu" data-astro-cid-nen7h5rs><a href="/archive" data-astro-cid-nen7h5rs>Archive</a></div><a href="/resume.pdf" target="_blank" data-astro-cid-nen7h5rs>CV</a></div></header><script type="module">document.getElementById(`theme-toggle`)?.addEventListener(`click`,()=>{let e=document.documentElement.getAttribute(`data-theme`)===`dark`?`light`:`dark`;window.__setPreferredTheme?.(e),localStorage.setItem(`theme`,e)}),document.getElementById(`menu-toggle`)?.addEventListener(`click`,()=>{document.getElementById(`mobile-menu`)?.classList.toggle(`hidden`)}),document.querySelectorAll(`.search-toggle`).forEach(e=>{e.addEventListener(`click`,()=>{document.dispatchEvent(new CustomEvent(`open-search`))})});</script><main data-astro-cid-tldeq5d5><article data-astro-cid-tldeq5d5><div class="hero-image" data-astro-cid-tldeq5d5><img width="1020" height="510" src="/blog/2026/08/headscale-to-netbird-benchmark.webp" alt="I benchmarked Headscale against NetBird, then migrated" loading="eager" fetchpriority="high" data-astro-cid-tldeq5d5></div><div class="blog-container" data-astro-cid-tldeq5d5><div class="prose-wrapper" data-astro-cid-tldeq5d5><div class="prose" data-astro-cid-tldeq5d5><div class="title" data-astro-cid-tldeq5d5><div class="date" data-astro-cid-tldeq5d5><time datetime="2026-08-14T00:00:00.000Z">Aug 14, 2026</time><span class="reading-time" data-astro-cid-tldeq5d5> · 12 min read</span></div><h1 data-astro-cid-tldeq5d5>I benchmarked Headscale against NetBird, then migrated</h1><div class="blog-tags" style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.75rem;" data-astro-cid-tldeq5d5><a href="/tags/linux" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#linux</a><a href="/tags/server" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#server</a><a href="/tags/mesh-network" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#mesh-network</a></div></div><details class="toc-mobile-details" data-astro-cid-p33bl5ka><summary class="toc-mobile-summary" data-astro-cid-p33bl5ka>Table of Contents<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-down" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-p33bl5ka><path stroke="none" d="M0 0h24v24H0z" fill="none" data-astro-cid-p33bl5ka></path><polyline points="6 9 12 15 18 9" data-astro-cid-p33bl5ka></polyline></svg></summary><nav class="toc-mobile-content" data-astro-cid-p33bl5ka><ul class="toc-list-mobile" data-astro-cid-p33bl5ka><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#the-rig" data-astro-cid-p33bl5ka>The rig</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#everything-gets-relayed-with-cgnat" data-astro-cid-p33bl5ka>Everything gets relayed with CGNAT</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#throughput" data-astro-cid-p33bl5ka>Throughput</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#latency" data-astro-cid-p33bl5ka>Latency</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#the-idle-cost-which-i-never-measured" data-astro-cid-p33bl5ka>The idle cost, which I never measured</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#the-one-column-derp-wins" data-astro-cid-p33bl5ka>The one column DERP wins</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#worth-a-weekend" data-astro-cid-p33bl5ka>Worth a weekend</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#footnote-label" data-astro-cid-p33bl5ka>Footnotes</a></li></ul></nav></details><script type="module">var e;function t(){e&&e.disconnect(),e=new IntersectionObserver(e=>{e.forEach(e=>{let t=e.target.getAttribute(`id`);if(!t)return;let n=document.querySelector(`.toc-item a[href="#${t}"]`),r=document.querySelector(`.toc-item-mobile a[href="#${t}"]`);e.isIntersecting&&(document.querySelectorAll(`.toc-item`).forEach(e=>e.classList.remove(`active`)),document.querySelectorAll(`.toc-item-mobile`).forEach(e=>e.classList.remove(`active`)),n?.parentElement?.classList.add(`active`),r?.parentElement?.classList.add(`active`))})},{root:null,rootMargin:`-100px 0px -60% 0px`,threshold:0}),document.querySelectorAll(`h2, h3`).forEach(t=>{e?.observe(t)})}t(),document.addEventListener(`astro:after-swap`,t);</script><p>My homelab is not in one place. Some boxes run in my apartment in Hanoi, others at my parents’ house in France, plus a few VPSs. Most machines sit behind routers I do not administer, and my laptop and phone move around with me. Reaching any of it from anywhere else used to mean port forwarding, or publishing a service to the open internet behind a login form and hoping for the best.</p>
+<p>A Mesh <a href="https://en.wikipedia.org/wiki/Virtual_private_network" target="_blank" rel="noopener noreferrer nofollow">Virtual Private Network</a> (<em>mesh VPN</em> for short) solves that. Every machine gets a private address that belongs to it and an encrypted tunnel to every other machine, built peer-to-peer instead of routed through a central concentrator. <code>ssh my-server.internal</code> is the same command whether I type it from the living room or from a phone on 5G.</p>
+<p>Modern mesh VPNs split into two halves. The control plane is a small server that knows every peer, distributes keys, and tells each machine how to reach the others. The connection between each machine is, generally, done using <a href="https://www.wireguard.com/" target="_blank" rel="noopener noreferrer nofollow">WireGuard</a> running straight between the peers, and the control server stays out of it. WireGuard is what made this class of tool practical: short keys, no session negotiation, and little enough overhead that the tunnel disappears into the noise.</p>
+<figure>
+    <img src="/images/headscale-to-netbird-benchmark-netbird-front.webp" alt="Architecture of Netbird&#x27;s mesh VPN">
+    <figcaption>Illustration of what's a mesh VPN layout. One central server to coordinate all the peers direct connections.<br>Credits to <a href="https://netbird.io/" target="_blank" rel="nofollow noopener noreferrer">Netbird</a></figcaption>
+</figure>
+<p>Peers cannot always reach each other, and homes behind carrier NAT often cannot. When the direct tunnel fails to come up, traffic falls back to a relay server that both sides can reach. Hold on to that word, because it decides most of this article.</p>
+<p>It’s been few years that I’m interested in that, I started by testing various solutions such as manual WireGuard’s configuration, <a href="https://nebula.defined.net/docs/" target="_blank" rel="noopener noreferrer nofollow">Nebula</a>, Slack’s take on the problem, etc. They mostly worked well, but it also wanted me to hand-manage every certificate and every host definition, which stopped fitting my needs as the node count grew. The most popular alternative on the internet for Mesh VPN is <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer nofollow">Tailscale</a>. However, as a European citizen and as of 2026, I would rather not hand the control plane of my private network to a US company. Especially when a FOSS re-implementation of that server exists, so I self-hosted <a href="https://headscale.net/" target="_blank" rel="noopener noreferrer nofollow">Headscale</a> instead.</p>
+<p>Headscale ran the whole thing for about a year and a half without drama. Two things wore me down.</p>
+<ul>
+<li>The first was the gap that comes with reimplementing someone else’s control protocol. Among other things: <a href="https://github.com/juanfont/headscale/issues/1307" target="_blank" rel="noopener noreferrer nofollow">Tailnet Lock</a> is still an open issue, the ACL support was rough at the time I needed it, and I never figured out how to get Point-to-Point working.</li>
+<li>The second was cost on small hardware: <code>tailscaled</code> sat in the top five processes on most of my servers, which is more than a mesh client should ask for when the mesh is idle<sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup>.</li>
+</ul>
+<div class="callout" data-callout="note"><p>I didn’t find much people complaining about any of that, so it might be a me problem and not a common thing. But, mainly for the first point, going about 10 nodes was really keeping Tailscale as one of the top process on each of my machines.</p>
+<p>Can’t say if it was a Headscale’s problem, a Tailscale’s one, nor anything… You’re milage might varry 🙃</p>
+</div>
+<p><a href="https://netbird.io/" target="_blank" rel="noopener noreferrer nofollow">NetBird</a> is fundamentally working the same way (coordination server, WireGuard, relay, etc), but has a different shape. First thing, the whole stack is FOSS (server and clients). This ensure to fix my first complain. Then it’s shipping with the <em>“Batteries included”</em>, meaning it ships with a nice integrated web interface instead of a config file and a CLI, plenty of simple access configuration and more. The newer additions are what caught my attention: <a href="https://docs.netbird.io/manage/reverse-proxy" target="_blank" rel="noopener noreferrer nofollow">a built-in reverse proxy</a>, and <a href="https://docs.netbird.io/manage/peers/lazy-connection" target="_blank" rel="noopener noreferrer nofollow">lazy peer connections</a> (fixing my second issue).</p>
+<p>I still had one reason to stay put. Tailscale’s global <a href="https://tailscale.com/docs/reference/derp-servers" target="_blank" rel="noopener noreferrer nofollow">DERP server network</a> (network of high availability relay servers) is a real perk, especially from Vietnam where Viettel’s <a href="https://en.wikipedia.org/wiki/Carrier-grade_NAT" target="_blank" rel="noopener noreferrer nofollow">CGNAT</a> pushes most of my traffic through relays. So I stood NetBird up alongside Headscale, ran both in parallel on my homelab, and measured.</p>
+<h2 id="the-rig">The rig</h2>
+<p>For these tests, I decided to use the widest range of machines I have running:</p>
+<p>Two peers, both in Hanoi (on Viettel connections) in different parts of the city: an Intel NUC running <a href="https://www.debian.org/" target="_blank" rel="noopener noreferrer nofollow">Debian</a> on x86_64, and a OnePlus 6 running <a href="https://postmarketos.org/" target="_blank" rel="noopener noreferrer nofollow">postmarketOS</a><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup> as a small ARM64 server. My trusty cheap <a href="https://www.ovh.com/" target="_blank" rel="noopener noreferrer nofollow">OVH</a> <a href="https://en.wikipedia.org/wiki/Virtual_private_server" target="_blank" rel="noopener noreferrer nofollow">VPS</a><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup> in Singapore carries both control planes (Headscale and NetBird) during the parallel run, including NetBird’s built-in relay. Tailscale’s nearest DERP region for this path is Hong Kong.</p>
+<figure>
+    <img src="/images/headscale-to-netbird-benchmark-architecture.webp" alt="Architecture of this series of tests">
+    <figcaption>Architecture of this series of tests.</figcaption>
+</figure>
+<p>That topology is what makes this comparison interesting, at least to me. Published comparisons of these tools tend to run between well-connected servers on clean paths — VPS to VPS over fiber — where every difference listed below rounds to zero. Half of my test rig is a phone with Android scraped off it, sitting behind a residential line in a city with flaky internet connectivity.</p>
+<p>I wanted four numbers out of the testing:</p>
+<ol>
+<li>Whether either stack can build a direct tunnel at all;</li>
+<li>How fast the link runs;</li>
+<li>How much latency each overlay adds;</li>
+<li>What each one costs while nothing is happening.</li>
+</ol>
+<div class="callout" data-callout="note"><p>In this article I will name my <em>Headscale</em>’s network as <em>Tailscale</em> for the most part.</p>
+<p>The thing is, yes I’m running the <em>Headscale</em> coordination server, but the clients are Tailscale’s one, the connection are relayed on Tailscale’s server; and at the end of the day, none of my tests really involved Headscale code itself.</p>
+</div>
+<h2 id="everything-gets-relayed-with-cgnat">Everything gets relayed with CGNAT</h2>
+<p>No suspense: Neither stack builds a direct tunnel between these two peers, and neither one can.</p>
+<p>Viettel puts my connections behind <a href="https://en.wikipedia.org/wiki/Carrier-grade_NAT" target="_blank" rel="noopener noreferrer nofollow">Carrier-Grade NAT (CGNAT)</a>, and at least one side of this pair gets symmetric mapping: the carrier assigns a fresh source port for every destination a peer talks to. The public address a peer discovers for itself is therefore useless to anybody else, and the hole-punching both meshes attempt has nothing to aim at.</p>
+<p>Tailscale reached that conclusion on its own, which is what makes me believe it. Its NAT traversal is as good as this field gets, down to birthday-paradox port guessing against uncooperative carriers, and it still gave up and relayed. NetBird came to the same answer.</p>
+<p>So every number below compares one relay against another: NetBird through my own VPS in Singapore 🇸🇬, Tailscale through DERP Hong Kong 🇭🇰, both connecting clients in Vietnam 🇻🇳. That is how my mesh runs every day, which makes it the comparison I care about.</p>
+<h2 id="throughput">Throughput</h2>
+<p><code>iperf3</code> pushes traffic between two hosts and reports what arrives at the far end. Thirty seconds of TCP over the relay path, in both directions:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Path</th><th>Throughput</th></tr></thead><tbody><tr><td>NetBird, relayed through my Singapore VPS</td><td>10.8 Mbps</td></tr><tr><td>Tailscale, relayed through DERP Hong Kong</td><td>6.15 Mbps</td></tr></tbody></table>
+<p>Netbird looks to be a winner, but there’s two other things explaining that gap. Geography comes first, since my own relay sits closer to both peers than Hong Kong does. The second is the OnePlus device: Tailscale ships userspace WireGuard while NetBird uses the Linux kernel’s module, and on a phone SoC that per-packet cost compounds across a thirty-second run. More on that below.</p>
+<p>I tested by ignored any UDP figure I got out of <code>iperf3 -u -b 0</code> on a relayed path<sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup>.</p>
+<h2 id="latency">Latency</h2>
+<p>Latency is the important day-to-day number I’ll see. Throughput matters when I copy a backup once a month; latency matters every time I type into an SSH session or load a web UI running on another machine.</p>
+<p>The main difference is at what level runs the WireGuard tunner, kernel or userspace. Tailscale’s client always runs <code>wireguard-go</code> in userspace, which buys them a super wide compatibility in a single implementation but costs a trip out of the kernel and back for every packet. NetBird uses the kernel WireGuard module when Linux offers it, less good compatibility but better (native) performances. The difference runs from tens to a couple hundred microseconds per packet, which sounds like nothing but can quickly add up.</p>
+<p>500 samples at 50 ms intervals, with a raw LAN baseline to anchor the two overlays:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">ping</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -c</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 500</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -i</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 0.05</span><span style="color:#032F62;--shiki-dark:#B8BB26"> nuc.local</span><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">          # LAN, no overlay</span></span>
+<span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">ping</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -c</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 500</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -i</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 0.05</span><span style="color:#032F62;--shiki-dark:#B8BB26"> nuc.ts.internal</span><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">    # Tailscale</span></span>
+<span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">ping</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -c</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 500</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -i</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 0.05</span><span style="color:#032F62;--shiki-dark:#B8BB26"> nuc.nb.internal</span><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">    # NetBird</span></span></code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Path</th><th>avg</th><th>overhead vs LAN</th></tr></thead><tbody><tr><td>Raw LAN</td><td>5.64 ms</td><td></td></tr><tr><td>NetBird</td><td>5.91 ms</td><td>+0.27 ms</td></tr><tr><td>Tailscale</td><td>7.21 ms</td><td>+1.56 ms</td></tr><tr><td>NetBird (relayed)</td><td>243.27 ms</td><td>+237.63 ms</td></tr><tr><td>Tailscale (relayed)</td><td>257.32 ms</td><td>+251.68 ms</td></tr></tbody></table>
+<p>500 samples is enough to erase most of the statistical noises (more won’t give much more details), so the 1.3 ms gap between the two overlays is a real result. NetBird costs a quarter of a millisecond over raw LAN, about what kernel WireGuard encap and decap should cost. Tailscale’s 1.56 ms is the userspace tax on this hardware. Same with the relayed connection.</p>
+<p>One detail I enjoyed: the LAN baseline’s worst sample during those tests came in at 38.6 ms, higher than the maximum of either overlay on LAN. My WiFi throws bigger outliers than either mesh does 😅</p>
+<h2 id="the-idle-cost-which-i-never-measured">The idle cost, which I never measured</h2>
+<p>Kernel WireGuard buys per-packet latency on a pair that is already talking. NetBird’s lazy connections buy something else, and no ping test will show it.</p>
+<p>Tailscale keeps every pair in the netmap alive, with keepalives and periodic handshake attempts running for peers a machine speaks to twice a month. On a homelab that peaked around ten nodes for me, most of that work exists for nothing. It never broke anything and it never cost me an outage, just it eats more resources than an idle mesh should ask for.</p>
+<p>NetBird brings a tunnel up when traffic wants to flow and lets it drop afterwards. A peer I have not spoken to in a week sits in <code>Idle</code>, costs nothing while it waits, and pays a small setup penalty on the first packet I send it.</p>
+<p>Putting a number on that needs <code>tailscaled</code> against <code>netbird</code> CPU time over an hour of silence. I forgot to measure it for <em>Tailscale</em>, and I had already settled on one solution… Sorry, not sorry 🤷</p>
+<figure>
+    <img src="/images/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5">
+    <figcaption>Close to nothing on my Nuc machines while streaming music and homelabing.</figcaption>
+</figure>
+<h1 id="numbers----------------------------------------------------------------------------------------------">NUMBERS ---------------------------------------------------------------------------------------------</h1>
+<h2 id="the-one-column-derp-wins">The one column DERP wins</h2>
+<p>One result went the other way. Under a UDP flood, DERP degraded and survived where my own relay collapsed. DERP Hong Kong delivered 3.27 Mbps out of a 10 Mbps offer, dropped 67%, and stayed up, discarding the overflow and carrying on. On the NetBird path the receiver stopped getting bytes and the control socket died and docker restarted the container.</p>
+<p>I did not chase it further. That test produces an artificial load I never generate: the heaviest real traffic on my mesh is Navidrome streaming, which sits comfortably inside what the relay handles without complaint.</p>
+<h2 id="worth-a-weekend">Worth a weekend</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>Headscale + Tailscale client</th><th>NetBird</th></tr></thead><tbody><tr><td>WireGuard implementation</td><td>userspace <code>wireguard-go</code></td><td>kernel module</td></tr><tr><td>Latency added over raw LAN</td><td>+1.56 ms</td><td>+0.27 ms</td></tr><tr><td>Relay throughput</td><td>6.15 Mbps (DERP Hong Kong)</td><td>10.8 Mbps (my VPS)</td></tr><tr><td>Direct tunnel over Viettel CGNAT</td><td>never</td><td>never</td></tr><tr><td>Idle peers</td><td>whole netmap kept alive</td><td>brought up on demand</td></tr><tr><td>Under a UDP flood</td><td>degrades and survives</td><td>collapsed</td></tr><tr><td>Open source</td><td>client is Tailscale’s, control plane reimplemented</td><td>FOSS end to end</td></tr><tr><td>Administration</td><td>config file and CLI</td><td>web interface</td></tr></tbody></table>
+<p>I’ll admit that this comparaison is not perfect as Headscale offers a dedicated self-hosted DERP server (same as the winning Netbird) and that I forgot to measure plenty of other interesting stuff since I wasn’t planning to exactly make an article about it at the time. But those metrics on top of all the nicer quality of life to administrate my mesh sold it to me.</p>
+<p>Reconfiguring everything took me a weekend or such. I reinstalled the clients, rebuilt the access rules in a web interface instead of a JSON file, and repointed the handful of services with old mesh addresses baked into their configs, been able to create and understand VPN-To-Site.</p>
+<p><em>Bref</em>, I now run my homelab FOSS from client to control plane, comes with nice features, and moves packets faster and lighter on the hardware I own.</p>
+<!-- --- -->
+<section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label">Footnotes</h2>
+<ol>
+<li id="user-content-fn-4">
+<p>I didn’t capture anything about it, so you’ll have to trust me. But I recall a Raspberry Pi 4 taking up to 10% CPU for Tailscale. Not an insane number, but still too much for me. <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-2">
+<p>Yes, a smartphone with Android scraped away and turned into a full server. Maybe an article about that one day. 🤷 Maybe. <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to reference 2" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-1">
+<p>The old <a href="https://us.ovhcloud.com/resources/blog/vps-2020/" target="_blank" rel="noopener noreferrer nofollow"><em>Starter VPS 2020</em></a> offer, which doesn’t exist anymore: 1 vCore, 2 GB of RAM and 20 GB of storage for a few euros per month. Honestly I don’t know how it runs this well on those specs! <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to reference 3" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-3">
+<p>Uncapped UDP measures how fast the sender stuffs its own socket, not what crosses the network. On my relayed path the sender finished at 30.00 s while the receiver line spanned 52.60 s, still draining buffered packets 22 seconds after the sender stopped, at 99% loss. Cap the rate (<code>-b 10M</code>, then 15M, then 20M) and read the receiver’s loss column instead. <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to reference 4" class="data-footnote-backref">↩</a></p>
+</li>
+</ol>
+</section><div class="giscus-wrapper" data-astro-cid-5ukdginb><script src="https://giscus.app/client.js" data-repo="RoiArthurB/roiarthurb.github.io" data-repo-id="R_kgDOSPu0kw" data-category="General" data-category-id="DIC_kwDOSPu0k84C8QdB" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="en" data-loading="lazy" crossorigin="anonymous" async></script></div><script data-astro-rerun>
+	function syncGiscusTheme() {
+		const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+		const iframe = document.querySelector('iframe.giscus-frame');
+		if (iframe) {
+			iframe.contentWindow?.postMessage(
+				{ giscus: { setConfig: { theme } } },
+				'https://giscus.app'
+			);
+		}
+	}
+
+	const observer = new MutationObserver(syncGiscusTheme);
+	observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script></div></div><nav class="toc-container" data-astro-cid-p33bl5ka><div class="toc-inner" data-astro-cid-p33bl5ka><h2 class="toc-title" data-astro-cid-p33bl5ka>Table of Contents</h2><ul class="toc-list" data-astro-cid-p33bl5ka><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#the-rig" data-astro-cid-p33bl5ka>The rig</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#everything-gets-relayed-with-cgnat" data-astro-cid-p33bl5ka>Everything gets relayed with CGNAT</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#throughput" data-astro-cid-p33bl5ka>Throughput</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#latency" data-astro-cid-p33bl5ka>Latency</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#the-idle-cost-which-i-never-measured" data-astro-cid-p33bl5ka>The idle cost, which I never measured</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#the-one-column-derp-wins" data-astro-cid-p33bl5ka>The one column DERP wins</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#worth-a-weekend" data-astro-cid-p33bl5ka>Worth a weekend</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#footnote-label" data-astro-cid-p33bl5ka>Footnotes</a></li></ul></div></nav></div></article></main><footer class="site-footer" data-astro-cid-jo6i4kqk><div class="footer-content" data-astro-cid-jo6i4kqk><div class="footer-col brand-col" data-astro-cid-jo6i4kqk><h3 data-astro-cid-jo6i4kqk>Arthur Brugière</h3><p data-astro-cid-jo6i4kqk>Computer Researcher / IT Geek</p><div class="copyright" data-astro-cid-jo6i4kqk>&copy; 2026 Arthur Brugière.<br data-astro-cid-jo6i4kqk>All rights reserved.</div></div><div class="footer-col" data-astro-cid-jo6i4kqk><!-- 
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href={url('/')}>Home</a></li>
+                <li><a href={url('/publications')}>Publications</a></li>
+                <li><a href={url('/projects')}>Projects</a></li>
+                <li><a href={url('/team')}>Team</a></li>
+                <li><a href={url('/blog')}>News</a></li>
+                {cvHref && <li><a href={cvHref} target="_blank">Download CV</a></li>}
+            </ul>
+        --></div><div class="footer-col" data-astro-cid-jo6i4kqk><h4 data-astro-cid-jo6i4kqk>Contact</h4><address data-astro-cid-jo6i4kqk>Arthur Brugière<br data-astro-cid-jo6i4kqk>Hanoi, Vietnam<br data-astro-cid-jo6i4kqk></address><p style="margin-top: 1rem;" data-astro-cid-jo6i4kqk><a href="mailto:arthur.brugiere@ird.fr" style="text-decoration: underline;" data-astro-cid-jo6i4kqk>arthur.brugiere@ird.fr</a><br data-astro-cid-jo6i4kqk></p></div><div class="footer-col" data-astro-cid-jo6i4kqk><h4 data-astro-cid-jo6i4kqk>Connect</h4><div class="social-links" data-astro-cid-jo6i4kqk><a href="https://github.com/RoiArthurB" target="_blank" rel="noopener noreferrer nofollow" aria-label="GitHub" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" data-astro-cid-jo6i4kqk></path></svg></a><a href="https://orcid.org/0000-0001-7220-449X" target="_blank" rel="noopener noreferrer nofollow" aria-label="Orcid" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" data-astro-cid-jo6i4kqk><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.369 4.378c.525 0 .947.431.947.947s-.422.947-.947.947a.95.95 0 0 1-.947-.947c0-.525.422-.947.947-.947zm-.722 3.038h1.444v10.041H6.647V7.416zm3.562 0h3.9c3.712 0 5.344 2.653 5.344 5.025 0 2.578-2.016 5.025-5.325 5.025h-3.919V7.416zm1.444 1.303v7.444h2.297c3.272 0 4.022-2.484 4.022-3.722 0-2.016-1.284-3.722-4.097-3.722h-2.222z" data-astro-cid-jo6i4kqk></path></svg></a><a href="https://scholar.google.com/citations?user=Zk8mYXoAAAAJ" target="_blank" rel="noopener noreferrer nofollow" aria-label="Google Scholar" data-astro-cid-jo6i4kqk><svg fill="currentColor" viewBox="0 0 32 32" width="24" height="24" xmlns="http://www.w3.org/2000/svg" data-astro-cid-jo6i4kqk><path d="M14.573 2.729c-0.729 0.484-4.292 2.849-7.917 5.255s-6.589 4.396-6.589 4.422c0 0.026 0.182 0.146 0.406 0.266 0.224 0.13 3.797 2.109 7.953 4.411l7.542 4.193 0.193-0.099c0.109-0.052 2.891-1.641 6.188-3.521l5.99-3.427 0.036 10.599h3.557v-12.401l-4.615-3.094c-6.219-4.167-11.188-7.448-11.307-7.474-0.063-0.010-0.703 0.38-1.438 0.87zM7.141 22.177l0.016 2.672 8.828 5.292 8.891-5.339v-2.641c0-1.458-0.016-2.646-0.031-2.646-0.021 0-1.76 1.042-3.87 2.323l-4.406 2.661-0.578 0.339-1.755-1.052c-1.464-0.875-2.927-1.755-4.385-2.641l-2.672-1.615c-0.031-0.010-0.042 1.177-0.036 2.646z" data-astro-cid-jo6i4kqk></path></svg></a><a href="https://www.linkedin.com/in/arthurbrugiere/" target="_blank" rel="noopener noreferrer nofollow" aria-label="LinkedIn" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" data-astro-cid-jo6i4kqk></path><rect x="2" y="9" width="4" height="12" data-astro-cid-jo6i4kqk></rect><circle cx="4" cy="4" r="2" data-astro-cid-jo6i4kqk></circle></svg></a><a href="https://en.wikipedia.org/wiki/Piratbyr%C3%A5n#Kopimi" target="_blank" rel="noopener noreferrer nofollow" aria-label="Kopimi" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M 20.945312 7.027344 L 18.394531 8.761719 L 15.871094 7.058594 L 13.738281 8.484375 L 13.738281 2.125 L 10.765625 0.109375 L 7.824219 2.125 L 7.824219 8.484375 L 3.109375 5.320312 L 0.164062 7.304688 L 0.164062 14.90625 L 13.320312 23.84375 L 16.261719 21.828125 L 16.261719 18.351562 L 18.398438 16.898438 L 20.949219 18.636719 L 23.921875 16.648438 L 23.921875 9.050781 Z M 10.765625 0.632812 L 12.980469 2.121094 L 10.765625 3.609375 L 8.554688 2.121094 Z M 10.765625 4.109375 L 12.945312 5.570312 L 10.765625 7.089844 L 8.554688 5.601562 Z M 10.765625 7.554688 L 12.945312 9.042969 L 10.765625 10.53125 L 8.554688 9.042969 Z M 0.929688 7.304688 L 3.109375 5.8125 L 5.320312 7.300781 L 3.109375 8.792969 Z M 3.480469 9.042969 L 5.695312 7.554688 L 7.875 9.046875 L 5.660156 10.535156 Z M 6 10.78125 L 8.214844 9.292969 L 10.425781 10.78125 L 8.214844 12.269531 Z M 8.554688 12.519531 L 10.765625 11.03125 L 12.945312 12.492188 L 10.765625 13.976562 Z M 13.320312 15.714844 L 11.105469 14.222656 L 13.320312 12.734375 L 13.335938 12.746094 L 15.5 14.226562 Z M 15.839844 10.535156 L 13.660156 9.042969 L 15.871094 7.554688 L 18.054688 9.042969 Z M 20.945312 10.535156 L 18.765625 9.046875 L 20.945312 7.558594 L 23.160156 9.046875 Z M 20.945312 10.535156 " data-astro-cid-jo6i4kqk></path></svg></a></div><div class="social-links" style="color: var(--color-text-muted); display: inline" data-astro-cid-jo6i4kqk><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="72px" height="72px" viewBox="0 0 72 72" version="1.1" fill="currentColor" stroke-width="0" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M 2.742188 2.742188 L 2.742188 69.230469 L 69.230469 69.230469 L 69.230469 2.742188 Z M 5.273438 5.273438 L 24.0625 5.273438 L 24.0625 24.0625 L 5.273438 24.0625 Z M 26.59375 5.273438 L 45.378906 5.273438 L 45.378906 24.0625 L 26.59375 24.0625 Z M 47.910156 5.273438 L 66.699219 5.273438 L 66.699219 24.0625 L 47.910156 24.0625 Z M 35.984375 6.671875 C 31.574219 6.675781 28 10.253906 28 14.667969 C 27.996094 19.082031 31.570312 22.664062 35.984375 22.667969 C 38.109375 22.671875 40.144531 21.828125 41.644531 20.328125 C 43.148438 18.828125 43.988281 16.789062 43.988281 14.667969 C 43.988281 10.25 40.402344 6.667969 35.984375 6.671875 Z M 5.273438 26.59375 L 24.0625 26.59375 L 24.0625 45.378906 L 5.273438 45.378906 Z M 26.59375 26.59375 L 45.378906 26.59375 L 45.378906 45.378906 L 26.59375 45.378906 Z M 47.910156 26.59375 L 66.699219 26.59375 L 66.699219 45.378906 L 47.910156 45.378906 Z M 57.320312 28 C 52.910156 28.003906 49.335938 31.574219 49.332031 35.984375 C 49.328125 40.402344 52.902344 43.984375 57.320312 43.988281 C 61.734375 43.984375 65.308594 40.402344 65.304688 35.984375 C 65.300781 31.574219 61.730469 28.003906 57.320312 28 Z M 5.273438 47.910156 L 24.0625 47.910156 L 24.0625 66.699219 L 5.273438 66.699219 Z M 26.59375 47.910156 L 45.378906 47.910156 L 45.378906 66.699219 L 26.59375 66.699219 Z M 47.910156 47.910156 L 66.699219 47.910156 L 66.699219 66.699219 L 47.910156 66.699219 Z M 14.667969 49.332031 C 10.253906 49.332031 6.675781 52.90625 6.671875 57.320312 C 6.675781 61.730469 10.253906 65.304688 14.667969 65.304688 C 19.082031 65.308594 22.664062 61.734375 22.667969 57.320312 C 22.664062 52.902344 19.082031 49.328125 14.667969 49.332031 Z M 35.984375 49.332031 C 31.574219 49.335938 28.003906 52.910156 28 57.320312 C 28.003906 61.730469 31.574219 65.300781 35.984375 65.304688 C 40.402344 65.308594 43.984375 61.734375 43.988281 57.320312 C 43.984375 52.902344 40.402344 49.328125 35.984375 49.332031 Z M 57.320312 49.332031 C 52.910156 49.335938 49.335938 52.910156 49.332031 57.320312 C 49.335938 61.730469 52.910156 65.300781 57.320312 65.304688 C 61.730469 65.300781 65.300781 61.730469 65.304688 57.320312 C 65.300781 52.910156 61.730469 49.335938 57.320312 49.332031 Z M 57.320312 49.332031 " data-astro-cid-jo6i4kqk></path></svg></div></div></div><div class="footer-credit" data-astro-cid-jo6i4kqk>Based on <a href="https://github.com/shravanngoswamii/astro-scholar" target="_blank" rel="noopener noreferrer nofollow" data-astro-cid-jo6i4kqk>Shravan Goswami - Astro Scholar</a> design</div><script async src="https://gc.zgo.at/count.js" data-goatcounter="https://arthurbrugiere.goatcounter.com/count"></script></footer><div id="search-overlay" class="search-overlay hidden" data-astro-cid-ac66eqjo><div id="search-backdrop" class="search-backdrop" data-astro-cid-ac66eqjo></div><div class="search-panel-wrapper" data-astro-cid-ac66eqjo><div id="search-panel" class="search-panel" data-astro-cid-ac66eqjo><div class="search-panel-header" data-astro-cid-ac66eqjo><span class="search-title" data-astro-cid-ac66eqjo>Search</span><button id="search-close-btn" class="search-close-btn" data-astro-cid-ac66eqjo>Esc</button></div><div class="search-panel-content" data-astro-cid-ac66eqjo><div id="pagefind__search" data-astro-cid-ac66eqjo></div></div></div></div></div><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.DbwgI8S-.js"></script><dialog id="author-modal" class="author-modal" data-astro-cid-jo6i4kqk><button id="close-modal" class="close-btn" aria-label="Close modal" data-astro-cid-jo6i4kqk>&times;</button><div class="modal-flex" data-astro-cid-jo6i4kqk><img id="modal-avatar" src="" alt="Avatar" class="modal-avatar" data-astro-cid-jo6i4kqk><div data-astro-cid-jo6i4kqk><h3 id="modal-name" data-astro-cid-jo6i4kqk></h3><span id="modal-title" data-astro-cid-jo6i4kqk></span><span id="modal-role" data-astro-cid-jo6i4kqk></span></div></div><p id="modal-bio" data-astro-cid-jo6i4kqk></p><div id="modal-socials" data-astro-cid-jo6i4kqk></div></dialog><script type="module" src="/_astro/Footer.astro_astro_type_script_index_0_lang.C96OUfRy.js"></script><script data-astro-rerun>
+			function getCodeBlockLabel(pre) {
+				const explicitLabel =
+					pre.getAttribute('data-file') ||
+					pre.getAttribute('data-filename') ||
+					pre.dataset.file ||
+					pre.dataset.filename;
+				if (explicitLabel) return explicitLabel;
+
+				const code = pre.querySelector('code');
+				const languageClass = code
+					? Array.from(code.classList).find((className) => className.startsWith('language-'))
+					: null;
+				const language =
+					pre.getAttribute('data-language') ||
+					pre.dataset.language ||
+					(languageClass ? languageClass.replace('language-', '') : '');
+				const normalized = language.toLowerCase();
+
+				const labels = {
+					astro: 'Astro',
+					bash: 'Bash',
+					css: 'CSS',
+					diff: 'Diff',
+					html: 'HTML',
+					js: 'JavaScript',
+					json: 'JSON',
+					md: 'Markdown',
+					plaintext: 'Code',
+					sh: 'Shell',
+					shell: 'Shell',
+					text: 'Code',
+					toml: 'TOML',
+					ts: 'TypeScript',
+					tsx: 'TSX',
+					yaml: 'YAML',
+					yml: 'YAML',
+				};
+
+				if (!normalized) return 'Code';
+				return labels[normalized] || normalized.toUpperCase();
+			}
+
+			async function writeToClipboard(text) {
+				if (navigator.clipboard && navigator.clipboard.writeText) {
+					await navigator.clipboard.writeText(text);
+					return;
+				}
+
+				const textarea = document.createElement('textarea');
+				textarea.value = text;
+				textarea.setAttribute('readonly', 'true');
+				textarea.style.position = 'absolute';
+				textarea.style.left = '-9999px';
+				document.body.appendChild(textarea);
+				textarea.select();
+				document.execCommand('copy');
+				document.body.removeChild(textarea);
+			}
+
+			function enhanceCodeBlocks() {
+				const codeBlocks = Array.from(document.querySelectorAll('.prose pre'));
+
+				for (const pre of codeBlocks) {
+					if (pre.dataset.enhancedCodeBlock === 'true') continue;
+
+					const code = pre.querySelector('code');
+					if (!code) continue;
+
+					pre.dataset.enhancedCodeBlock = 'true';
+					pre.setAttribute('tabindex', '0');
+
+					const wrapper = document.createElement('div');
+					wrapper.className = 'code-block-frame';
+
+					pre.parentNode?.insertBefore(wrapper, pre);
+					wrapper.appendChild(pre);
+
+					const label = document.createElement('span');
+					label.className = 'code-block-label';
+					label.textContent = getCodeBlockLabel(pre);
+
+					const copyButton = document.createElement('button');
+					copyButton.type = 'button';
+					copyButton.className = 'copy-code-button';
+					copyButton.innerHTML =
+						'<span class="copy-code-button__default">Copy</span><span class="copy-code-button__success">Copied</span>';
+					copyButton.setAttribute('aria-label', `Copy ${label.textContent} code`);
+
+					copyButton.addEventListener('click', async () => {
+						try {
+							await writeToClipboard(code.innerText || '');
+							copyButton.dataset.copied = 'true';
+							window.setTimeout(() => {
+								copyButton.dataset.copied = 'false';
+							}, 1200);
+						} catch (error) {
+							console.error('Failed to copy code block', error);
+						}
+					});
+
+					wrapper.appendChild(label);
+					wrapper.appendChild(copyButton);
+				}
+			}
+
+			enhanceCodeBlocks();
+
+			if (!window.__academicPortfolioCodeBlockListener) {
+				document.addEventListener('astro:after-swap', enhanceCodeBlocks);
+				window.__academicPortfolioCodeBlockListener = true;
+			}
+		</script></body></html>
