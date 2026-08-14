@@ -146,7 +146,9 @@ const { posts } = Astro.props;
             }
         </style>
 	</head>
-	<body>
+	<!-- Kept out of Pagefind: these pages only list posts that are themselves
+	     indexed, so they add duplicate hits to every search. -->
+	<body data-pagefind-ignore>
 		<Header />
 		<main>
 			<h1>Posts tagged "{tag}"</h1>
