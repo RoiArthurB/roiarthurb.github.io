@@ -53,7 +53,7 @@ const cvHref = CV_URL ? url(CV_URL) : null;
         <a href={url('/projects')}>Projects</a>
         <a href={url('/software')}>Software</a>
         <a href={url('/publications')}>Publications</a>
-        <span class="mobile-menu-section">Blog</span>
+        <a href={url('/blog')} class="mobile-menu-section">Blog</a>
         <div class="mobile-submenu">
             <a href={url('/archive')}>Archive</a>
         </div>
@@ -308,7 +308,9 @@ const cvHref = CV_URL ? url(CV_URL) : null;
         background-color: var(--color-bg-offset);
         color: var(--color-accent);
     }
-    .mobile-menu-section {
+    /* Scoped to out-specify `.mobile-menu a`, so the Blog link keeps the
+       section-header look while still being clickable. */
+    .mobile-menu .mobile-menu-section {
         padding: 0.5rem 0.875rem;
         font-weight: 600;
         font-size: 0.9rem;
@@ -318,6 +320,8 @@ const cvHref = CV_URL ? url(CV_URL) : null;
         margin-top: 0.5rem;
         border-top: 1px solid var(--color-border);
         padding-top: 0.75rem;
+        text-decoration: none;
+        border-radius: 8px;
     }
     .mobile-submenu {
         display: flex;
