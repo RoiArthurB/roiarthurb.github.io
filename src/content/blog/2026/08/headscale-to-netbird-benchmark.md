@@ -8,7 +8,7 @@ tags:
   - linux
   - server
   - mesh-network
-publish: false
+publish: true
 ---
 
 My homelab is not in one place. Some boxes run in my apartment in Hanoi, others at my parents' house in France, plus a few VPSs. Most machines sit behind routers I do not administer, and my laptop and phone move around with me. Reaching any of it from anywhere else used to mean port forwarding, or publishing a service to the open internet behind a login form and hoping for the best.
@@ -122,13 +122,16 @@ NetBird brings a tunnel up when traffic wants to flow and lets it drop afterward
 
 Putting a number on that needs `tailscaled` against `netbird` CPU time over an hour of silence. I forgot to measure it for *Tailscale*, and I had already settled on one solution... Sorry, not sorry 🤷
 
+| Machine | Netbird's idle cost |
+|---|---|
+| Intel NUC, x86_64 | 15 CPU-s per hour, 0.42% of one core |
+| OnePlus 6 linux, arm64 | 13.2 CPU-s per hour, 0.37% of one core |
+| Raspberry Pi 4 | 41.7 CPU-s per hour, 1.16% of one core |
 
 <figure>
     <img src="/images/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5" />
     <figcaption>Close to nothing on my Nuc machines while streaming music and homelabing.</figcaption>
 </figure>
-
-# NUMBERS ---------------------------------------------------------------------------------------------
 
 ## The one column DERP wins
 
