@@ -1,0 +1,498 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-tldeq5d5><head><meta charset="utf-8"><script data-cfasync="false">
+	(() => {
+		const root = document.documentElement;
+		const paintTheme = (theme) => {
+			const dark = theme === 'dark';
+			root.setAttribute('data-theme', dark ? 'dark' : 'light');
+			root.style.setProperty('background-color', 'var(--color-bg)');
+			root.style.colorScheme = dark ? 'dark' : 'light';
+		};
+		let theme = 'light';
+		try {
+			const s = localStorage.getItem('theme');
+			if (s === 'dark' || s === 'light') theme = s;
+			else if (matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+		} catch {
+			if (matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+		}
+		paintTheme(theme);
+		window.addEventListener('load', () => root.setAttribute('data-theme-ready', 'true'), { once: true });
+		window.__setPreferredTheme = paintTheme;
+	})();
+</script><style>
+	/* CSS variables inline — available immediately in all modes (dev + prod), before any external CSS */
+	:root {
+		--color-bg: #ffffff;
+		--color-bg-offset: #ffffff;
+		--color-bg-header: rgba(255, 255, 255, 0.85);
+		--color-text-main: #1a1a1a;
+		--color-text-muted: #555555;
+		--color-accent: #c47f00;
+		--color-border: #eaeaea;
+	}
+	[data-theme='dark'] {
+		--color-bg: #1f1f1e;
+		--color-bg-offset: #272726;
+		--color-bg-header: rgba(31, 31, 30, 0.85);
+		--color-text-main: #ddd4c0;
+		--color-text-muted: #6b6358;
+		--color-accent: #ffab00;
+		--color-border: #242424;
+	}
+	html, body { min-height: 100%; background-color: var(--color-bg); }
+	@media (prefers-color-scheme: dark) {
+		html:not([data-theme='light']), html:not([data-theme='light']) body { background-color: var(--color-bg); }
+	}
+	html[data-theme='dark'], html[data-theme='dark'] body { background-color: var(--color-bg); color-scheme: dark; }
+	html[data-theme='light'], html[data-theme='light'] body { background-color: var(--color-bg); color-scheme: light; }
+	/* Critical header layout — prevents FOUC before component CSS loads */
+	header {
+		position: sticky;
+		top: 0;
+		z-index: 100;
+		padding: 0 1em;
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+	}
+	header nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		max-width: 960px;
+		margin: 0 auto;
+		height: 4.5rem;
+	}
+	header { background-color: var(--color-bg-header); }
+	/* Critical card backgrounds — prevents white flash in dark mode */
+	.project-card, .interactive-card, .pi-card, .collab-card, .team-card {
+		background-color: var(--color-bg-offset);
+		border-color: var(--color-border);
+	}
+	.team-hero h1 { color: var(--color-text-main); }
+	.team-hero p { color: var(--color-text-muted); }
+	body {
+		background-color: var(--color-bg);
+		color: var(--color-text-main);
+		margin: 0;
+	}
+	/* Suppress all transitions until page is fully styled */
+	html:not([data-theme-ready]) *, html:not([data-theme-ready]) *::before, html:not([data-theme-ready]) *::after {
+		transition: none !important;
+		animation: none !important;
+	}
+</style><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/atom+xml" title="Arthur Brugière" href="https://arthurbrugiere.fr/feed.xml"><link rel="alternate" type="application/rss+xml" title="Arthur Brugière (RSS)" href="https://arthurbrugiere.fr/rss.xml"><meta name="generator" content="Astro v7.2.1"><meta name="color-scheme" content="light dark"><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/agina.otf" as="font" type="font/otf" crossorigin><link rel="preload" href="/fonts/Epical Comeback.otf" as="font" type="font/otf" crossorigin><style>
+		@font-face {
+			font-family: "Atkinson";
+			src: url("/fonts/atkinson-regular.woff") format("woff");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Atkinson";
+			src: url("/fonts/atkinson-bold.woff") format("woff");
+			font-weight: 700;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Agina";
+			src: url("/fonts/agina.otf") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Epical";
+			src: url("/fonts/Epical Comeback.otf") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+	</style><link rel="canonical" href="https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/"><title>Running Ollama on iGPU on Linux</title><meta name="title" content="Running Ollama on iGPU on Linux"><meta name="description" content="How I got 3x inference speed on a five-year-old Intel NUC iGPU"><meta property="og:type" content="website"><meta property="og:url" content="https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/"><meta property="og:title" content="Running Ollama on iGPU on Linux"><meta property="og:description" content="How I got 3x inference speed on a five-year-old Intel NUC iGPU"><meta property="og:image" content="https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu.webp"><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/"><meta property="twitter:title" content="Running Ollama on iGPU on Linux"><meta property="twitter:description" content="How I got 3x inference speed on a five-year-old Intel NUC iGPU"><meta property="twitter:image" content="https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu.webp"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://arthurbrugiere.fr/#website","url":"https://arthurbrugiere.fr","name":"Arthur Brugière","description":"How I got 3x inference speed on a five-year-old Intel NUC iGPU","inLanguage":"en"},{"@type":"Person","@id":"https://arthurbrugiere.fr/#person","name":"Arthur Brugière","jobTitle":"Computer Science Researcher / IT Geek","url":"https://arthurbrugiere.fr","sameAs":["https://github.com/RoiArthurB","https://orcid.org/0000-0001-7220-449X","https://scholar.google.com/citations?user=Zk8mYXoAAAAJ","https://www.linkedin.com/in/arthurbrugiere/"]}]}</script><link rel="stylesheet" href="/_astro/Header.Br8TgZRg.css"><link rel="stylesheet" href="/_astro/_..DO-udsM0.css"></head><body data-astro-cid-tldeq5d5><header data-astro-cid-nen7h5rs><nav data-astro-cid-nen7h5rs><h2 style="font-family: var(--font-serif);" data-astro-cid-nen7h5rs><a href="/" data-astro-cid-nen7h5rs>Arthur Brugière</a></h2><div class="internal-links" data-astro-cid-nen7h5rs><a href="/" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Home</a><a href="/projects" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Projects</a><a href="/software" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Software</a><a href="/publications" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Publications</a><div class="dropdown" data-astro-cid-nen7h5rs><a href="/blog" class="active" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Blog</a><div class="dropdown-content" data-astro-cid-nen7h5rs><!-- <HeaderLink href={url('/blog')}>News</HeaderLink> --><!-- <HeaderLink href={url('/tags')}>Tags</HeaderLink> --><a href="/archive" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Archive</a></div></div><a href="/resume.pdf" target="_blank" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>CV</a><a href="/slashes" style="color: var(--color-bg)" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>/</a></div><div class="header-actions" data-astro-cid-nen7h5rs><button id="search-toggle-desktop" class="search-toggle" aria-label="Search site" data-astro-cid-nen7h5rs><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><circle cx="11" cy="11" r="8" data-astro-cid-nen7h5rs></circle><line x1="21" y1="21" x2="16.65" y2="16.65" data-astro-cid-nen7h5rs></line></svg></button><button id="theme-toggle" aria-label="Toggle Dark Mode" data-astro-cid-nen7h5rs><svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><circle cx="12" cy="12" r="5" data-astro-cid-nen7h5rs></circle><line x1="12" y1="1" x2="12" y2="3" data-astro-cid-nen7h5rs></line><line x1="12" y1="21" x2="12" y2="23" data-astro-cid-nen7h5rs></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" data-astro-cid-nen7h5rs></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" data-astro-cid-nen7h5rs></line><line x1="1" y1="12" x2="3" y2="12" data-astro-cid-nen7h5rs></line><line x1="21" y1="12" x2="23" y2="12" data-astro-cid-nen7h5rs></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" data-astro-cid-nen7h5rs></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" data-astro-cid-nen7h5rs></line></svg><svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" data-astro-cid-nen7h5rs></path></svg></button><button id="menu-toggle" aria-label="Toggle Menu" data-astro-cid-nen7h5rs><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><line x1="3" y1="12" x2="21" y2="12" data-astro-cid-nen7h5rs></line><line x1="3" y1="6" x2="21" y2="6" data-astro-cid-nen7h5rs></line><line x1="3" y1="18" x2="21" y2="18" data-astro-cid-nen7h5rs></line></svg></button></div></nav><div id="mobile-menu" class="mobile-menu hidden" data-astro-cid-nen7h5rs><div class="mobile-menu-header" data-astro-cid-nen7h5rs><span class="mobile-menu-title" data-astro-cid-nen7h5rs>Menu</span><button id="search-toggle-mobile" class="search-toggle" aria-label="Search site" data-astro-cid-nen7h5rs><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><circle cx="11" cy="11" r="8" data-astro-cid-nen7h5rs></circle><line x1="21" y1="21" x2="16.65" y2="16.65" data-astro-cid-nen7h5rs></line></svg></button></div><a href="/" data-astro-cid-nen7h5rs>Home</a><a href="/projects" data-astro-cid-nen7h5rs>Projects</a><a href="/software" data-astro-cid-nen7h5rs>Software</a><a href="/publications" data-astro-cid-nen7h5rs>Publications</a><a href="/blog" class="mobile-menu-section" data-astro-cid-nen7h5rs>Blog</a><div class="mobile-submenu" data-astro-cid-nen7h5rs><a href="/archive" data-astro-cid-nen7h5rs>Archive</a></div><a href="/resume.pdf" target="_blank" data-astro-cid-nen7h5rs>CV</a></div></header><script type="module">document.getElementById(`theme-toggle`)?.addEventListener(`click`,()=>{let e=document.documentElement.getAttribute(`data-theme`)===`dark`?`light`:`dark`;window.__setPreferredTheme?.(e),localStorage.setItem(`theme`,e)}),document.getElementById(`menu-toggle`)?.addEventListener(`click`,()=>{document.getElementById(`mobile-menu`)?.classList.toggle(`hidden`)}),document.querySelectorAll(`.search-toggle`).forEach(e=>{e.addEventListener(`click`,()=>{document.dispatchEvent(new CustomEvent(`open-search`))})});</script><main data-astro-cid-tldeq5d5><article data-astro-cid-tldeq5d5><div class="hero-image" data-astro-cid-tldeq5d5><img width="1020" height="510" src="/blog/2026/08/ollama-intel-igpu.webp" alt="Running Ollama on iGPU on Linux" loading="eager" fetchpriority="high" data-astro-cid-tldeq5d5></div><div class="blog-container" data-astro-cid-tldeq5d5><div class="prose-wrapper" data-astro-cid-tldeq5d5><div class="prose" data-astro-cid-tldeq5d5><div class="title" data-astro-cid-tldeq5d5><div class="date" data-astro-cid-tldeq5d5><time datetime="2026-08-16T00:00:00.000Z">Aug 16, 2026</time><span class="reading-time" data-astro-cid-tldeq5d5> · 13 min read</span></div><h1 data-astro-cid-tldeq5d5>Running Ollama on iGPU on Linux</h1><div class="blog-tags" style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.75rem;" data-astro-cid-tldeq5d5><a href="/tags/linux" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#linux</a><a href="/tags/LLM" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#LLM</a><a href="/tags/ollama" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#ollama</a><a href="/tags/intel" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#intel</a><a href="/tags/self-hosting" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#self-hosting</a></div></div><details class="toc-mobile-details" data-astro-cid-p33bl5ka><summary class="toc-mobile-summary" data-astro-cid-p33bl5ka>Table of Contents<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-down" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-p33bl5ka><path stroke="none" d="M0 0h24v24H0z" fill="none" data-astro-cid-p33bl5ka></path><polyline points="6 9 12 15 18 9" data-astro-cid-p33bl5ka></polyline></svg></summary><nav class="toc-mobile-content" data-astro-cid-p33bl5ka><ul class="toc-list-mobile" data-astro-cid-p33bl5ka><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#the-cpu-baseline" data-astro-cid-p33bl5ka>The CPU baseline</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#vulkan-because-sycl-never-landed-in-ollama" data-astro-cid-p33bl5ka>Vulkan, because SYCL never landed in Ollama</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#ollama-sees-the-igpu-and-throws-it-away" data-astro-cid-p33bl5ka>Ollama sees the iGPU, and throws it away</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#benchmarking" data-astro-cid-p33bl5ka>Benchmarking</a></li><li class="toc-item-mobile depth-3" data-astro-cid-p33bl5ka><a href="#the-numbers" data-astro-cid-p33bl5ka>The numbers</a></li><li class="toc-item-mobile depth-3" data-astro-cid-p33bl5ka><a href="#how-much-the-igpu-is-working" data-astro-cid-p33bl5ka>How much the iGPU is working</a></li><li class="toc-item-mobile depth-3" data-astro-cid-p33bl5ka><a href="#trying-to-squeeze-more-from-the-igpu" data-astro-cid-p33bl5ka>Trying to squeeze more from the iGPU</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#the-context-length-trap" data-astro-cid-p33bl5ka>The context length trap</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#where-it-landed" data-astro-cid-p33bl5ka>Where it landed</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#footnote-label" data-astro-cid-p33bl5ka>Footnotes</a></li></ul></nav></details><script type="module">var e;function t(){e&&e.disconnect(),e=new IntersectionObserver(e=>{e.forEach(e=>{let t=e.target.getAttribute(`id`);if(!t)return;let n=document.querySelector(`.toc-item a[href="#${t}"]`),r=document.querySelector(`.toc-item-mobile a[href="#${t}"]`);e.isIntersecting&&(document.querySelectorAll(`.toc-item`).forEach(e=>e.classList.remove(`active`)),document.querySelectorAll(`.toc-item-mobile`).forEach(e=>e.classList.remove(`active`)),n?.parentElement?.classList.add(`active`),r?.parentElement?.classList.add(`active`))})},{root:null,rootMargin:`-100px 0px -60% 0px`,threshold:0}),document.querySelectorAll(`h2, h3`).forEach(t=>{e?.observe(t)})}t(),document.addEventListener(`astro:after-swap`,t);</script><p>Like everyone, I’m interested in running my own LLM, so I installed Ollama in my homelab some time ago. Ollama is a tool to easily run <a href="https://en.wikipedia.org/wiki/Large_language_model" target="_blank" rel="noopener noreferrer nofollow">Large Language Models (LLM)</a>, and exposes this local AI as a server to be used by other applications. It’s not the best tool to get the most out of the machine, but it’s the simplest to install and manage with plenty of nice QoL.</p>
+<p>But, since I installed it, Ollama has been the most disappointing service on my home server. The machine I installed it on is an <a href="https://en.wikipedia.org/wiki/Intel_nuc" target="_blank" rel="noopener noreferrer nofollow">Intel NUC</a> <a href="https://www.asus.com/supportonly/nuc11pahi5/helpdesk_manual/" target="_blank" rel="noopener noreferrer nofollow">NUC11PAHi5</a> from 2021 (an <a href="https://www.intel.com/content/www/us/en/products/sku/208658/intel-core-i51135g7-processor-8m-cache-up-to-4-20-ghz/specifications.html" target="_blank" rel="noopener noreferrer nofollow">11th-gen Tiger Lake i5-1135G7</a> with 4 cores, 8 threads, Iris Xe graphics <em>(80@1.30 GHz)</em>, and 32 GB of RAM). It runs headless Debian 13, doesn’t have a dedicated GPU and hosts a little less than 40 other Docker containers, all sharing the same 4 CPU cores.</p>
+<figure>
+    <img src="/images/ollama-intel-igpu-nuc.webp" alt="Spec. sheet of my Intel NUC.">
+    <figcaption>Spec. sheet of my Intel NUC.</figcaption>
+</figure>
+<p>Every model I tried on it felt like a bad joke: the time to generate responses has always been somewhere between “go make coffee” and “why did I even install this.”</p>
+<p>Then <a href="https://www.liquid.ai" target="_blank" rel="noopener noreferrer nofollow">Liquid AI</a> released <a href="https://www.liquid.ai/blog/lfm2-5-2-6b" target="_blank" rel="noopener noreferrer nofollow">LFM2.5-2.6B</a>. A 2.6B-parameter model with tool calling, a thinking mode, and a GGUF that weighs under 2 GB. Their CPU benchmarks were published on small devices, going all the way down to smartphone inference, not data-center GPUs. That told me everything: this thing was built for hardware exactly like mine. Time to dive in.</p>
+<figure>
+    <img src="/images/ollama-intel-igpu-lfm-benchmark.webp" alt="LFM2.5-2.6B benchmark, above all the others.">
+    <figcaption>Mandatory LLM benchmark image. Honestly not that bad!</figcaption>
+</figure>
+<div class="callout" data-callout="note"><p>Before really diving in, here’s a little glossary to understand all the LLM-world technical words:</p>
+<ul>
+<li>A <strong>Token</strong> is one of the pieces a sentence, or even a long word, gets cut into for the model to understand it. It applies both to what’s ingested by the model and to what is generated by it.</li>
+<li><strong>Prompt</strong> is the name for any message sent by the user (either a sentence, a question, some debug logs, etc). A prompt is split into several tokens.</li>
+<li><strong>Prefill</strong> is how fast the model reads your prompt. It sets how long you stare at a blank screen before the first word appears.</li>
+<li><strong>Decode</strong> or <strong>Inference</strong> is how fast it writes the answer. It sets how quickly text scrolls past once it starts. Both are measured in tokens per second, and the gap between them is the whole story.</li>
+</ul>
+</div>
+<h2 id="the-cpu-baseline">The CPU baseline</h2>
+<p>Ollama returns timings on every <code>/api/generate</code> call, so no benchmark tools are needed. You just divide token counts by durations.</p>
+<p>To start testing this new model on my machine, I first started naively and used a ten-token prompt (the prompt being: “Summarise TCP congestion control in 300 words.”), but I quickly realized that it was too small to really get numbers to compare and everything collapsed within statistical noise.</p>
+<p>So I built a bigger/realistic prompt: the first 12,000 characters of the <code>tcp</code> man page, stripped of formatting, followed by a request for a 100-word summary. That comes to <em>~3,000 tokens</em>, which is more representative of what an agent actually sends: a wall of retrieved text with a short instruction tacked on at the end. The reply is capped at 100 tokens so the decode figure comes from a consistent amount of generation.</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#24292E;--shiki-dark:#83A598">TEXT</span><span style="color:#D73A49;--shiki-dark:#8EC07C">=</span><span style="color:#24292E;--shiki-dark:#A89984">$(</span><span style="color:#6F42C1;--shiki-dark:#FABD2F">man</span><span style="color:#032F62;--shiki-dark:#B8BB26"> tcp</span><span style="color:#D73A49;--shiki-dark:#8EC07C"> |</span><span style="color:#6F42C1;--shiki-dark:#FABD2F"> col</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -b</span><span style="color:#D73A49;--shiki-dark:#8EC07C"> |</span><span style="color:#6F42C1;--shiki-dark:#FABD2F"> head</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -c</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 12000</span><span style="color:#24292E;--shiki-dark:#A89984">)</span></span>
+<span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">jq</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -n</span><span style="color:#005CC5;--shiki-dark:#D3869B"> --arg</span><span style="color:#032F62;--shiki-dark:#B8BB26"> p</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#24292E;--shiki-dark:#83A598">$TEXT</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62;--shiki-dark:#B8BB26">Summarise the above in 100 words.</span><span style="color:#032F62;--shiki-dark:#A89984">"</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#032F62;--shiki-dark:#A89984"> '</span><span style="color:#032F62;--shiki-dark:#B8BB26">{model:"hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M",prompt:$p,stream:false,options:{num_predict:100}}</span><span style="color:#032F62;--shiki-dark:#A89984">'</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> </span></span>
+<span class="line"><span style="color:#D73A49;--shiki-dark:#8EC07C">|</span><span style="color:#6F42C1;--shiki-dark:#FABD2F"> curl</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -s</span><span style="color:#032F62;--shiki-dark:#B8BB26"> http://localhost:11434/api/generate</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -d</span><span style="color:#032F62;--shiki-dark:#B8BB26"> @-</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> </span></span>
+<span class="line"><span style="color:#D73A49;--shiki-dark:#8EC07C">|</span><span style="color:#6F42C1;--shiki-dark:#FABD2F"> jq</span><span style="color:#032F62;--shiki-dark:#A89984"> '</span><span style="color:#032F62;--shiki-dark:#B8BB26">{tokens: .prompt_eval_count,</span></span>
+<span class="line"><span style="color:#032F62;--shiki-dark:#B8BB26">       prefill: (.prompt_eval_count/(.prompt_eval_duration/1e9)),</span></span>
+<span class="line"><span style="color:#032F62;--shiki-dark:#B8BB26">       decode: (.eval_count/(.eval_duration/1e9))}</span><span style="color:#032F62;--shiki-dark:#A89984">'</span></span></code></pre>
+<p>On that prompt, CPU-only gave <em>73.5 tok/s prefill</em> and <em><strong>9.19 tok/s decode</strong></em>.</p>
+<p>On the trivial ten-token prompt, decode had been <em>11.8 tok/s</em>. The same model lost a quarter of its writing speed once it had 3K tokens to keep in mind (also called <em>context</em> in more technical words). That was the first hint of a scaling problem and a sign that the CPU was, as expected, the bottleneck.</p>
+<h2 id="vulkan-because-sycl-never-landed-in-ollama">Vulkan, because SYCL never landed in Ollama</h2>
+<p>LLMs are made to work on <a href="https://en.wikipedia.org/wiki/Graphics_processing_unit" target="_blank" rel="noopener noreferrer nofollow">GPUs</a> and not CPUs (because of plenty of technical reasons related to matrix calculation that I’m not expert enough to explain). So obviously the performance on the CPU is bad, however this CPU has, within the chip, an <a href="https://en.wikipedia.org/wiki/Graphics_processing_unit#Integrated_graphics_processing_unit" target="_blank" rel="noopener noreferrer nofollow">integrated GPU (or <em>iGPU</em>)</a><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup>.</p>
+<div class="callout" data-callout="note"><p>I’ll freely exchange “iGPU”, “GPU” and “Iris Xe” in the text. It was depending on my flow while writing, but it always refers to the same thing in my Intel NUC.</p>
+</div>
+<p>Intel’s own path to its i/GPUs is <a href="https://en.wikipedia.org/wiki/SYCL" target="_blank" rel="noopener noreferrer nofollow">SYCL</a>. <a href="https://github.com/ollama/ollama/pulls?q=SYCL" target="_blank" rel="noopener noreferrer nofollow">Several pull requests adding it to Ollama</a> have been open for a long time, tested on iGPUs and Arc cards alike, and remain unmerged behind merge conflicts or such. So official support doesn’t exist that way, and I should drop Ollama entirely and choose another inference engine. But I’m lazy.</p>
+<p>Luckily for me, <a href="https://en.wikipedia.org/wiki/Vulkan" target="_blank" rel="noopener noreferrer nofollow">Vulkan</a> avoids all of that. It’s a generic GPU API that Mesa implements for Intel graphics, it’s already in mainline Ollama, and it needs no Intel-specific runtime. The host just needs the Mesa drivers:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">sudo</span><span style="color:#032F62;--shiki-dark:#B8BB26"> apt</span><span style="color:#032F62;--shiki-dark:#B8BB26"> install</span><span style="color:#032F62;--shiki-dark:#B8BB26"> mesa-vulkan-drivers</span><span style="color:#032F62;--shiki-dark:#B8BB26"> vulkan-tools</span></span></code></pre>
+<p>Then I checked what Vulkan can actually see:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="txt"><code><span class="line"><span>$ vulkaninfo --summary</span></span>
+<span class="line"><span>'DISPLAY' environment variable not set... skipping surface info</span></span>
+<span class="line"><span>WARNING: [../src/intel/vulkan/anv_physical_device.c:2420] Code 0 : Unable to open device /dev/dri/renderD128: Permission denied (VK_ERROR_INCOMPATIBLE_DRIVER)</span></span>
+<span class="line"><span>WARNING: [../src/intel/vulkan_hasvk/anv_device.c:1602] Code 0 : Unable to open device /dev/dri/renderD128: Permission denied (VK_ERROR_INCOMPATIBLE_DRIVER)</span></span>
+<span class="line"><span>==========</span></span>
+<span class="line"><span>VULKANINFO</span></span>
+<span class="line"><span>==========</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Vulkan Instance Version: 1.4.309</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>[...]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Devices:</span></span>
+<span class="line"><span>========</span></span>
+<span class="line"><span>GPU0:</span></span>
+<span class="line"><span>        apiVersion         = 1.4.305</span></span>
+<span class="line"><span>        driverVersion      = 0.0.1</span></span>
+<span class="line"><span>        vendorID           = 0x10005</span></span>
+<span class="line"><span>        deviceID           = 0x0000</span></span>
+<span class="line"><span>        deviceType         = PHYSICAL_DEVICE_TYPE_CPU</span></span>
+<span class="line"><span>        deviceName         = llvmpipe (LLVM 19.1.7, 256 bits)</span></span>
+<span class="line"><span>        driverID           = DRIVER_ID_MESA_LLVMPIPE</span></span>
+<span class="line"><span>        driverName         = llvmpipe</span></span>
+<span class="line"><span>        driverInfo         = Mesa 25.0.7-2+deb13u1 (LLVM 19.1.7)</span></span></code></pre>
+<p>Three things in that output matter:</p>
+<ul>
+<li><strong>The llvmpipe <em>trap</em>.</strong> The only device that <em>did</em> survive is <code>GPU0</code>, and the detail is in two fields: <code>deviceName = llvmpipe</code>, <code>deviceType = PHYSICAL_DEVICE_TYPE_CPU</code>. That’s Mesa’s software rasterizer, a graphics card implemented in software on the CPU. It’s a valid Vulkan device, and any program naively looking for “a GPU” will take it without complaint. Hand your inference to it and you get the CPU processing as before, now running through an emulation layer, slower than plain CPU inference, with nothing anywhere reporting an error.</li>
+<li><strong>Device selection.</strong> <code>VK_LAYER_MESA_device_select</code> sits in the layer list. That’s the mechanism for telling Mesa which device to pick, and it’s how you avoid the llvmpipe trap.</li>
+<li><strong>Permission.</strong> The two <code>WARNING</code> lines say Intel’s driver could not open <code>/dev/dri/renderD128</code>, the graphics card’s render node. My user wasn’t in the <code>render</code> group. Run the same command with <code>sudo</code> and the Iris Xe appears. For a container, this means passing <code>/dev/dri</code> through and adding the render group’s GID.</li>
+</ul>
+<p>Here we have my real Iris Xe iGPU available:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="txt"><code><span class="line"><span>$ sudo vulkaninfo --summary</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>[...]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Devices:</span></span>
+<span class="line"><span>========</span></span>
+<span class="line"><span>GPU0:</span></span>
+<span class="line"><span>  apiVersion         = 1.4.305</span></span>
+<span class="line"><span>  driverVersion      = 25.0.7</span></span>
+<span class="line"><span>  vendorID           = 0x8086</span></span>
+<span class="line"><span>  deviceID           = 0x9a49</span></span>
+<span class="line"><span>  deviceType         = PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU</span></span>
+<span class="line"><span>  deviceName         = Intel(R) Iris(R) Xe Graphics (TGL GT2)</span></span>
+<span class="line"><span>  driverID           = DRIVER_ID_INTEL_OPEN_SOURCE_MESA</span></span>
+<span class="line"><span>  driverName         = Intel open-source Mesa driver</span></span>
+<span class="line"><span>  driverInfo         = Mesa 25.0.7-2+deb13u1</span></span>
+<span class="line"><span>  conformanceVersion = 1.4.0.0</span></span>
+<span class="line"><span>  deviceUUID         = 8680499a-0100-0000-0002-000000000000</span></span>
+<span class="line"><span>  driverUUID         = 2f784820-7750-3c96-f005-19cf15571d8b</span></span>
+<span class="line"><span>GPU1:</span></span>
+<span class="line"><span>  deviceType         = PHYSICAL_DEVICE_TYPE_CPU</span></span>
+<span class="line"><span>  deviceName         = llvmpipe (LLVM 19.1.7, 256 bits)</span></span>
+<span class="line"><span>  driverID           = DRIVER_ID_MESA_LLVMPIPE</span></span>
+<span class="line"><span>  driverName         = llvmpipe</span></span>
+<span class="line"><span>  [...]</span></span></code></pre>
+<p>So I gave Ollama that device node, set one variable to force the Vulkan backend, and two variables to pin the choice:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="yaml"><code><span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">devices</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#24292E;--shiki-dark:#A89984"> [</span><span style="color:#032F62;--shiki-dark:#A89984">"</span><span style="color:#032F62;--shiki-dark:#B8BB26">/dev/dri:/dev/dri</span><span style="color:#032F62;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984">]</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">environment</span><span style="color:#24292E;--shiki-dark:#A89984">:</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">  OLLAMA_VULKAN</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">1</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">  GGML_VK_VISIBLE_DEVICES</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">0</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">  MESA_VK_DEVICE_SELECT</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">8086:9a49</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span></code></pre>
+<p><code>GGML_VK_VISIBLE_DEVICES</code> restricts ggml’s own device enumeration. <code>MESA_VK_DEVICE_SELECT</code> drives that Mesa layer, keyed on the “<em>vendor ID:device ID</em>” of the Iris Xe.</p>
+<h2 id="ollama-sees-the-igpu-and-throws-it-away">Ollama sees the iGPU, and throws it away</h2>
+<p>To my surprise, after setting Ollama to use the iGPU, it produced no speedup at all. And then this line appeared in <code>docker logs ollama</code>:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>level=INFO source=runner.go:405 msg="dropping integrated GPU; to enable, set OLLAMA_IGPU_ENABLE=1"</span></span>
+<span class="line"><span>  id=0 library=Vulkan compute=0.0 name=Vulkan0</span></span>
+<span class="line"><span>  description="Intel(R) Iris(R) Xe Graphics (TGL GT2)" pci_id=0000:00:02.0</span></span></code></pre>
+<p>Ollama found the Iris Xe, named the right chip, and then discarded it on purpose.</p>
+<p>As iGPUs share the memory bus with the CPU they sit within, Ollama’s scheduler assumes they can’t win anything and drops them on startup. The permission and device-selection work above was all correct, and the result was still CPU inference.</p>
+<p>The log message also names its own fix: Adding this environment variable in my config</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="yaml"><code><span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">environment</span><span style="color:#24292E;--shiki-dark:#A89984">:</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">  OLLAMA_IGPU_ENABLE</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">1</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">  ...</span></span></code></pre>
+<h2 id="benchmarking">Benchmarking</h2>
+<h3 id="the-numbers">The numbers</h3>
+<p>So, time to benchmark my machine a little.</p>
+<p>I’m reusing the same ~3k-token prompt, same LFM2.5-2.6B model at <code>Q4_K_M</code><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup>, one run with <code>OLLAMA_IGPU_ENABLE=0</code> (CPU inference) and one with <code>OLLAMA_IGPU_ENABLE=1</code> (iGPU inference):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>CPU only</th><th>Iris Xe via Vulkan</th><th>Difference</th></tr></thead><tbody><tr><td><strong>Prefill</strong></td><td>73.5 tok/s</td><td>240.0 tok/s</td><td>+227%</td></tr><tr><td><strong>Decode</strong></td><td>9.19 tok/s</td><td>14.35 tok/s</td><td>+56%</td></tr></tbody></table>
+<p>Impressive results: the iGPU is beating the CPU across the board, but particularly for the prefilling (ie. the time before the model finishes analysing my prompt).</p>
+<p>The second measurement is what really surprised me. Decode speed falls as the prompt grows, it’s normal as the model has more previous tokens to attend to for every new token it writes. How fast it falls is what determines whether long conversations stay snappy or not:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Prompt size</th><th>CPU decode</th><th>Iris Xe decode</th></tr></thead><tbody><tr><td>~10 tokens</td><td>11.8 tok/s</td><td>14.6 tok/s</td></tr><tr><td>3K tokens</td><td>9.19 tok/s</td><td>14.35 tok/s</td></tr><tr><td>6K tokens</td><td>not measured</td><td>13.96 tok/s</td></tr></tbody></table>
+<p>The CPU lost 22% of its decode speed going from a trivial prompt to a 3K one. The Iris Xe lost less than 5% per doubling all the way to 6K.</p>
+<p>The gap widens because “remembering” a long conversation, for an LLM, is mathematical processing, not memory, and the Iris Xe iGPU has 80 execution units built and optimized for that math. When you’re feeding an agent long tool outputs and multi-turn histories, the speed at 6K tokens matters more than the speed at 10 so the iGPU wins.</p>
+<h3 id="how-much-the-igpu-is-working">How much the iGPU is working</h3>
+<p>Ollama’s logs report the placement of every part of the model at load time:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>load_tensors: offloaded 31/31 layers to GPU</span></span>
+<span class="line"><span>load_tensors:   CPU_Mapped model buffer size =   205.08 MiB</span></span>
+<span class="line"><span>load_tensors:      Vulkan0 model buffer size =  1589.03 MiB</span></span></code></pre>
+<p>All 31 layers of the LLM are on the Iris Xe chip, 1,589 MiB of them. The 205 MiB left on the CPU is the token embedding table: the lookup that turns a token ID into a vector. It’s a table read rather than a computation, so it belongs where the RAM is and doesn’t really hurt performance.</p>
+<p>That’s a clean split, and it explains the numbers. The inference work runs fully on the GPU, while my cores are left with scheduling, picking the next token, and the other containers of my normal server.</p>
+<h3 id="trying-to-squeeze-more-from-the-igpu">Trying to squeeze more from the iGPU</h3>
+<p>One of the interesting inference settings that Ollama let me play with is <code>num_batch</code> which controls how many prompt tokens Ollama pushes through the GPU in one go during prefill, and the default of <code>512</code> looked conservative for my device with nothing else using the iGPU. Raising it to <code>2048</code> gave <em>232.75 tok/s</em> at a 6k-token prompt, against <em>240.0 tok/s</em> at 3k-token with the default.</p>
+<p>No gain, and it reserves an extra 200 MiB on the iGPU to achieve it. I put it back.</p>
+<h2 id="the-context-length-trap">The context length trap</h2>
+<p><a href="https://openwebui.com" target="_blank" rel="noopener noreferrer nofollow">Open WebUI</a> is the chat front end I point at Ollama, a self-hosted web UI that handles conversations, models, users and a lot more instead of using Ollama via the CLI. It also fires background requests of its own, and that turned out to matter.</p>
+<figure>
+    <img src="/images/ollama-intel-igpu-openwebui.webp" alt="Open WebUI v0.11.0 empty chat interface with LFM2.5-2.6B ready.">
+    <figcaption>My instance of Open WebUI v0.11.0 with LFM2.5-2.6B ready to chat!</figcaption>
+</figure>
+<p>Having seen how well the Iris Xe holds decode speed, I raised the context window to 122K (close to the documentation’s maximum) to see how far it would go. Load times climbed from 34 seconds (after the first message) to 123 seconds across a few turns of a single conversation, on a model that was supposed to stay resident.</p>
+<p>After some investigation, it’s those background requests which are the cause. Open WebUI generates a title and tags for each conversation, and those calls carried a different context length than my chat messages. Those are being asked to my default provider: Ollama. Ollama tears down the running model and reloads it whenever the requested context length changes, so every background task (with very small context length) was evicting my conversation and paying the load cost again.</p>
+<p>To fix that:</p>
+<ul>
+<li>I set <code>OLLAMA_CONTEXT_LENGTH</code> and Open WebUI’s <code>num_ctx</code> to the same value. I settled at <code>32768</code>, where prefilling a full window stays under half a minute.</li>
+<li><code>OLLAMA_NUM_PARALLEL=2</code> fixes the other half: two slots means Ollama can hold 2 conversations at the same time, giving those background tasks their own slot instead of evicting my conversation each time they run.</li>
+</ul>
+<p>One trap while checking this. Ollama reports <code>prompt_eval_count</code> as the full prompt length regardless of how much it actually recomputed, so watching that number grow across turns proves nothing about caching. Divide it by <code>prompt_eval_duration</code> instead: land near the prefill speed measured above (<em>~240 tok/s</em>) and the prompt was reprocessed; land in the thousands and it was reused.</p>
+<p>To double check, I sent an identical request twice directly to Ollama, which gave 11.8s then 121ms. Reuse works.</p>
+<h2 id="where-it-landed">Where it landed</h2>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="yaml"><code><span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">services</span><span style="color:#24292E;--shiki-dark:#A89984">:</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">  ollama</span><span style="color:#24292E;--shiki-dark:#A89984">:</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">    image</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#B8BB26"> ollama/ollama:latest</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">    restart</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#B8BB26"> unless-stopped</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">    ports</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> </span></span>
+<span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">      # Don't expose port on your network!</span></span>
+<span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">      # Give it an explicit IP address to be reached on.</span></span>
+<span class="line"><span style="color:#24292E;--shiki-dark:#A89984">      -</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">127.0.0.1:11434:11434</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">    volumes</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> </span></span>
+<span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">      # Where my model is saved</span></span>
+<span class="line"><span style="color:#24292E;--shiki-dark:#A89984">      -</span><span style="color:#032F62;--shiki-dark:#B8BB26"> ollama:/root/.ollama</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">    devices</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#24292E;--shiki-dark:#EBDBB2"> </span></span>
+<span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">      # Giving my iGPU to Ollama in the container</span></span>
+<span class="line"><span style="color:#24292E;--shiki-dark:#A89984">      -</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">/dev/dri:/dev/dri</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">    # Avoid using swap memory</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">    mem_swappiness</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 0</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">    environment</span><span style="color:#24292E;--shiki-dark:#A89984">:</span></span>
+<span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">      # Use Vulkan</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">      OLLAMA_VULKAN</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">1</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">      # Use the iGPU please</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">      OLLAMA_IGPU_ENABLE</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">1</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">      # This iGPU</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">      GGML_VK_VISIBLE_DEVICES</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">0</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">      MESA_VK_DEVICE_SELECT</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">8086:9a49</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#6A737D;--shiki-light-font-style:inherit;--shiki-dark:#928374;--shiki-dark-font-style:italic">      # Other settings</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">      OLLAMA_KEEP_ALIVE</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">-1</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">      OLLAMA_MAX_LOADED_MODELS</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">1</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">      OLLAMA_NUM_PARALLEL</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">2</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">      OLLAMA_FLASH_ATTENTION</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">1</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">      OLLAMA_CONTEXT_LENGTH</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#B8BB26">32768</span><span style="color:#032F62;--shiki-dark:#A89984">"</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">volumes</span><span style="color:#24292E;--shiki-dark:#A89984">:</span></span>
+<span class="line"><span style="color:#22863A;--shiki-dark:#8EC07C">  ollama</span><span style="color:#24292E;--shiki-dark:#A89984">:</span></span></code></pre>
+<p>From <em>73 tok/s</em> to <em>240 tok/s</em> prefill, and <em>9.2 tok/s</em> to <em>14.4 tok/s</em> inference. On hardware without a dedicated GPU.</p>
+<p>One bottleneck I didn’t present stays, and it stays for a boring reason. <code>dmidecode</code> shows that my two 16 GB SODIMM sticks are rated at different speeds (one at 3,200 MT/s and one at 2,400) so DDR4 clocks the whole subsystem down to 2,400 MT/s. Matching them should push decode to somewhere near 16 or 17 tok/s. But a single 16 GB DDR4-3200 stick now costs more than $100, which is too much money for three tokens per second on a five-year-old NUC.</p>
+<p>Regardless, I’m really happy about how things turned out and I now have my very own <del>slow</del> not-that-slow personal AI that I’ll be able to play a little with.</p>
+<!-- --- -->
+<section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label">Footnotes</h2>
+<ol>
+<li id="user-content-fn-1">
+<p>This is useful to be able to have only a single chip but also get graphics and screen working on laptops. <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-2">
+<p>I don’t fully understand how quantization magic works. I just took the recommended one from LFM’s own documentation, and generally that’s what the internet recommends. <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to reference 2" class="data-footnote-backref">↩</a></p>
+</li>
+</ol>
+</section><div class="giscus-wrapper" data-astro-cid-5ukdginb><script src="https://giscus.app/client.js" data-repo="RoiArthurB/roiarthurb.github.io" data-repo-id="R_kgDOSPu0kw" data-category="General" data-category-id="DIC_kwDOSPu0k84C8QdB" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="en" data-loading="lazy" crossorigin="anonymous" async></script></div><script data-astro-rerun>
+	function syncGiscusTheme() {
+		const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+		const iframe = document.querySelector('iframe.giscus-frame');
+		if (iframe) {
+			iframe.contentWindow?.postMessage(
+				{ giscus: { setConfig: { theme } } },
+				'https://giscus.app'
+			);
+		}
+	}
+
+	const observer = new MutationObserver(syncGiscusTheme);
+	observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script></div></div><nav class="toc-container" data-astro-cid-p33bl5ka><div class="toc-inner" data-astro-cid-p33bl5ka><h2 class="toc-title" data-astro-cid-p33bl5ka>Table of Contents</h2><ul class="toc-list" data-astro-cid-p33bl5ka><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#the-cpu-baseline" data-astro-cid-p33bl5ka>The CPU baseline</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#vulkan-because-sycl-never-landed-in-ollama" data-astro-cid-p33bl5ka>Vulkan, because SYCL never landed in Ollama</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#ollama-sees-the-igpu-and-throws-it-away" data-astro-cid-p33bl5ka>Ollama sees the iGPU, and throws it away</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#benchmarking" data-astro-cid-p33bl5ka>Benchmarking</a></li><li class="toc-item depth-3" data-astro-cid-p33bl5ka><a href="#the-numbers" data-astro-cid-p33bl5ka>The numbers</a></li><li class="toc-item depth-3" data-astro-cid-p33bl5ka><a href="#how-much-the-igpu-is-working" data-astro-cid-p33bl5ka>How much the iGPU is working</a></li><li class="toc-item depth-3" data-astro-cid-p33bl5ka><a href="#trying-to-squeeze-more-from-the-igpu" data-astro-cid-p33bl5ka>Trying to squeeze more from the iGPU</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#the-context-length-trap" data-astro-cid-p33bl5ka>The context length trap</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#where-it-landed" data-astro-cid-p33bl5ka>Where it landed</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#footnote-label" data-astro-cid-p33bl5ka>Footnotes</a></li></ul></div></nav></div></article></main><footer class="site-footer" data-astro-cid-jo6i4kqk><div class="footer-content" data-astro-cid-jo6i4kqk><div class="footer-col brand-col" data-astro-cid-jo6i4kqk><h3 data-astro-cid-jo6i4kqk>Arthur Brugière</h3><p data-astro-cid-jo6i4kqk>Computer Researcher / IT Geek</p><div class="copyright" data-astro-cid-jo6i4kqk>&copy; 2026 Arthur Brugière.<br data-astro-cid-jo6i4kqk>All rights reserved.</div></div><div class="footer-col" data-astro-cid-jo6i4kqk><!-- 
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href={url('/')}>Home</a></li>
+                <li><a href={url('/publications')}>Publications</a></li>
+                <li><a href={url('/projects')}>Projects</a></li>
+                <li><a href={url('/team')}>Team</a></li>
+                <li><a href={url('/blog')}>News</a></li>
+                {cvHref && <li><a href={cvHref} target="_blank">Download CV</a></li>}
+            </ul>
+        --></div><div class="footer-col" data-astro-cid-jo6i4kqk><h4 data-astro-cid-jo6i4kqk>Contact</h4><address data-astro-cid-jo6i4kqk>Arthur Brugière<br data-astro-cid-jo6i4kqk>Hanoi, Vietnam<br data-astro-cid-jo6i4kqk></address><p style="margin-top: 1rem;" data-astro-cid-jo6i4kqk><a href="mailto:arthur.brugiere@ird.fr" style="text-decoration: underline;" data-astro-cid-jo6i4kqk>arthur.brugiere@ird.fr</a><br data-astro-cid-jo6i4kqk></p></div><div class="footer-col" data-astro-cid-jo6i4kqk><h4 data-astro-cid-jo6i4kqk>Connect</h4><div class="social-links" data-astro-cid-jo6i4kqk><a href="https://github.com/RoiArthurB" target="_blank" rel="noopener noreferrer nofollow" aria-label="GitHub" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" data-astro-cid-jo6i4kqk></path></svg></a><a href="https://orcid.org/0000-0001-7220-449X" target="_blank" rel="noopener noreferrer nofollow" aria-label="Orcid" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" data-astro-cid-jo6i4kqk><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.369 4.378c.525 0 .947.431.947.947s-.422.947-.947.947a.95.95 0 0 1-.947-.947c0-.525.422-.947.947-.947zm-.722 3.038h1.444v10.041H6.647V7.416zm3.562 0h3.9c3.712 0 5.344 2.653 5.344 5.025 0 2.578-2.016 5.025-5.325 5.025h-3.919V7.416zm1.444 1.303v7.444h2.297c3.272 0 4.022-2.484 4.022-3.722 0-2.016-1.284-3.722-4.097-3.722h-2.222z" data-astro-cid-jo6i4kqk></path></svg></a><a href="https://scholar.google.com/citations?user=Zk8mYXoAAAAJ" target="_blank" rel="noopener noreferrer nofollow" aria-label="Google Scholar" data-astro-cid-jo6i4kqk><svg fill="currentColor" viewBox="0 0 32 32" width="24" height="24" xmlns="http://www.w3.org/2000/svg" data-astro-cid-jo6i4kqk><path d="M14.573 2.729c-0.729 0.484-4.292 2.849-7.917 5.255s-6.589 4.396-6.589 4.422c0 0.026 0.182 0.146 0.406 0.266 0.224 0.13 3.797 2.109 7.953 4.411l7.542 4.193 0.193-0.099c0.109-0.052 2.891-1.641 6.188-3.521l5.99-3.427 0.036 10.599h3.557v-12.401l-4.615-3.094c-6.219-4.167-11.188-7.448-11.307-7.474-0.063-0.010-0.703 0.38-1.438 0.87zM7.141 22.177l0.016 2.672 8.828 5.292 8.891-5.339v-2.641c0-1.458-0.016-2.646-0.031-2.646-0.021 0-1.76 1.042-3.87 2.323l-4.406 2.661-0.578 0.339-1.755-1.052c-1.464-0.875-2.927-1.755-4.385-2.641l-2.672-1.615c-0.031-0.010-0.042 1.177-0.036 2.646z" data-astro-cid-jo6i4kqk></path></svg></a><a href="https://www.linkedin.com/in/arthurbrugiere/" target="_blank" rel="noopener noreferrer nofollow" aria-label="LinkedIn" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" data-astro-cid-jo6i4kqk></path><rect x="2" y="9" width="4" height="12" data-astro-cid-jo6i4kqk></rect><circle cx="4" cy="4" r="2" data-astro-cid-jo6i4kqk></circle></svg></a><a href="https://en.wikipedia.org/wiki/Piratbyr%C3%A5n#Kopimi" target="_blank" rel="noopener noreferrer nofollow" aria-label="Kopimi" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M 20.945312 7.027344 L 18.394531 8.761719 L 15.871094 7.058594 L 13.738281 8.484375 L 13.738281 2.125 L 10.765625 0.109375 L 7.824219 2.125 L 7.824219 8.484375 L 3.109375 5.320312 L 0.164062 7.304688 L 0.164062 14.90625 L 13.320312 23.84375 L 16.261719 21.828125 L 16.261719 18.351562 L 18.398438 16.898438 L 20.949219 18.636719 L 23.921875 16.648438 L 23.921875 9.050781 Z M 10.765625 0.632812 L 12.980469 2.121094 L 10.765625 3.609375 L 8.554688 2.121094 Z M 10.765625 4.109375 L 12.945312 5.570312 L 10.765625 7.089844 L 8.554688 5.601562 Z M 10.765625 7.554688 L 12.945312 9.042969 L 10.765625 10.53125 L 8.554688 9.042969 Z M 0.929688 7.304688 L 3.109375 5.8125 L 5.320312 7.300781 L 3.109375 8.792969 Z M 3.480469 9.042969 L 5.695312 7.554688 L 7.875 9.046875 L 5.660156 10.535156 Z M 6 10.78125 L 8.214844 9.292969 L 10.425781 10.78125 L 8.214844 12.269531 Z M 8.554688 12.519531 L 10.765625 11.03125 L 12.945312 12.492188 L 10.765625 13.976562 Z M 13.320312 15.714844 L 11.105469 14.222656 L 13.320312 12.734375 L 13.335938 12.746094 L 15.5 14.226562 Z M 15.839844 10.535156 L 13.660156 9.042969 L 15.871094 7.554688 L 18.054688 9.042969 Z M 20.945312 10.535156 L 18.765625 9.046875 L 20.945312 7.558594 L 23.160156 9.046875 Z M 20.945312 10.535156 " data-astro-cid-jo6i4kqk></path></svg></a></div><div class="social-links" style="color: var(--color-text-muted); display: inline" data-astro-cid-jo6i4kqk><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="72px" height="72px" viewBox="0 0 72 72" version="1.1" fill="currentColor" stroke-width="0" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M 2.742188 2.742188 L 2.742188 69.230469 L 69.230469 69.230469 L 69.230469 2.742188 Z M 5.273438 5.273438 L 24.0625 5.273438 L 24.0625 24.0625 L 5.273438 24.0625 Z M 26.59375 5.273438 L 45.378906 5.273438 L 45.378906 24.0625 L 26.59375 24.0625 Z M 47.910156 5.273438 L 66.699219 5.273438 L 66.699219 24.0625 L 47.910156 24.0625 Z M 35.984375 6.671875 C 31.574219 6.675781 28 10.253906 28 14.667969 C 27.996094 19.082031 31.570312 22.664062 35.984375 22.667969 C 38.109375 22.671875 40.144531 21.828125 41.644531 20.328125 C 43.148438 18.828125 43.988281 16.789062 43.988281 14.667969 C 43.988281 10.25 40.402344 6.667969 35.984375 6.671875 Z M 5.273438 26.59375 L 24.0625 26.59375 L 24.0625 45.378906 L 5.273438 45.378906 Z M 26.59375 26.59375 L 45.378906 26.59375 L 45.378906 45.378906 L 26.59375 45.378906 Z M 47.910156 26.59375 L 66.699219 26.59375 L 66.699219 45.378906 L 47.910156 45.378906 Z M 57.320312 28 C 52.910156 28.003906 49.335938 31.574219 49.332031 35.984375 C 49.328125 40.402344 52.902344 43.984375 57.320312 43.988281 C 61.734375 43.984375 65.308594 40.402344 65.304688 35.984375 C 65.300781 31.574219 61.730469 28.003906 57.320312 28 Z M 5.273438 47.910156 L 24.0625 47.910156 L 24.0625 66.699219 L 5.273438 66.699219 Z M 26.59375 47.910156 L 45.378906 47.910156 L 45.378906 66.699219 L 26.59375 66.699219 Z M 47.910156 47.910156 L 66.699219 47.910156 L 66.699219 66.699219 L 47.910156 66.699219 Z M 14.667969 49.332031 C 10.253906 49.332031 6.675781 52.90625 6.671875 57.320312 C 6.675781 61.730469 10.253906 65.304688 14.667969 65.304688 C 19.082031 65.308594 22.664062 61.734375 22.667969 57.320312 C 22.664062 52.902344 19.082031 49.328125 14.667969 49.332031 Z M 35.984375 49.332031 C 31.574219 49.335938 28.003906 52.910156 28 57.320312 C 28.003906 61.730469 31.574219 65.300781 35.984375 65.304688 C 40.402344 65.308594 43.984375 61.734375 43.988281 57.320312 C 43.984375 52.902344 40.402344 49.328125 35.984375 49.332031 Z M 57.320312 49.332031 C 52.910156 49.335938 49.335938 52.910156 49.332031 57.320312 C 49.335938 61.730469 52.910156 65.300781 57.320312 65.304688 C 61.730469 65.300781 65.300781 61.730469 65.304688 57.320312 C 65.300781 52.910156 61.730469 49.335938 57.320312 49.332031 Z M 57.320312 49.332031 " data-astro-cid-jo6i4kqk></path></svg></div></div></div><div class="footer-credit" data-astro-cid-jo6i4kqk>Based on <a href="https://github.com/shravanngoswamii/astro-scholar" target="_blank" rel="noopener noreferrer nofollow" data-astro-cid-jo6i4kqk>Shravan Goswami - Astro Scholar</a> design</div><script async src="https://gc.zgo.at/count.js" data-goatcounter="https://arthurbrugiere.goatcounter.com/count"></script></footer><div id="search-overlay" class="search-overlay hidden" data-astro-cid-ac66eqjo><div id="search-backdrop" class="search-backdrop" data-astro-cid-ac66eqjo></div><div class="search-panel-wrapper" data-astro-cid-ac66eqjo><div id="search-panel" class="search-panel" data-astro-cid-ac66eqjo><div class="search-panel-header" data-astro-cid-ac66eqjo><span class="search-title" data-astro-cid-ac66eqjo>Search</span><button id="search-close-btn" class="search-close-btn" data-astro-cid-ac66eqjo>Esc</button></div><div class="search-panel-content" data-astro-cid-ac66eqjo><div id="pagefind__search" data-astro-cid-ac66eqjo></div></div></div></div></div><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.DbwgI8S-.js"></script><dialog id="author-modal" class="author-modal" data-astro-cid-jo6i4kqk><button id="close-modal" class="close-btn" aria-label="Close modal" data-astro-cid-jo6i4kqk>&times;</button><div class="modal-flex" data-astro-cid-jo6i4kqk><img id="modal-avatar" src="" alt="Avatar" class="modal-avatar" data-astro-cid-jo6i4kqk><div data-astro-cid-jo6i4kqk><h3 id="modal-name" data-astro-cid-jo6i4kqk></h3><span id="modal-title" data-astro-cid-jo6i4kqk></span><span id="modal-role" data-astro-cid-jo6i4kqk></span></div></div><p id="modal-bio" data-astro-cid-jo6i4kqk></p><div id="modal-socials" data-astro-cid-jo6i4kqk></div></dialog><script type="module" src="/_astro/Footer.astro_astro_type_script_index_0_lang.C96OUfRy.js"></script><script data-astro-rerun>
+			function getCodeBlockLabel(pre) {
+				const explicitLabel =
+					pre.getAttribute('data-file') ||
+					pre.getAttribute('data-filename') ||
+					pre.dataset.file ||
+					pre.dataset.filename;
+				if (explicitLabel) return explicitLabel;
+
+				const code = pre.querySelector('code');
+				const languageClass = code
+					? Array.from(code.classList).find((className) => className.startsWith('language-'))
+					: null;
+				const language =
+					pre.getAttribute('data-language') ||
+					pre.dataset.language ||
+					(languageClass ? languageClass.replace('language-', '') : '');
+				const normalized = language.toLowerCase();
+
+				const labels = {
+					astro: 'Astro',
+					bash: 'Bash',
+					css: 'CSS',
+					diff: 'Diff',
+					html: 'HTML',
+					js: 'JavaScript',
+					json: 'JSON',
+					md: 'Markdown',
+					plaintext: 'Code',
+					sh: 'Shell',
+					shell: 'Shell',
+					text: 'Code',
+					toml: 'TOML',
+					ts: 'TypeScript',
+					tsx: 'TSX',
+					yaml: 'YAML',
+					yml: 'YAML',
+				};
+
+				if (!normalized) return 'Code';
+				return labels[normalized] || normalized.toUpperCase();
+			}
+
+			async function writeToClipboard(text) {
+				if (navigator.clipboard && navigator.clipboard.writeText) {
+					await navigator.clipboard.writeText(text);
+					return;
+				}
+
+				const textarea = document.createElement('textarea');
+				textarea.value = text;
+				textarea.setAttribute('readonly', 'true');
+				textarea.style.position = 'absolute';
+				textarea.style.left = '-9999px';
+				document.body.appendChild(textarea);
+				textarea.select();
+				document.execCommand('copy');
+				document.body.removeChild(textarea);
+			}
+
+			function enhanceCodeBlocks() {
+				const codeBlocks = Array.from(document.querySelectorAll('.prose pre'));
+
+				for (const pre of codeBlocks) {
+					if (pre.dataset.enhancedCodeBlock === 'true') continue;
+
+					const code = pre.querySelector('code');
+					if (!code) continue;
+
+					pre.dataset.enhancedCodeBlock = 'true';
+					pre.setAttribute('tabindex', '0');
+
+					const wrapper = document.createElement('div');
+					wrapper.className = 'code-block-frame';
+
+					pre.parentNode?.insertBefore(wrapper, pre);
+					wrapper.appendChild(pre);
+
+					const label = document.createElement('span');
+					label.className = 'code-block-label';
+					label.textContent = getCodeBlockLabel(pre);
+
+					const copyButton = document.createElement('button');
+					copyButton.type = 'button';
+					copyButton.className = 'copy-code-button';
+					copyButton.innerHTML =
+						'<span class="copy-code-button__default">Copy</span><span class="copy-code-button__success">Copied</span>';
+					copyButton.setAttribute('aria-label', `Copy ${label.textContent} code`);
+
+					copyButton.addEventListener('click', async () => {
+						try {
+							await writeToClipboard(code.innerText || '');
+							copyButton.dataset.copied = 'true';
+							window.setTimeout(() => {
+								copyButton.dataset.copied = 'false';
+							}, 1200);
+						} catch (error) {
+							console.error('Failed to copy code block', error);
+						}
+					});
+
+					wrapper.appendChild(label);
+					wrapper.appendChild(copyButton);
+				}
+			}
+
+			enhanceCodeBlocks();
+
+			if (!window.__academicPortfolioCodeBlockListener) {
+				document.addEventListener('astro:after-swap', enhanceCodeBlocks);
+				window.__academicPortfolioCodeBlockListener = true;
+			}
+		</script></body></html>
