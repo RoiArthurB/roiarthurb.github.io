@@ -13,7 +13,7 @@ tags:
 publish: true
 ---
 
-Like everyone, I'm interested in running my own LLM, so I installed Ollama in my homelab some time ago. Ollama is a tool to easily run [Large Language Models (LLM)](https://en.wikipedia.org/wiki/Large_language_model), and exposes this local AI as a server to be used by other applications. It's not the best tool to get the most out of the machine, but it's the simplest to install and manage with plenty of nice QoL.
+Like everyone, I'm interested in running my own [Large Language Models (LLM)](https://en.wikipedia.org/wiki/Large_language_model), so I installed Ollama in my homelab some time ago. Ollama is a tool to easily run LLM, and exposes this local AI as a server to be used by other applications. It's not the best tool to get the most out of the machine, but it's the simplest to install and manage with plenty of nice QoL.
 
 But, since I installed it, Ollama has been the most disappointing service on my home server. The machine I installed it on is an [Intel NUC](https://en.wikipedia.org/wiki/Intel_nuc) [NUC11PAHi5](https://www.asus.com/supportonly/nuc11pahi5/helpdesk_manual/) from 2021 (an [11th-gen Tiger Lake i5-1135G7](https://www.intel.com/content/www/us/en/products/sku/208658/intel-core-i51135g7-processor-8m-cache-up-to-4-20-ghz/specifications.html) with 4 cores, 8 threads, Iris Xe graphics *(80\@1.30 GHz)*, and 32 GB of RAM). It runs headless Debian 13, doesn't have a dedicated GPU and hosts a little less than 40 other Docker containers, all sharing the same 4 CPU cores.
 
