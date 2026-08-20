@@ -1,0 +1,444 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-tldeq5d5><head><meta charset="utf-8"><script data-cfasync="false">
+	(() => {
+		const root = document.documentElement;
+		const paintTheme = (theme) => {
+			const dark = theme === 'dark';
+			root.setAttribute('data-theme', dark ? 'dark' : 'light');
+			root.style.setProperty('background-color', 'var(--color-bg)');
+			root.style.colorScheme = dark ? 'dark' : 'light';
+		};
+		let theme = 'light';
+		try {
+			const s = localStorage.getItem('theme');
+			if (s === 'dark' || s === 'light') theme = s;
+			else if (matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+		} catch {
+			if (matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+		}
+		paintTheme(theme);
+		window.addEventListener('load', () => root.setAttribute('data-theme-ready', 'true'), { once: true });
+		window.__setPreferredTheme = paintTheme;
+	})();
+</script><style>
+	/* CSS variables inline — available immediately in all modes (dev + prod), before any external CSS */
+	:root {
+		--color-bg: #ffffff;
+		--color-bg-offset: #ffffff;
+		--color-bg-header: rgba(255, 255, 255, 0.85);
+		--color-text-main: #1a1a1a;
+		--color-text-muted: #555555;
+		--color-accent: #c47f00;
+		--color-border: #eaeaea;
+	}
+	[data-theme='dark'] {
+		--color-bg: #1f1f1e;
+		--color-bg-offset: #272726;
+		--color-bg-header: rgba(31, 31, 30, 0.85);
+		--color-text-main: #ddd4c0;
+		--color-text-muted: #6b6358;
+		--color-accent: #ffab00;
+		--color-border: #242424;
+	}
+	html, body { min-height: 100%; background-color: var(--color-bg); }
+	@media (prefers-color-scheme: dark) {
+		html:not([data-theme='light']), html:not([data-theme='light']) body { background-color: var(--color-bg); }
+	}
+	html[data-theme='dark'], html[data-theme='dark'] body { background-color: var(--color-bg); color-scheme: dark; }
+	html[data-theme='light'], html[data-theme='light'] body { background-color: var(--color-bg); color-scheme: light; }
+	/* Critical header layout — prevents FOUC before component CSS loads */
+	header {
+		position: sticky;
+		top: 0;
+		z-index: 100;
+		padding: 0 1em;
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+	}
+	header nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		max-width: 960px;
+		margin: 0 auto;
+		height: 4.5rem;
+	}
+	header { background-color: var(--color-bg-header); }
+	/* Critical card backgrounds — prevents white flash in dark mode */
+	.project-card, .interactive-card, .pi-card, .collab-card, .team-card {
+		background-color: var(--color-bg-offset);
+		border-color: var(--color-border);
+	}
+	.team-hero h1 { color: var(--color-text-main); }
+	.team-hero p { color: var(--color-text-muted); }
+	body {
+		background-color: var(--color-bg);
+		color: var(--color-text-main);
+		margin: 0;
+	}
+	/* Suppress all transitions until page is fully styled */
+	html:not([data-theme-ready]) *, html:not([data-theme-ready]) *::before, html:not([data-theme-ready]) *::after {
+		transition: none !important;
+		animation: none !important;
+	}
+</style><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/atom+xml" title="Arthur Brugière" href="https://arthurbrugiere.fr/feed.xml"><link rel="alternate" type="application/rss+xml" title="Arthur Brugière (RSS)" href="https://arthurbrugiere.fr/rss.xml"><meta name="generator" content="Astro v7.2.1"><meta name="color-scheme" content="light dark"><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/agina.otf" as="font" type="font/otf" crossorigin><link rel="preload" href="/fonts/Epical Comeback.otf" as="font" type="font/otf" crossorigin><style>
+		@font-face {
+			font-family: "Atkinson";
+			src: url("/fonts/atkinson-regular.woff") format("woff");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Atkinson";
+			src: url("/fonts/atkinson-bold.woff") format("woff");
+			font-weight: 700;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Agina";
+			src: url("/fonts/agina.otf") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: "Epical";
+			src: url("/fonts/Epical Comeback.otf") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+		}
+	</style><link rel="canonical" href="https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/"><title>Three LFM2.5-2.6B in parallel on an iGPU</title><meta name="title" content="Three LFM2.5-2.6B in parallel on an iGPU"><meta name="description" content="Ollama queued every request in a single slot because lfm2 is blocklisted from parallelism. llama-server fixed it."><meta property="og:type" content="website"><meta property="og:url" content="https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/"><meta property="og:title" content="Three LFM2.5-2.6B in parallel on an iGPU"><meta property="og:description" content="Ollama queued every request in a single slot because lfm2 is blocklisted from parallelism. llama-server fixed it."><meta property="og:image" content="https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel.webp"><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/"><meta property="twitter:title" content="Three LFM2.5-2.6B in parallel on an iGPU"><meta property="twitter:description" content="Ollama queued every request in a single slot because lfm2 is blocklisted from parallelism. llama-server fixed it."><meta property="twitter:image" content="https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel.webp"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://arthurbrugiere.fr/#website","url":"https://arthurbrugiere.fr","name":"Arthur Brugière","description":"Ollama queued every request in a single slot because lfm2 is blocklisted from parallelism. llama-server fixed it.","inLanguage":"en"},{"@type":"Person","@id":"https://arthurbrugiere.fr/#person","name":"Arthur Brugière","jobTitle":"Computer Science Researcher / IT Geek","url":"https://arthurbrugiere.fr","sameAs":["https://github.com/RoiArthurB","https://orcid.org/0000-0001-7220-449X","https://scholar.google.com/citations?user=Zk8mYXoAAAAJ","https://www.linkedin.com/in/arthurbrugiere/"]}]}</script><link rel="stylesheet" href="/_astro/Header.Br8TgZRg.css"><link rel="stylesheet" href="/_astro/_..DO-udsM0.css"></head><body data-astro-cid-tldeq5d5><header data-astro-cid-nen7h5rs><nav data-astro-cid-nen7h5rs><h2 style="font-family: var(--font-serif);" data-astro-cid-nen7h5rs><a href="/" data-astro-cid-nen7h5rs>Arthur Brugière</a></h2><div class="internal-links" data-astro-cid-nen7h5rs><a href="/" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Home</a><a href="/projects" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Projects</a><a href="/software" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Software</a><a href="/publications" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Publications</a><div class="dropdown" data-astro-cid-nen7h5rs><a href="/blog" class="active" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Blog</a><div class="dropdown-content" data-astro-cid-nen7h5rs><!-- <HeaderLink href={url('/blog')}>News</HeaderLink> --><!-- <HeaderLink href={url('/tags')}>Tags</HeaderLink> --><a href="/archive" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>Archive</a></div></div><a href="/resume.pdf" target="_blank" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>CV</a><a href="/slashes" style="color: var(--color-bg)" data-astro-cid-nen7h5rs="true" data-astro-cid-evkijfd6>/</a></div><div class="header-actions" data-astro-cid-nen7h5rs><button id="search-toggle-desktop" class="search-toggle" aria-label="Search site" data-astro-cid-nen7h5rs><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><circle cx="11" cy="11" r="8" data-astro-cid-nen7h5rs></circle><line x1="21" y1="21" x2="16.65" y2="16.65" data-astro-cid-nen7h5rs></line></svg></button><button id="theme-toggle" aria-label="Toggle Dark Mode" data-astro-cid-nen7h5rs><svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><circle cx="12" cy="12" r="5" data-astro-cid-nen7h5rs></circle><line x1="12" y1="1" x2="12" y2="3" data-astro-cid-nen7h5rs></line><line x1="12" y1="21" x2="12" y2="23" data-astro-cid-nen7h5rs></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" data-astro-cid-nen7h5rs></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" data-astro-cid-nen7h5rs></line><line x1="1" y1="12" x2="3" y2="12" data-astro-cid-nen7h5rs></line><line x1="21" y1="12" x2="23" y2="12" data-astro-cid-nen7h5rs></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" data-astro-cid-nen7h5rs></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" data-astro-cid-nen7h5rs></line></svg><svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" data-astro-cid-nen7h5rs></path></svg></button><button id="menu-toggle" aria-label="Toggle Menu" data-astro-cid-nen7h5rs><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><line x1="3" y1="12" x2="21" y2="12" data-astro-cid-nen7h5rs></line><line x1="3" y1="6" x2="21" y2="6" data-astro-cid-nen7h5rs></line><line x1="3" y1="18" x2="21" y2="18" data-astro-cid-nen7h5rs></line></svg></button></div></nav><div id="mobile-menu" class="mobile-menu hidden" data-astro-cid-nen7h5rs><div class="mobile-menu-header" data-astro-cid-nen7h5rs><span class="mobile-menu-title" data-astro-cid-nen7h5rs>Menu</span><button id="search-toggle-mobile" class="search-toggle" aria-label="Search site" data-astro-cid-nen7h5rs><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-nen7h5rs><circle cx="11" cy="11" r="8" data-astro-cid-nen7h5rs></circle><line x1="21" y1="21" x2="16.65" y2="16.65" data-astro-cid-nen7h5rs></line></svg></button></div><a href="/" data-astro-cid-nen7h5rs>Home</a><a href="/projects" data-astro-cid-nen7h5rs>Projects</a><a href="/software" data-astro-cid-nen7h5rs>Software</a><a href="/publications" data-astro-cid-nen7h5rs>Publications</a><a href="/blog" class="mobile-menu-section" data-astro-cid-nen7h5rs>Blog</a><div class="mobile-submenu" data-astro-cid-nen7h5rs><a href="/archive" data-astro-cid-nen7h5rs>Archive</a></div><a href="/resume.pdf" target="_blank" data-astro-cid-nen7h5rs>CV</a></div></header><script type="module">document.getElementById(`theme-toggle`)?.addEventListener(`click`,()=>{let e=document.documentElement.getAttribute(`data-theme`)===`dark`?`light`:`dark`;window.__setPreferredTheme?.(e),localStorage.setItem(`theme`,e)}),document.getElementById(`menu-toggle`)?.addEventListener(`click`,()=>{document.getElementById(`mobile-menu`)?.classList.toggle(`hidden`)}),document.querySelectorAll(`.search-toggle`).forEach(e=>{e.addEventListener(`click`,()=>{document.dispatchEvent(new CustomEvent(`open-search`))})});</script><main data-astro-cid-tldeq5d5><article data-astro-cid-tldeq5d5><div class="hero-image" data-astro-cid-tldeq5d5><img width="1020" height="510" src="/blog/2026/08/llama-server-lfm-parallel.webp" alt="Three LFM2.5-2.6B in parallel on an iGPU" loading="eager" fetchpriority="high" data-astro-cid-tldeq5d5></div><div class="blog-container" data-astro-cid-tldeq5d5><div class="prose-wrapper" data-astro-cid-tldeq5d5><div class="prose" data-astro-cid-tldeq5d5><div class="title" data-astro-cid-tldeq5d5><div class="date" data-astro-cid-tldeq5d5><time datetime="2026-08-20T00:00:00.000Z">Aug 20, 2026</time><span class="reading-time" data-astro-cid-tldeq5d5> · 12 min read</span></div><h1 data-astro-cid-tldeq5d5>Three LFM2.5-2.6B in parallel on an iGPU</h1><div class="blog-tags" style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.75rem;" data-astro-cid-tldeq5d5><a href="/tags/linux" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#linux</a><a href="/tags/LLM" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#LLM</a><a href="/tags/llama.cpp" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#llama.cpp</a><a href="/tags/self-hosting" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);" data-astro-cid-tldeq5d5>#self-hosting</a></div></div><details class="toc-mobile-details" data-astro-cid-p33bl5ka><summary class="toc-mobile-summary" data-astro-cid-p33bl5ka>Table of Contents<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-down" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-p33bl5ka><path stroke="none" d="M0 0h24v24H0z" fill="none" data-astro-cid-p33bl5ka></path><polyline points="6 9 12 15 18 9" data-astro-cid-p33bl5ka></polyline></svg></summary><nav class="toc-mobile-content" data-astro-cid-p33bl5ka><ul class="toc-list-mobile" data-astro-cid-p33bl5ka><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#what-openwebui-actually-sends" data-astro-cid-p33bl5ka>What OpenWebUI actually sends</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#ollama-uses-one-slot" data-astro-cid-p33bl5ka>Ollama uses one slot</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#the-alternatives-i-checked" data-astro-cid-p33bl5ka>The alternatives I checked</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#llama-server-with-three-slots" data-astro-cid-p33bl5ka>llama-server with three slots</a></li><li class="toc-item-mobile depth-3" data-astro-cid-p33bl5ka><a href="#measuring-what-i-got" data-astro-cid-p33bl5ka>Measuring what I got</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#slots-turned-my-queue-into-a-fight" data-astro-cid-p33bl5ka>Slots turned my queue into a fight</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#where-it-landed" data-astro-cid-p33bl5ka>Where it landed</a></li><li class="toc-item-mobile depth-2" data-astro-cid-p33bl5ka><a href="#footnote-label" data-astro-cid-p33bl5ka>Footnotes</a></li></ul></nav></details><script type="module">var e;function t(){e&&e.disconnect(),e=new IntersectionObserver(e=>{e.forEach(e=>{let t=e.target.getAttribute(`id`);if(!t)return;let n=document.querySelector(`.toc-item a[href="#${t}"]`),r=document.querySelector(`.toc-item-mobile a[href="#${t}"]`);e.isIntersecting&&(document.querySelectorAll(`.toc-item`).forEach(e=>e.classList.remove(`active`)),document.querySelectorAll(`.toc-item-mobile`).forEach(e=>e.classList.remove(`active`)),n?.parentElement?.classList.add(`active`),r?.parentElement?.classList.add(`active`))})},{root:null,rootMargin:`-100px 0px -60% 0px`,threshold:0}),document.querySelectorAll(`h2, h3`).forEach(t=>{e?.observe(t)})}t(),document.addEventListener(`astro:after-swap`,t);</script><p>Since <a href="https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/" target="_blank" rel="noopener noreferrer nofollow">my last post</a>, <a href="https://ollama.com" target="_blank" rel="noopener noreferrer nofollow">Ollama</a> has been serving <a href="https://www.liquid.ai/blog/lfm2-5-2-6b" target="_blank" rel="noopener noreferrer nofollow">LFM2.5-2.6B</a> from the Iris Xe iGPU of my Intel NUC. And, since it works, I started using it in my homelab.</p>
+<p><a href="https://openwebui.com" target="_blank" rel="noopener noreferrer nofollow">OpenWebUI</a> for chat, my <a href="https://hermes-agent.nousresearch.com" target="_blank" rel="noopener noreferrer nofollow">agent Hermes</a> pointed at the same Ollama endpoint, both expecting something that answers while they talk. Within a day or two, the machine felt broken again: I’d send one message and Ollama was slow again to begin answering, even when nothing else should have been talking to my model.</p>
+<h2 id="what-openwebui-actually-sends">What OpenWebUI actually sends</h2>
+<p>I discovered that OpenWebUI does work on its own. After every exchange it fires background jobs that generate a conversation title, tags, follow-up suggestions and such, and each job replays the whole conversation as context. Mine were around <code>6,400 tokens</code> by then (around 30s to prefill), so a single title job asked my iGPU to re-read everything just to write one short name for the chat.</p>
+<div class="callout" data-callout="tip"><p>Two words from the previous post that I keep using here:</p>
+<ul>
+<li><strong>Prefill</strong> is how fast the model reads your prompt. It sets how long you stare at a blank screen before the first word appears.</li>
+<li><strong>Decode</strong> is how fast it writes the answer.</li>
+</ul>
+<p>A third one arrives below: a <strong>slot</strong> is one conversation’s workspace inside the server. It holds that conversation’s tokens so they don’t have to be read again on the next message.</p>
+</div>
+<p>Under Ollama those jobs didn’t fail or get rejected; they queued. My requests and its requests all landed on the same slot (I’ll show why in a second), so every message I sent went behind whatever background job from two turns ago hadn’t finished yet. That was the busy-for-no-reason state: nothing was chatting, but the queue wasn’t empty.</p>
+<h2 id="ollama-uses-one-slot">Ollama uses one slot</h2>
+<p>Ollama’s log made it clear:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="txt"><code><span class="line"><span>$ docker logs docker-ollama-1 2>&#x26;1 | grep 'new prompt' | tail -3</span></span>
+<span class="line"><span>slot   operator(): id  0 | task 0 | new prompt, n_ctx_slot = 32768, ...</span></span>
+<span class="line"><span>slot   operator(): id  0 | task 1805 | new prompt, ...</span></span>
+<span class="line"><span>slot   operator(): id  0 | task 2591 | new prompt, ...</span></span></code></pre>
+<p>Every request carried <code>id 0</code>. Mine and OpenWebUI’s. One slot means everything serializes through it: my chat waits for a tag job, the tag job waits for my next message, nobody is fast, and Ollama is working hard the whole time.</p>
+<p>But my config had <code>OLLAMA_NUM_PARALLEL=3</code> set; 3 jobs can run in parallel, so I assumed a bug. To check whether this was policy or accident, I pulled another small transformer model as a canary<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> and loaded it on the same server with the same config.</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">$</span><span style="color:#032F62;--shiki-dark:#B8BB26"> docker</span><span style="color:#032F62;--shiki-dark:#B8BB26"> exec</span><span style="color:#032F62;--shiki-dark:#B8BB26"> docker-ollama-1</span><span style="color:#032F62;--shiki-dark:#B8BB26"> ollama</span><span style="color:#032F62;--shiki-dark:#B8BB26"> pull</span><span style="color:#032F62;--shiki-dark:#B8BB26"> qwen3:0.6b</span></span>
+<span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">$</span><span style="color:#032F62;--shiki-dark:#B8BB26"> curl</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -s</span><span style="color:#032F62;--shiki-dark:#B8BB26"> http://localhost:11434/api/generate</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -d</span><span style="color:#032F62;--shiki-dark:#A89984"> '</span><span style="color:#032F62;--shiki-dark:#B8BB26">{"model":"qwen3:0.6b","prompt":"hi","stream":false}</span><span style="color:#032F62;--shiki-dark:#A89984">'</span><span style="color:#D73A49;--shiki-dark:#8EC07C"> ></span><span style="color:#032F62;--shiki-dark:#B8BB26">/dev/null</span></span>
+<span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">$</span><span style="color:#032F62;--shiki-dark:#B8BB26"> docker</span><span style="color:#032F62;--shiki-dark:#B8BB26"> logs</span><span style="color:#032F62;--shiki-dark:#B8BB26"> docker-ollama-1</span><span style="color:#D73A49;--shiki-dark:#8EC07C"> 2>&#x26;1</span><span style="color:#D73A49;--shiki-dark:#8EC07C"> |</span><span style="color:#6F42C1;--shiki-dark:#FABD2F"> grep</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -E</span><span style="color:#032F62;--shiki-dark:#A89984"> '</span><span style="color:#032F62;--shiki-dark:#B8BB26">n_slots</span><span style="color:#032F62;--shiki-dark:#A89984">'</span><span style="color:#D73A49;--shiki-dark:#8EC07C"> |</span><span style="color:#6F42C1;--shiki-dark:#FABD2F"> tail</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -2</span></span>
+<span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">srv</span><span style="color:#032F62;--shiki-dark:#B8BB26">    load_model:</span><span style="color:#032F62;--shiki-dark:#B8BB26"> initializing,</span><span style="color:#032F62;--shiki-dark:#B8BB26"> n_slots</span><span style="color:#032F62;--shiki-dark:#B8BB26"> =</span><span style="color:#032F62;--shiki-dark:#B8BB26"> 1,</span><span style="color:#032F62;--shiki-dark:#B8BB26"> n_ctx_slot</span><span style="color:#032F62;--shiki-dark:#B8BB26"> =</span><span style="color:#032F62;--shiki-dark:#B8BB26"> 32768,</span><span style="color:#032F62;--shiki-dark:#B8BB26"> kv_unified</span><span style="color:#032F62;--shiki-dark:#B8BB26"> =</span><span style="color:#032F62;--shiki-dark:#A89984"> '</span><span style="color:#032F62;--shiki-dark:#B8BB26">false</span><span style="color:#032F62;--shiki-dark:#A89984">'</span></span>
+<span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">srv</span><span style="color:#032F62;--shiki-dark:#B8BB26">    load_model:</span><span style="color:#032F62;--shiki-dark:#B8BB26"> initializing,</span><span style="color:#032F62;--shiki-dark:#B8BB26"> n_slots</span><span style="color:#032F62;--shiki-dark:#B8BB26"> =</span><span style="color:#032F62;--shiki-dark:#B8BB26"> 3,</span><span style="color:#032F62;--shiki-dark:#B8BB26"> n_ctx_slot</span><span style="color:#032F62;--shiki-dark:#B8BB26"> =</span><span style="color:#032F62;--shiki-dark:#B8BB26"> 32768,</span><span style="color:#032F62;--shiki-dark:#B8BB26"> kv_unified</span><span style="color:#032F62;--shiki-dark:#B8BB26"> =</span><span style="color:#032F62;--shiki-dark:#A89984"> '</span><span style="color:#032F62;--shiki-dark:#B8BB26">false</span><span style="color:#032F62;--shiki-dark:#A89984">'</span></span></code></pre>
+<p>Ollama prints one of those lines each time it loads a model. The first is LFM2.5, still running with <code>n_slots = 1</code>; the second is the Qwen I pulled moments earlier, with <code>n_slots = 3</code>. So it’s a model issue, not my config nor a bug.</p>
+<p>Checking Ollama’s log again:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="txt"><code><span class="line"><span>time=2026-08-19T08:38:35.338Z level=WARN source=sched.go:509 msg="model architecture does not currently support parallel requests" architecture=lfm2</span></span></code></pre>
+<p><a href="https://github.com/ollama/ollama/issues/4165" target="_blank" rel="noopener noreferrer nofollow">Ollama keeps a hardcoded list of architectures</a> that get <code>numParallel = 1</code> regardless of the environment variable, and <code>lfm2</code> (my LLM) <a href="https://github.com/ollama/ollama/blob/main/server/sched.go#L507" target="_blank" rel="noopener noreferrer nofollow">is on it</a>.</p>
+<p>As for why lfm2 made the cut: LFM2 is a hybrid architecture. Only eight of its thirty layers are attention with a KV cache; the other twenty-two are short-conv blocks that carry recurrent state instead. A KV cache can be sliced across parallel sequences, and I don’t think one shared recurrent state can. That’s my explanation at least. Ollama tells you it won’t, but not why.</p>
+<h2 id="the-alternatives-i-checked">The alternatives I checked</h2>
+<p>At that point I was ready to just switch models. A plain transformer would parallelize fine in Ollama and the whole problem evaporates. But the Qwen3.6 35B MoE I benchmarked prefills at under 64 tok/s on this box, which starts to be slow to chat or for agentic work, and smaller dense ones decode slower per token than LFM2.5 anyway<sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup>.</p>
+<p>So let’s see what other runners can I use:</p>
+<p><a href="https://vllm.ai/" target="_blank" rel="noopener noreferrer nofollow">vLLM</a> is the other big name people throw out for serving, and it’s a no here too. Its Intel path is oneAPI/XPU aimed at discrete GPUs like Arc and Flex, there’s no Vulkan backend to begin with (from what Claude told me), and the whole design (continuous batching, FP16, high concurrency) targets datacenter hardware. On a single-user NUC with shared memory it would be slower than what I had if I even got it running.</p>
+<p>Ollama is built on top of <a href="https://github.com/ggml-org/llama.cpp" target="_blank" rel="noopener noreferrer nofollow">llama.cpp</a> for running models, and it’s possible to run it alone. So there was no speed magic waiting in <code>llama-server</code>, its built-in HTTP endpoint. The point of going direct is that it exposes knobs Ollama hides and doesn’t have this architecture blocklist; upstream allocates recurrent state per sequence when you ask for parallel slots, which is exactly what a hybrid model needs.</p>
+<h2 id="llama-server-with-three-slots">llama-server with three slots</h2>
+<p>Same Docker shape as part one: <code>/dev/dri</code> passed through, the render group’s GID added, Mesa device selection pinned to the Iris Xe so llvmpipe can’t sneak in. New are the image and its arguments:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">docker</span><span style="color:#032F62;--shiki-dark:#B8BB26"> run</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -d</span><span style="color:#005CC5;--shiki-dark:#D3869B"> --restart</span><span style="color:#032F62;--shiki-dark:#B8BB26"> unless-stopped</span><span style="color:#005CC5;--shiki-dark:#D3869B"> --name</span><span style="color:#032F62;--shiki-dark:#B8BB26"> llama-lfm</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">  --device</span><span style="color:#032F62;--shiki-dark:#B8BB26"> /dev/dri:/dev/dri</span><span style="color:#005CC5;--shiki-dark:#D3869B"> --group-add</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 992</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">  -p</span><span style="color:#032F62;--shiki-dark:#B8BB26"> 11435:8080</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">  -v</span><span style="color:#032F62;--shiki-dark:#B8BB26"> /home/gru/docker/open-webui/ollama/models/blobs:/blobs:ro</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">  -e</span><span style="color:#032F62;--shiki-dark:#B8BB26"> GGML_VK_VISIBLE_DEVICES=</span><span style="color:#005CC5;--shiki-dark:#D3869B">0</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -e</span><span style="color:#032F62;--shiki-dark:#B8BB26"> MESA_VK_DEVICE_SELECT=8086:9a49</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">  --cpuset-cpus</span><span style="color:#032F62;--shiki-dark:#B8BB26"> 0-3</span><span style="color:#005CC5;--shiki-dark:#D3869B"> --cpu-shares</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 2048</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#032F62;--shiki-dark:#B8BB26">  ghcr.io/ggml-org/llama.cpp:server-vulkan</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    -m</span><span style="color:#032F62;--shiki-dark:#B8BB26"> /blobs/sha256-02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    --alias</span><span style="color:#032F62;--shiki-dark:#B8BB26"> lfm2.5</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    -ngl</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 99</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    --parallel</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 3</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    -c</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 98304</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    -fa</span><span style="color:#032F62;--shiki-dark:#B8BB26"> on</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    -ub</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 1024</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -b</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 2048</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    --cache-reuse</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 256</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    --reasoning-preserve</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    --jinja</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    --mlock</span><span style="color:#005CC5;--shiki-dark:#D3869B"> \</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#D3869B">    --host</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 0.0.0.0</span><span style="color:#005CC5;--shiki-dark:#D3869B"> --port</span><span style="color:#005CC5;--shiki-dark:#D3869B"> 8080</span></span></code></pre>
+<p>What each of those does:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Flag</th><th>What it sets</th></tr></thead><tbody><tr><td><code>-m</code></td><td>the model file; here Ollama’s blob for LFM2.5</td></tr><tr><td><code>--alias</code></td><td>the name clients ask for, instead of a hash</td></tr><tr><td><code>-ngl</code></td><td>how many layers run on the GPU; 99 means all of them (mandatory for GPU)</td></tr><tr><td><code>--parallel</code></td><td>how many slots the server keeps, so how many conversations at once</td></tr><tr><td><code>-c</code></td><td>the total context pool, divided across those slots</td></tr><tr><td><code>-fa</code></td><td>flash attention, the same thing <code>OLLAMA_FLASH_ATTENTION</code> turned on</td></tr><tr><td><code>-ub</code> / <code>-b</code></td><td>how many prompt tokens go through the GPU per batch during prefill</td></tr><tr><td><code>--cache-reuse</code></td><td>reuse a cached prompt even when it diverges a little from the new one</td></tr><tr><td><code>--reasoning-preserve</code></td><td>keep the model’s thinking blocks in the conversation history</td></tr><tr><td><code>--jinja</code></td><td>apply the chat template that ships inside the model file</td></tr></tbody></table>
+<div class="callout" data-callout="note"><p>The volume mount points at Ollama’s content-addressed blob store, so I’m not keeping a second copy of the 1.7 GB GGUF on disk.</p>
+<p>The trade: an <code>ollama rm</code> removes the model for both runners, but this way I can also easily update it with <code>ollama pull</code>. It would be a good idea to copy the blob somewhere stable; it didn’t bother me enough to do it.</p>
+</div>
+<p>One flag pair behaves opposite to what I was used to: Ollama multiplies context by parallel slots; llama.cpp divides by them. <code>-c 98304</code> with <code>--parallel 3</code> is a pool of 98,304 tokens split three ways, so each conversation gets the same 32k I’d been running under Ollama. The load log confirmed it:<code> n_slots = 3</code>, <code>n_ctx_slot = 32768</code>.</p>
+<p>The rest is tuning I’ll account for in a minute: <code>-ub 1024 -b 2048</code> controls the micro-batch size during prefill; <code>--cache-reuse 256 --reasoning-preserve</code> are about reusing cached prefixes across turns (the server printed “chat template supports preserving reasoning, consider enabling it” at startup, so I took its advice).</p>
+<p>As announced, it has more tuning options than Ollama. Now let’s load the model and see if it can run several slots in parallel:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">$</span><span style="color:#032F62;--shiki-dark:#B8BB26"> docker</span><span style="color:#032F62;--shiki-dark:#B8BB26"> logs</span><span style="color:#032F62;--shiki-dark:#B8BB26"> llama-lfm</span><span style="color:#D73A49;--shiki-dark:#8EC07C"> 2>&#x26;1</span><span style="color:#D73A49;--shiki-dark:#8EC07C"> |</span><span style="color:#6F42C1;--shiki-dark:#FABD2F"> grep</span><span style="color:#005CC5;--shiki-dark:#D3869B"> -E</span><span style="color:#032F62;--shiki-dark:#A89984"> '</span><span style="color:#032F62;--shiki-dark:#B8BB26">n_slots|model loaded</span><span style="color:#032F62;--shiki-dark:#A89984">'</span></span>
+<span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">srv</span><span style="color:#032F62;--shiki-dark:#B8BB26">    load_model:</span><span style="color:#032F62;--shiki-dark:#B8BB26"> initializing,</span><span style="color:#032F62;--shiki-dark:#B8BB26"> n_slots</span><span style="color:#032F62;--shiki-dark:#B8BB26"> =</span><span style="color:#032F62;--shiki-dark:#B8BB26"> 3,</span><span style="color:#032F62;--shiki-dark:#B8BB26"> n_ctx_slot</span><span style="color:#032F62;--shiki-dark:#B8BB26"> =</span><span style="color:#032F62;--shiki-dark:#B8BB26"> 32768,</span><span style="color:#032F62;--shiki-dark:#B8BB26"> kv_unified</span><span style="color:#032F62;--shiki-dark:#B8BB26"> =</span><span style="color:#032F62;--shiki-dark:#A89984"> '</span><span style="color:#032F62;--shiki-dark:#B8BB26">false</span><span style="color:#032F62;--shiki-dark:#A89984">'</span></span>
+<span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">llama_server:</span><span style="color:#032F62;--shiki-dark:#B8BB26"> model</span><span style="color:#032F62;--shiki-dark:#B8BB26"> loaded</span></span></code></pre>
+<p>Yes! <code>n_slots = 3</code>! Looks good!</p>
+<p>The first test was three concurrent requests against the three slots. All three launched in the same millisecond and finished together at about 21 s wall time, each decoding around 10 tok/s. The same work under Ollama serialized to roughly 40 s. Real concurrency on an iGPU with 80 execution units.</p>
+<h3 id="measuring-what-i-got">Measuring what I got</h3>
+<p>I wrote a small script so I wouldn’t have to redo these by hand. I checked four things in order: is solo decode the same speed as Ollama’s, how does aggregate throughput scale with concurrent requests, does turn two skip re-prefilling history (cache reuse), and do tool calls plus reasoning still parse. Output (trimmed):</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="txt"><code><span class="line"><span>1. SOLO DECODE  (expect ~15 tok/s)</span></span>
+<span class="line"><span>   eval time = 13226.66 ms / 200 tokens (15.05 tok/s)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. CONCURRENCY SCALING</span></span>
+<span class="line"><span>   n=1  wall=13.8s  aggregate=14.44 tok/s</span></span>
+<span class="line"><span>   n=2  wall=17.3s  aggregate=23.12 tok/s</span></span>
+<span class="line"><span>   n=3  wall=21.1s  aggregate=28.42 tok/s</span></span></code></pre>
+<p>(1) Solo decode at <em>15.05 tok/s</em> is what Ollama gave a request running alone, so, as expected, this “new runner” costs me nothing per request: same engine, same Vulkan backend.</p>
+<p>(2) The scaling column is the point of the whole exercise: flat around 15 tok/s aggregate in Ollama  as it didn’t have any concurrency, 28.4 here with three requests running. It’s still climbing from two to three (+23%).[^3]</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="txt"><code><span class="line"><span>3. CACHE-REUSE ACROSS TURNS</span></span>
+<span class="line"><span>   turn 1 prefill: 6682 ms / 1758 tokens (263 tok/s)</span></span>
+<span class="line"><span>   turn 2 prefill:  397 ms /   20 tokens</span></span></code></pre>
+<p>(3) The cache-reuse number is the other win I didn’t expect to be this good. <em>Turn one</em> prefilled 1,758 tokens; <em>turn two</em> evaluated only my new message, 20 tokens in under half a second.</p>
+<p>With Ollama, OpenWebUI strips think blocks from history when it replays a conversation, which meant that it needed to re-prefilled the previous assistant response every turn (as the history wasn’t matching exactly). That tax is gone here: I’m not entirely sure whether <code>--cache-reuse</code> or <code>--reasoning-preserve</code> did it, both are cheap so I didn’t chase it.</p>
+<p>There’s also slot affinity at work; my two test requests landed on the same slot (id 1), which kept the cached prefix next to the conversation instead of letting a round-robin bounce it around.</p>
+<div class="callout" data-callout="note"><p>How long does that cache live? Nothing expires by age; it’s a question of how many other conversations arrive.</p>
+<p>The three slots get recycled least-recently-used first: three unrelated conversations show up after mine and my slot is gone. Behind them sits a separate prompt cache in RAM, 8 GB by default (<code>-cram</code>), and <code>--cache-idle-slots</code> writes an idle slot into it before handing that slot to somebody else, so coming back to an older conversation is often cheaper than paying full price for it.</p>
+<p>Obviously, since it’s in RAM, mone of it survives a restart of the container. There is a <code>--slot-save-path</code> option, but it only exposes REST endpoints that a client has to call itself, and neither of mine does.</p>
+</div>
+<p>(4) The correctness check passed too. A weather question with one tool defined came back as structured output, no raw tokens leaking into the content field:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="json"><code><span class="line"><span style="color:#24292E;--shiki-dark:#A89984">{</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#A89984">  "</span><span style="color:#005CC5;--shiki-dark:#689D6A">reasoning</span><span style="color:#005CC5;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#83A598">The user is asking about the weather in Hanoi...</span><span style="color:#032F62;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984">,</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#A89984">  "</span><span style="color:#005CC5;--shiki-dark:#689D6A">tool_calls</span><span style="color:#005CC5;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#24292E;--shiki-dark:#A89984"> [{</span><span style="color:#005CC5;--shiki-dark:#A89984"> "</span><span style="color:#005CC5;--shiki-dark:#689D6A">function</span><span style="color:#005CC5;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#24292E;--shiki-dark:#A89984"> {</span><span style="color:#005CC5;--shiki-dark:#A89984"> "</span><span style="color:#005CC5;--shiki-dark:#689D6A">name</span><span style="color:#005CC5;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#83A598">get_weather</span><span style="color:#032F62;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984">,</span><span style="color:#005CC5;--shiki-dark:#A89984"> "</span><span style="color:#005CC5;--shiki-dark:#689D6A">arguments</span><span style="color:#005CC5;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> "</span><span style="color:#032F62;--shiki-dark:#83A598">{</span><span style="color:#005CC5;--shiki-dark:#D3869B">\"</span><span style="color:#032F62;--shiki-dark:#83A598">city</span><span style="color:#005CC5;--shiki-dark:#D3869B">\"</span><span style="color:#032F62;--shiki-dark:#83A598">: </span><span style="color:#005CC5;--shiki-dark:#D3869B">\"</span><span style="color:#032F62;--shiki-dark:#83A598">Hanoi</span><span style="color:#005CC5;--shiki-dark:#D3869B">\"</span><span style="color:#032F62;--shiki-dark:#83A598">}</span><span style="color:#032F62;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984"> }</span><span style="color:#24292E;--shiki-dark:#A89984"> }],</span></span>
+<span class="line"><span style="color:#005CC5;--shiki-dark:#A89984">  "</span><span style="color:#005CC5;--shiki-dark:#689D6A">content</span><span style="color:#005CC5;--shiki-dark:#A89984">"</span><span style="color:#24292E;--shiki-dark:#A89984">:</span><span style="color:#032F62;--shiki-dark:#A89984"> ""</span></span>
+<span class="line"><span style="color:#24292E;--shiki-dark:#A89984">}</span></span></code></pre>
+<p>That’s what agentic use needs (either Hermes or OpenWebUI tools to search on internet or such), so it goes back to pointing at a model that behaves.</p>
+<h2 id="slots-turned-my-queue-into-a-fight">Slots turned my queue into a fight</h2>
+<p>The background jobs didn’t go away when I changed servers. What changed was how they hurt me. Under Ollama they queued behind my chat and finished <del>quickly</del>. With three free slots they run concurrently with it and steal bandwidth from the request I’m actually waiting on:</p>
+<pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="txt"><code><span class="line"><span>7.43  slot 0 &#x3C;- task 1005   (my chat)</span></span>
+<span class="line"><span>7.44  slot 1 &#x3C;- task 1007   (6,374 tokens)</span></span>
+<span class="line"><span>8.17  slot 2 &#x3C;- task 1071</span></span>
+<span class="line"><span>9.02  slot 1 &#x3C;- task 1395   (6,593 tokens)</span></span>
+<span class="line"><span>9.38  slot 1 &#x3C;- task 1486   (1,780 tokens)</span></span></code></pre>
+<p>Five tasks out of two chat turns. The ~6,400-token ones are OpenWebUI replaying the entire conversation to write titles and tags; at about <em>240 tok/s</em> that’s roughly 30 seconds of prefill per job, just to name one chat. Here’s what happens to my decode speed:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>decode</th></tr></thead><tbody><tr><td>solo</td><td>15.05 t/s</td></tr><tr><td>+ 1 background task</td><td>~7.2 t/s</td></tr><tr><td>+ 2 background tasks</td><td>3.94 t/s, a 108 s response</td></tr></tbody></table>
+<p>Parallel slots didn’t remove the problem; they converted queuing into congestion. Same total work, but now it happens at the exact moment I’m waiting for my answer.</p>
+<p>Since it’s working as expected, I need to fix this background issue in OpenWebUI: Admin -> Settings -> Interface, and turn off what you don’t need.</p>
+<p>I disabled tag generation and follow-up suggestions and kept only title generation, which fires once per conversation when it starts (it’s nicer for the interface, and runs only once when the chat is small). My chat went back to solo speed, and the three slots stayed available for other concurrency.</p>
+<h2 id="where-it-landed">Where it landed</h2>
+<p>I’m running both now.</p>
+<p>Llama-server on port <code>11435</code> for LFM2.5, Ollama on port <code>11434</code> for everything else. It runs solo ~15 tok/s, accumulates up to 28 tok/s at full load (but individual answers are slower), follow-up turns in chatting are nearly free thanks to prefix reuse, and no queue between the chat UI and the agent.</p>
+<p><em>Bref</em>, the model I chose for being fast on small hardware needed a different runner to be fast for more than one client at a time, and getting there cost me reading logs and running one more docker container 🙃</p>
+<!-- --- -->
+<section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label">Footnotes</h2>
+<ol>
+<li id="user-content-fn-1">
+<p>A 0.6B qwen, pulled purely as a canary. It got its three slots and went back to sleep. <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-2">
+<p>Most LLMs are transformers: every layer attends to every previous token, which is what makes them slow down as a conversation grows. LFM2 is a hybrid architecture. That specific design is why a 2.6B model reads 3,000 tokens at 240 tok/s on an iGPU, and why its speed barely moves as the conversation gets longer. <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to reference 2" class="data-footnote-backref">↩</a></p>
+</li>
+</ol>
+</section><div class="giscus-wrapper" data-astro-cid-5ukdginb><script src="https://giscus.app/client.js" data-repo="RoiArthurB/roiarthurb.github.io" data-repo-id="R_kgDOSPu0kw" data-category="General" data-category-id="DIC_kwDOSPu0k84C8QdB" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="en" data-loading="lazy" crossorigin="anonymous" async></script></div><script data-astro-rerun>
+	function syncGiscusTheme() {
+		const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+		const iframe = document.querySelector('iframe.giscus-frame');
+		if (iframe) {
+			iframe.contentWindow?.postMessage(
+				{ giscus: { setConfig: { theme } } },
+				'https://giscus.app'
+			);
+		}
+	}
+
+	const observer = new MutationObserver(syncGiscusTheme);
+	observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script></div></div><nav class="toc-container" data-astro-cid-p33bl5ka><div class="toc-inner" data-astro-cid-p33bl5ka><h2 class="toc-title" data-astro-cid-p33bl5ka>Table of Contents</h2><ul class="toc-list" data-astro-cid-p33bl5ka><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#what-openwebui-actually-sends" data-astro-cid-p33bl5ka>What OpenWebUI actually sends</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#ollama-uses-one-slot" data-astro-cid-p33bl5ka>Ollama uses one slot</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#the-alternatives-i-checked" data-astro-cid-p33bl5ka>The alternatives I checked</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#llama-server-with-three-slots" data-astro-cid-p33bl5ka>llama-server with three slots</a></li><li class="toc-item depth-3" data-astro-cid-p33bl5ka><a href="#measuring-what-i-got" data-astro-cid-p33bl5ka>Measuring what I got</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#slots-turned-my-queue-into-a-fight" data-astro-cid-p33bl5ka>Slots turned my queue into a fight</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#where-it-landed" data-astro-cid-p33bl5ka>Where it landed</a></li><li class="toc-item depth-2" data-astro-cid-p33bl5ka><a href="#footnote-label" data-astro-cid-p33bl5ka>Footnotes</a></li></ul></div></nav></div></article></main><footer class="site-footer" data-astro-cid-jo6i4kqk><div class="footer-content" data-astro-cid-jo6i4kqk><div class="footer-col brand-col" data-astro-cid-jo6i4kqk><h3 data-astro-cid-jo6i4kqk>Arthur Brugière</h3><p data-astro-cid-jo6i4kqk>Computer Researcher / IT Geek</p><div class="copyright" data-astro-cid-jo6i4kqk>&copy; 2026 Arthur Brugière.<br data-astro-cid-jo6i4kqk>All rights reserved.</div></div><div class="footer-col" data-astro-cid-jo6i4kqk><!-- 
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href={url('/')}>Home</a></li>
+                <li><a href={url('/publications')}>Publications</a></li>
+                <li><a href={url('/projects')}>Projects</a></li>
+                <li><a href={url('/team')}>Team</a></li>
+                <li><a href={url('/blog')}>News</a></li>
+                {cvHref && <li><a href={cvHref} target="_blank">Download CV</a></li>}
+            </ul>
+        --></div><div class="footer-col" data-astro-cid-jo6i4kqk><h4 data-astro-cid-jo6i4kqk>Contact</h4><address data-astro-cid-jo6i4kqk>Arthur Brugière<br data-astro-cid-jo6i4kqk>Hanoi, Vietnam<br data-astro-cid-jo6i4kqk></address><p style="margin-top: 1rem;" data-astro-cid-jo6i4kqk><a href="mailto:arthur.brugiere@ird.fr" style="text-decoration: underline;" data-astro-cid-jo6i4kqk>arthur.brugiere@ird.fr</a><br data-astro-cid-jo6i4kqk></p></div><div class="footer-col" data-astro-cid-jo6i4kqk><h4 data-astro-cid-jo6i4kqk>Connect</h4><div class="social-links" data-astro-cid-jo6i4kqk><a href="https://github.com/RoiArthurB" target="_blank" rel="noopener noreferrer nofollow" aria-label="GitHub" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" data-astro-cid-jo6i4kqk></path></svg></a><a href="https://orcid.org/0000-0001-7220-449X" target="_blank" rel="noopener noreferrer nofollow" aria-label="Orcid" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" data-astro-cid-jo6i4kqk><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.369 4.378c.525 0 .947.431.947.947s-.422.947-.947.947a.95.95 0 0 1-.947-.947c0-.525.422-.947.947-.947zm-.722 3.038h1.444v10.041H6.647V7.416zm3.562 0h3.9c3.712 0 5.344 2.653 5.344 5.025 0 2.578-2.016 5.025-5.325 5.025h-3.919V7.416zm1.444 1.303v7.444h2.297c3.272 0 4.022-2.484 4.022-3.722 0-2.016-1.284-3.722-4.097-3.722h-2.222z" data-astro-cid-jo6i4kqk></path></svg></a><a href="https://scholar.google.com/citations?user=Zk8mYXoAAAAJ" target="_blank" rel="noopener noreferrer nofollow" aria-label="Google Scholar" data-astro-cid-jo6i4kqk><svg fill="currentColor" viewBox="0 0 32 32" width="24" height="24" xmlns="http://www.w3.org/2000/svg" data-astro-cid-jo6i4kqk><path d="M14.573 2.729c-0.729 0.484-4.292 2.849-7.917 5.255s-6.589 4.396-6.589 4.422c0 0.026 0.182 0.146 0.406 0.266 0.224 0.13 3.797 2.109 7.953 4.411l7.542 4.193 0.193-0.099c0.109-0.052 2.891-1.641 6.188-3.521l5.99-3.427 0.036 10.599h3.557v-12.401l-4.615-3.094c-6.219-4.167-11.188-7.448-11.307-7.474-0.063-0.010-0.703 0.38-1.438 0.87zM7.141 22.177l0.016 2.672 8.828 5.292 8.891-5.339v-2.641c0-1.458-0.016-2.646-0.031-2.646-0.021 0-1.76 1.042-3.87 2.323l-4.406 2.661-0.578 0.339-1.755-1.052c-1.464-0.875-2.927-1.755-4.385-2.641l-2.672-1.615c-0.031-0.010-0.042 1.177-0.036 2.646z" data-astro-cid-jo6i4kqk></path></svg></a><a href="https://www.linkedin.com/in/arthurbrugiere/" target="_blank" rel="noopener noreferrer nofollow" aria-label="LinkedIn" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" data-astro-cid-jo6i4kqk></path><rect x="2" y="9" width="4" height="12" data-astro-cid-jo6i4kqk></rect><circle cx="4" cy="4" r="2" data-astro-cid-jo6i4kqk></circle></svg></a><a href="https://en.wikipedia.org/wiki/Piratbyr%C3%A5n#Kopimi" target="_blank" rel="noopener noreferrer nofollow" aria-label="Kopimi" data-astro-cid-jo6i4kqk><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M 20.945312 7.027344 L 18.394531 8.761719 L 15.871094 7.058594 L 13.738281 8.484375 L 13.738281 2.125 L 10.765625 0.109375 L 7.824219 2.125 L 7.824219 8.484375 L 3.109375 5.320312 L 0.164062 7.304688 L 0.164062 14.90625 L 13.320312 23.84375 L 16.261719 21.828125 L 16.261719 18.351562 L 18.398438 16.898438 L 20.949219 18.636719 L 23.921875 16.648438 L 23.921875 9.050781 Z M 10.765625 0.632812 L 12.980469 2.121094 L 10.765625 3.609375 L 8.554688 2.121094 Z M 10.765625 4.109375 L 12.945312 5.570312 L 10.765625 7.089844 L 8.554688 5.601562 Z M 10.765625 7.554688 L 12.945312 9.042969 L 10.765625 10.53125 L 8.554688 9.042969 Z M 0.929688 7.304688 L 3.109375 5.8125 L 5.320312 7.300781 L 3.109375 8.792969 Z M 3.480469 9.042969 L 5.695312 7.554688 L 7.875 9.046875 L 5.660156 10.535156 Z M 6 10.78125 L 8.214844 9.292969 L 10.425781 10.78125 L 8.214844 12.269531 Z M 8.554688 12.519531 L 10.765625 11.03125 L 12.945312 12.492188 L 10.765625 13.976562 Z M 13.320312 15.714844 L 11.105469 14.222656 L 13.320312 12.734375 L 13.335938 12.746094 L 15.5 14.226562 Z M 15.839844 10.535156 L 13.660156 9.042969 L 15.871094 7.554688 L 18.054688 9.042969 Z M 20.945312 10.535156 L 18.765625 9.046875 L 20.945312 7.558594 L 23.160156 9.046875 Z M 20.945312 10.535156 " data-astro-cid-jo6i4kqk></path></svg></a></div><div class="social-links" style="color: var(--color-text-muted); display: inline" data-astro-cid-jo6i4kqk><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="72px" height="72px" viewBox="0 0 72 72" version="1.1" fill="currentColor" stroke-width="0" fill="none" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-jo6i4kqk><path d="M 2.742188 2.742188 L 2.742188 69.230469 L 69.230469 69.230469 L 69.230469 2.742188 Z M 5.273438 5.273438 L 24.0625 5.273438 L 24.0625 24.0625 L 5.273438 24.0625 Z M 26.59375 5.273438 L 45.378906 5.273438 L 45.378906 24.0625 L 26.59375 24.0625 Z M 47.910156 5.273438 L 66.699219 5.273438 L 66.699219 24.0625 L 47.910156 24.0625 Z M 35.984375 6.671875 C 31.574219 6.675781 28 10.253906 28 14.667969 C 27.996094 19.082031 31.570312 22.664062 35.984375 22.667969 C 38.109375 22.671875 40.144531 21.828125 41.644531 20.328125 C 43.148438 18.828125 43.988281 16.789062 43.988281 14.667969 C 43.988281 10.25 40.402344 6.667969 35.984375 6.671875 Z M 5.273438 26.59375 L 24.0625 26.59375 L 24.0625 45.378906 L 5.273438 45.378906 Z M 26.59375 26.59375 L 45.378906 26.59375 L 45.378906 45.378906 L 26.59375 45.378906 Z M 47.910156 26.59375 L 66.699219 26.59375 L 66.699219 45.378906 L 47.910156 45.378906 Z M 57.320312 28 C 52.910156 28.003906 49.335938 31.574219 49.332031 35.984375 C 49.328125 40.402344 52.902344 43.984375 57.320312 43.988281 C 61.734375 43.984375 65.308594 40.402344 65.304688 35.984375 C 65.300781 31.574219 61.730469 28.003906 57.320312 28 Z M 5.273438 47.910156 L 24.0625 47.910156 L 24.0625 66.699219 L 5.273438 66.699219 Z M 26.59375 47.910156 L 45.378906 47.910156 L 45.378906 66.699219 L 26.59375 66.699219 Z M 47.910156 47.910156 L 66.699219 47.910156 L 66.699219 66.699219 L 47.910156 66.699219 Z M 14.667969 49.332031 C 10.253906 49.332031 6.675781 52.90625 6.671875 57.320312 C 6.675781 61.730469 10.253906 65.304688 14.667969 65.304688 C 19.082031 65.308594 22.664062 61.734375 22.667969 57.320312 C 22.664062 52.902344 19.082031 49.328125 14.667969 49.332031 Z M 35.984375 49.332031 C 31.574219 49.335938 28.003906 52.910156 28 57.320312 C 28.003906 61.730469 31.574219 65.300781 35.984375 65.304688 C 40.402344 65.308594 43.984375 61.734375 43.988281 57.320312 C 43.984375 52.902344 40.402344 49.328125 35.984375 49.332031 Z M 57.320312 49.332031 C 52.910156 49.335938 49.335938 52.910156 49.332031 57.320312 C 49.335938 61.730469 52.910156 65.300781 57.320312 65.304688 C 61.730469 65.300781 65.300781 61.730469 65.304688 57.320312 C 65.300781 52.910156 61.730469 49.335938 57.320312 49.332031 Z M 57.320312 49.332031 " data-astro-cid-jo6i4kqk></path></svg></div></div></div><div class="footer-credit" data-astro-cid-jo6i4kqk>Based on <a href="https://github.com/shravanngoswamii/astro-scholar" target="_blank" rel="noopener noreferrer nofollow" data-astro-cid-jo6i4kqk>Shravan Goswami - Astro Scholar</a> design</div><script async src="https://gc.zgo.at/count.js" data-goatcounter="https://arthurbrugiere.goatcounter.com/count"></script></footer><div id="search-overlay" class="search-overlay hidden" data-astro-cid-ac66eqjo><div id="search-backdrop" class="search-backdrop" data-astro-cid-ac66eqjo></div><div class="search-panel-wrapper" data-astro-cid-ac66eqjo><div id="search-panel" class="search-panel" data-astro-cid-ac66eqjo><div class="search-panel-header" data-astro-cid-ac66eqjo><span class="search-title" data-astro-cid-ac66eqjo>Search</span><button id="search-close-btn" class="search-close-btn" data-astro-cid-ac66eqjo>Esc</button></div><div class="search-panel-content" data-astro-cid-ac66eqjo><div id="pagefind__search" data-astro-cid-ac66eqjo></div></div></div></div></div><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.DbwgI8S-.js"></script><dialog id="author-modal" class="author-modal" data-astro-cid-jo6i4kqk><button id="close-modal" class="close-btn" aria-label="Close modal" data-astro-cid-jo6i4kqk>&times;</button><div class="modal-flex" data-astro-cid-jo6i4kqk><img id="modal-avatar" src="" alt="Avatar" class="modal-avatar" data-astro-cid-jo6i4kqk><div data-astro-cid-jo6i4kqk><h3 id="modal-name" data-astro-cid-jo6i4kqk></h3><span id="modal-title" data-astro-cid-jo6i4kqk></span><span id="modal-role" data-astro-cid-jo6i4kqk></span></div></div><p id="modal-bio" data-astro-cid-jo6i4kqk></p><div id="modal-socials" data-astro-cid-jo6i4kqk></div></dialog><script type="module" src="/_astro/Footer.astro_astro_type_script_index_0_lang.C96OUfRy.js"></script><script data-astro-rerun>
+			function getCodeBlockLabel(pre) {
+				const explicitLabel =
+					pre.getAttribute('data-file') ||
+					pre.getAttribute('data-filename') ||
+					pre.dataset.file ||
+					pre.dataset.filename;
+				if (explicitLabel) return explicitLabel;
+
+				const code = pre.querySelector('code');
+				const languageClass = code
+					? Array.from(code.classList).find((className) => className.startsWith('language-'))
+					: null;
+				const language =
+					pre.getAttribute('data-language') ||
+					pre.dataset.language ||
+					(languageClass ? languageClass.replace('language-', '') : '');
+				const normalized = language.toLowerCase();
+
+				const labels = {
+					astro: 'Astro',
+					bash: 'Bash',
+					css: 'CSS',
+					diff: 'Diff',
+					html: 'HTML',
+					js: 'JavaScript',
+					json: 'JSON',
+					md: 'Markdown',
+					plaintext: 'Code',
+					sh: 'Shell',
+					shell: 'Shell',
+					text: 'Code',
+					toml: 'TOML',
+					ts: 'TypeScript',
+					tsx: 'TSX',
+					yaml: 'YAML',
+					yml: 'YAML',
+				};
+
+				if (!normalized) return 'Code';
+				return labels[normalized] || normalized.toUpperCase();
+			}
+
+			async function writeToClipboard(text) {
+				if (navigator.clipboard && navigator.clipboard.writeText) {
+					await navigator.clipboard.writeText(text);
+					return;
+				}
+
+				const textarea = document.createElement('textarea');
+				textarea.value = text;
+				textarea.setAttribute('readonly', 'true');
+				textarea.style.position = 'absolute';
+				textarea.style.left = '-9999px';
+				document.body.appendChild(textarea);
+				textarea.select();
+				document.execCommand('copy');
+				document.body.removeChild(textarea);
+			}
+
+			function enhanceCodeBlocks() {
+				const codeBlocks = Array.from(document.querySelectorAll('.prose pre'));
+
+				for (const pre of codeBlocks) {
+					if (pre.dataset.enhancedCodeBlock === 'true') continue;
+
+					const code = pre.querySelector('code');
+					if (!code) continue;
+
+					pre.dataset.enhancedCodeBlock = 'true';
+					pre.setAttribute('tabindex', '0');
+
+					const wrapper = document.createElement('div');
+					wrapper.className = 'code-block-frame';
+
+					pre.parentNode?.insertBefore(wrapper, pre);
+					wrapper.appendChild(pre);
+
+					const label = document.createElement('span');
+					label.className = 'code-block-label';
+					label.textContent = getCodeBlockLabel(pre);
+
+					const copyButton = document.createElement('button');
+					copyButton.type = 'button';
+					copyButton.className = 'copy-code-button';
+					copyButton.innerHTML =
+						'<span class="copy-code-button__default">Copy</span><span class="copy-code-button__success">Copied</span>';
+					copyButton.setAttribute('aria-label', `Copy ${label.textContent} code`);
+
+					copyButton.addEventListener('click', async () => {
+						try {
+							await writeToClipboard(code.innerText || '');
+							copyButton.dataset.copied = 'true';
+							window.setTimeout(() => {
+								copyButton.dataset.copied = 'false';
+							}, 1200);
+						} catch (error) {
+							console.error('Failed to copy code block', error);
+						}
+					});
+
+					wrapper.appendChild(label);
+					wrapper.appendChild(copyButton);
+				}
+			}
+
+			enhanceCodeBlocks();
+
+			if (!window.__academicPortfolioCodeBlockListener) {
+				document.addEventListener('astro:after-swap', enhanceCodeBlocks);
+				window.__academicPortfolioCodeBlockListener = true;
+			}
+		</script></body></html>
