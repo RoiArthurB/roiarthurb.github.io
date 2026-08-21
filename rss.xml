@@ -14,7 +14,7 @@ Two words from the previous post that I keep using here:&lt;/p&gt;
 &lt;p&gt;Under Ollama those jobs didn&apos;t fail or get rejected; they queued. My requests and its requests all landed on the same slot (I&apos;ll show why in a second), so every message I sent went behind whatever background job from two turns ago hadn&apos;t finished yet. That was the busy-for-no-reason state: nothing was chatting, but the queue wasn&apos;t empty.&lt;/p&gt;
 &lt;h2&gt;Ollama uses one slot&lt;/h2&gt;
 &lt;p&gt;Ollama&apos;s log made it clear:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;$ docker logs docker-ollama-1 2&amp;gt;&amp;amp;1 | grep &apos;new prompt&apos; | tail -3
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ docker logs docker-ollama-1 2&amp;gt;&amp;amp;1 | grep &apos;new prompt&apos; | tail -3
 slot   operator(): id  0 | task 0 | new prompt, n_ctx_slot = 32768, ...
 slot   operator(): id  0 | task 1805 | new prompt, ...
 slot   operator(): id  0 | task 2591 | new prompt, ...
@@ -172,7 +172,7 @@ How long does that cache live? Nothing expires by age; it&apos;s a question of h
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Five tasks out of two chat turns. The ~6,400-token ones are OpenWebUI replaying the entire conversation to write titles and tags; at about &lt;em&gt;240 tok/s&lt;/em&gt; that&apos;s roughly 30 seconds of prefill per job, just to name one chat. Here&apos;s what happens to my decode speed:&lt;/p&gt;
 &lt;figure&gt;
-    &lt;img src=&quot;https://arthurbrugiere.fr/images/llama-server-lfm-parallel-contention.webp&quot; alt=&quot;Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two.&quot; /&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/llama-server-lfm-parallel-speed.webp&quot; alt=&quot;Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two.&quot; /&gt;
     &lt;figcaption&gt;Each background job costs me roughly half my decode speed — just to name a chat [source: ollama-to-llama-server-parallel.md].&lt;/figcaption&gt;
 &lt;/figure&gt;
 &lt;p&gt;Parallel slots didn&apos;t remove the problem; they converted queuing into congestion. Same total work, but now it happens at the exact moment I&apos;m waiting for my answer.&lt;/p&gt;

@@ -35,7 +35,7 @@ Two words from the previous post that I keep using here:</p>
 <p>Under Ollama those jobs didn't fail or get rejected; they queued. My requests and its requests all landed on the same slot (I'll show why in a second), so every message I sent went behind whatever background job from two turns ago hadn't finished yet. That was the busy-for-no-reason state: nothing was chatting, but the queue wasn't empty.</p>
 <h2>Ollama uses one slot</h2>
 <p>Ollama's log made it clear:</p>
-<pre><code class="language-txt">$ docker logs docker-ollama-1 2&gt;&amp;1 | grep 'new prompt' | tail -3
+<pre><code class="language-bash">$ docker logs docker-ollama-1 2&gt;&amp;1 | grep 'new prompt' | tail -3
 slot   operator(): id  0 | task 0 | new prompt, n_ctx_slot = 32768, ...
 slot   operator(): id  0 | task 1805 | new prompt, ...
 slot   operator(): id  0 | task 2591 | new prompt, ...
@@ -193,7 +193,7 @@ How long does that cache live? Nothing expires by age; it's a question of how ma
 </code></pre>
 <p>Five tasks out of two chat turns. The ~6,400-token ones are OpenWebUI replaying the entire conversation to write titles and tags; at about <em>240 tok/s</em> that's roughly 30 seconds of prefill per job, just to name one chat. Here's what happens to my decode speed:</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/llama-server-lfm-parallel-contention.webp" alt="Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two." />
+    <img src="https://arthurbrugiere.fr/images/llama-server-lfm-parallel-speed.webp" alt="Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two." />
     <figcaption>Each background job costs me roughly half my decode speed — just to name a chat [source: ollama-to-llama-server-parallel.md].</figcaption>
 </figure>
 <p>Parallel slots didn't remove the problem; they converted queuing into congestion. Same total work, but now it happens at the exact moment I'm waiting for my answer.</p>
