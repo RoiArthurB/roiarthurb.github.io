@@ -1,4 +1,195 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Arthur Brugière</title><description>Computer Researcher / IT Geek</description><link>https://arthurbrugiere.fr/</link><item><title>Running Ollama on iGPU on Linux</title><link>https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/</guid><description>How I got 3x inference speed on a five-year-old Intel NUC iGPU</description><pubDate>Sun, 16 Aug 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Like everyone, I&apos;m interested in running my own &lt;a href=&quot;https://en.wikipedia.org/wiki/Large_language_model&quot;&gt;Large Language Models (LLM)&lt;/a&gt;, so I installed Ollama in my homelab some time ago. Ollama is a tool to easily run LLM, and exposes this local AI as a server to be used by other applications. It&apos;s not the best tool to get the most out of the machine, but it&apos;s the simplest to install and manage with plenty of nice QoL.&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Arthur Brugière</title><description>Computer Researcher / IT Geek</description><link>https://arthurbrugiere.fr/</link><item><title>Three LFM2.5-2.6B in parallel on an iGPU</title><link>https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/</guid><description>Ollama queued every request in a single slot because lfm2 is blocklisted from parallelism. llama-server fixed it.</description><pubDate>Fri, 21 Aug 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Since &lt;a href=&quot;https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/&quot;&gt;my last post&lt;/a&gt;, &lt;a href=&quot;https://ollama.com&quot;&gt;Ollama&lt;/a&gt; has been serving &lt;a href=&quot;https://www.liquid.ai/blog/lfm2-5-2-6b&quot;&gt;LFM2.5-2.6B&lt;/a&gt; from the Iris Xe iGPU of my Intel NUC. And, since it works, I started using it in my homelab.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://openwebui.com&quot;&gt;OpenWebUI&lt;/a&gt; for chat, my &lt;a href=&quot;https://hermes-agent.nousresearch.com&quot;&gt;agent Hermes&lt;/a&gt; pointed at the same Ollama endpoint, both expecting something that answers while they talk. Within a day or two, the machine felt broken again: I&apos;d send one message and Ollama was slow again to begin answering, even when nothing else should have been talking to my model.&lt;/p&gt;
+&lt;h2&gt;What OpenWebUI actually sends&lt;/h2&gt;
+&lt;p&gt;I discovered that OpenWebUI does work on its own. After every exchange it fires background jobs that generate a conversation title, tags, follow-up suggestions and such, and each job replays the whole conversation as context. Mine were around &lt;code&gt;6,400 tokens&lt;/code&gt; by then (around 30s to prefill), so a single title job asked my iGPU to re-read everything just to write one short name for the chat.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!TIP]
+Two words from the previous post that I keep using here:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Prefill&lt;/strong&gt; is how fast the model reads your prompt. It sets how long you stare at a blank screen before the first word appears.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Decode&lt;/strong&gt; is how fast it writes the answer.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A third one arrives below: a &lt;strong&gt;slot&lt;/strong&gt; is one conversation&apos;s workspace inside the server. It holds that conversation&apos;s tokens so they don&apos;t have to be read again on the next message.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Under Ollama those jobs didn&apos;t fail or get rejected; they queued. My requests and its requests all landed on the same slot (I&apos;ll show why in a second), so every message I sent went behind whatever background job from two turns ago hadn&apos;t finished yet. That was the busy-for-no-reason state: nothing was chatting, but the queue wasn&apos;t empty.&lt;/p&gt;
+&lt;h2&gt;Ollama uses one slot&lt;/h2&gt;
+&lt;p&gt;Ollama&apos;s log made it clear:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;$ docker logs docker-ollama-1 2&amp;gt;&amp;amp;1 | grep &apos;new prompt&apos; | tail -3
+slot   operator(): id  0 | task 0 | new prompt, n_ctx_slot = 32768, ...
+slot   operator(): id  0 | task 1805 | new prompt, ...
+slot   operator(): id  0 | task 2591 | new prompt, ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Every request carried &lt;code&gt;id 0&lt;/code&gt;. Mine and OpenWebUI&apos;s. One slot means everything serializes through it: my chat waits for a tag job, the tag job waits for my next message, nobody is fast, and Ollama is working hard the whole time.&lt;/p&gt;
+&lt;p&gt;But my config had &lt;code&gt;OLLAMA_NUM_PARALLEL=3&lt;/code&gt; set; 3 jobs can run in parallel, so I assumed a bug. To check whether this was policy or accident, I pulled another small transformer model as a canary[^1] and loaded it on the same server with the same config.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ docker exec docker-ollama-1 ollama pull qwen3:0.6b
+$ curl -s http://localhost:11434/api/generate -d &apos;{&amp;quot;model&amp;quot;:&amp;quot;qwen3:0.6b&amp;quot;,&amp;quot;prompt&amp;quot;:&amp;quot;hi&amp;quot;,&amp;quot;stream&amp;quot;:false}&apos; &amp;gt;/dev/null
+$ docker logs docker-ollama-1 2&amp;gt;&amp;amp;1 | grep -E &apos;n_slots&apos; | tail -2
+srv    load_model: initializing, n_slots = 1, n_ctx_slot = 32768, kv_unified = &apos;false&apos;
+srv    load_model: initializing, n_slots = 3, n_ctx_slot = 32768, kv_unified = &apos;false&apos;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Ollama prints one of those lines each time it loads a model. The first is LFM2.5, still running with &lt;code&gt;n_slots = 1&lt;/code&gt;; the second is the Qwen I pulled moments earlier, with &lt;code&gt;n_slots = 3&lt;/code&gt;. So it&apos;s a model issue, not my config nor a bug.&lt;/p&gt;
+&lt;p&gt;Checking Ollama&apos;s log again:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;time=2026-08-19T08:38:35.338Z level=WARN source=sched.go:509 msg=&amp;quot;model architecture does not currently support parallel requests&amp;quot; architecture=lfm2
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/ollama/ollama/issues/4165&quot;&gt;Ollama keeps a hardcoded list of architectures&lt;/a&gt; that get &lt;code&gt;numParallel = 1&lt;/code&gt; regardless of the environment variable, and &lt;code&gt;lfm2&lt;/code&gt; (my LLM) &lt;a href=&quot;https://github.com/ollama/ollama/blob/main/server/sched.go#L507&quot;&gt;is on it&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;As for why lfm2 made the cut: LFM2 is a hybrid architecture. Only eight of its thirty layers are attention with a KV cache; the other twenty-two are short-conv blocks that carry recurrent state instead. A KV cache can be sliced across parallel sequences, and I don&apos;t think one shared recurrent state can. That&apos;s my explanation at least. Ollama tells you it won&apos;t, but not why.&lt;/p&gt;
+&lt;h2&gt;The alternatives I checked&lt;/h2&gt;
+&lt;p&gt;At that point I was ready to just switch models. A plain transformer would parallelize fine in Ollama and the whole problem evaporates. But the Qwen3.6 35B MoE I benchmarked prefills at under 64 tok/s on this box, which starts to be slow to chat or for agentic work, and smaller dense ones decode slower per token than LFM2.5 anyway[^2].&lt;/p&gt;
+&lt;p&gt;So let&apos;s see what other runners can I use:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://vllm.ai/&quot;&gt;vLLM&lt;/a&gt; is the other big name people throw out for serving, and it&apos;s a no here too. Its Intel path is oneAPI/XPU aimed at discrete GPUs like Arc and Flex, there&apos;s no Vulkan backend to begin with (from what Claude told me), and the whole design (continuous batching, FP16, high concurrency) targets datacenter hardware. On a single-user NUC with shared memory it would be slower than what I had if I even got it running.&lt;/p&gt;
+&lt;p&gt;Ollama is built on top of &lt;a href=&quot;https://github.com/ggml-org/llama.cpp&quot;&gt;llama.cpp&lt;/a&gt; for running models, and it&apos;s possible to run it alone. So there was no speed magic waiting in &lt;code&gt;llama-server&lt;/code&gt;, its built-in HTTP endpoint. The point of going direct is that it exposes knobs Ollama hides and doesn&apos;t have this architecture blocklist; upstream allocates recurrent state per sequence when you ask for parallel slots, which is exactly what a hybrid model needs.&lt;/p&gt;
+&lt;h2&gt;llama-server with three slots&lt;/h2&gt;
+&lt;p&gt;Same Docker shape as part one: &lt;code&gt;/dev/dri&lt;/code&gt; passed through, the render group&apos;s GID added, Mesa device selection pinned to the Iris Xe so llvmpipe can&apos;t sneak in. New are the image and its arguments:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;docker run -d --restart unless-stopped --name llama-lfm \
+  --device /dev/dri:/dev/dri --group-add 992 \
+  -p 11435:8080 \
+  -v /home/gru/docker/open-webui/ollama/models/blobs:/blobs:ro \
+  -e GGML_VK_VISIBLE_DEVICES=0 -e MESA_VK_DEVICE_SELECT=8086:9a49 \
+  --cpuset-cpus 0-3 --cpu-shares 2048 \
+  ghcr.io/ggml-org/llama.cpp:server-vulkan \
+    -m /blobs/sha256-02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed \
+    --alias lfm2.5 \
+    -ngl 99 \
+    --parallel 3 \
+    -c 98304 \
+    -fa on \
+    -ub 1024 -b 2048 \
+    --cache-reuse 256 \
+    --reasoning-preserve \
+    --jinja \
+    --mlock \
+    --host 0.0.0.0 --port 8080
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;What each of those does:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Flag&lt;/th&gt;
+&lt;th&gt;What it sets&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;-m&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;the model file; here Ollama&apos;s blob for LFM2.5&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;--alias&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;the name clients ask for, instead of a hash&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;-ngl&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;how many layers run on the GPU; 99 means all of them (mandatory for GPU)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;--parallel&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;how many slots the server keeps, so how many conversations at once&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;-c&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;the total context pool, divided across those slots&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;-fa&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;flash attention, the same thing &lt;code&gt;OLLAMA_FLASH_ATTENTION&lt;/code&gt; turned on&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;-ub&lt;/code&gt; / &lt;code&gt;-b&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;how many prompt tokens go through the GPU per batch during prefill&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;--cache-reuse&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;reuse a cached prompt even when it diverges a little from the new one&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;--reasoning-preserve&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;keep the model&apos;s thinking blocks in the conversation history&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;--jinja&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;apply the chat template that ships inside the model file&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+The volume mount points at Ollama&apos;s content-addressed blob store, so I&apos;m not keeping a second copy of the 1.7 GB GGUF on disk.&lt;/p&gt;
+&lt;p&gt;The trade: an &lt;code&gt;ollama rm&lt;/code&gt; removes the model for both runners, but this way I can also easily update it with &lt;code&gt;ollama pull&lt;/code&gt;. It would be a good idea to copy the blob somewhere stable; it didn&apos;t bother me enough to do it.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;One flag pair behaves opposite to what I was used to: Ollama multiplies context by parallel slots; llama.cpp divides by them. &lt;code&gt;-c 98304&lt;/code&gt; with &lt;code&gt;--parallel 3&lt;/code&gt; is a pool of 98,304 tokens split three ways, so each conversation gets the same 32k I&apos;d been running under Ollama. The load log confirmed it:&lt;code&gt; n_slots = 3&lt;/code&gt;, &lt;code&gt;n_ctx_slot = 32768&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The rest is tuning I&apos;ll account for in a minute: &lt;code&gt;-ub 1024 -b 2048&lt;/code&gt; controls the micro-batch size during prefill; &lt;code&gt;--cache-reuse 256 --reasoning-preserve&lt;/code&gt; are about reusing cached prefixes across turns (the server printed &amp;quot;chat template supports preserving reasoning, consider enabling it&amp;quot; at startup, so I took its advice).&lt;/p&gt;
+&lt;p&gt;As announced, it has more tuning options than Ollama. Now let&apos;s load the model and see if it can run several slots in parallel:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ docker logs llama-lfm 2&amp;gt;&amp;amp;1 | grep -E &apos;n_slots|model loaded&apos;
+srv    load_model: initializing, n_slots = 3, n_ctx_slot = 32768, kv_unified = &apos;false&apos;
+llama_server: model loaded
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Yes! &lt;code&gt;n_slots = 3&lt;/code&gt;! Looks good!&lt;/p&gt;
+&lt;p&gt;The first test was three concurrent requests against the three slots. All three launched in the same millisecond and finished together at about 21 s wall time, each decoding around 10 tok/s. The same work under Ollama serialized to roughly 40 s. Real concurrency on an iGPU with 80 execution units.&lt;/p&gt;
+&lt;h3&gt;Measuring what I got&lt;/h3&gt;
+&lt;p&gt;I wrote a small script so I wouldn&apos;t have to redo these by hand. I checked four things in order: is solo decode the same speed as Ollama&apos;s, how does aggregate throughput scale with concurrent requests, does turn two skip re-prefilling history (cache reuse), and do tool calls plus reasoning still parse. Output (trimmed):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;1. SOLO DECODE  (expect ~15 tok/s)
+   eval time = 13226.66 ms / 200 tokens (15.05 tok/s)
+
+2. CONCURRENCY SCALING
+   n=1  wall=13.8s  aggregate=14.44 tok/s
+   n=2  wall=17.3s  aggregate=23.12 tok/s
+   n=3  wall=21.1s  aggregate=28.42 tok/s
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;(1) Solo decode at &lt;em&gt;15.05 tok/s&lt;/em&gt; is what Ollama gave a request running alone, so, as expected, this &amp;quot;new runner&amp;quot; costs me nothing per request: same engine, same Vulkan backend.&lt;/p&gt;
+&lt;p&gt;(2) The scaling column is the point of the whole exercise: flat around 15 tok/s aggregate in Ollama  as it didn&apos;t have any concurrency, 28.4 here with three requests running. It&apos;s still climbing from two to three (+23%).[^3]&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/llama-server-lfm-parallel-speed.webp&quot; alt=&quot;Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4.&quot; /&gt;
+    &lt;figcaption&gt;Same engine, same iGPU: Ollama&apos;s single slot caps the box at ~15 tok/s no matter how many requests arrive [source: verify-llama.sh]; three slots in llama-server climb almost linearly to 28.&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;3. CACHE-REUSE ACROSS TURNS
+   turn 1 prefill: 6682 ms / 1758 tokens (263 tok/s)
+   turn 2 prefill:  397 ms /   20 tokens
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;(3) The cache-reuse number is the other win I didn&apos;t expect to be this good. &lt;em&gt;Turn one&lt;/em&gt; prefilled 1,758 tokens; &lt;em&gt;turn two&lt;/em&gt; evaluated only my new message, 20 tokens in under half a second.&lt;/p&gt;
+&lt;p&gt;With Ollama, OpenWebUI strips think blocks from history when it replays a conversation, which meant that it needed to re-prefilled the previous assistant response every turn (as the history wasn&apos;t matching exactly). That tax is gone here: I&apos;m not entirely sure whether &lt;code&gt;--cache-reuse&lt;/code&gt; or &lt;code&gt;--reasoning-preserve&lt;/code&gt; did it, both are cheap so I didn&apos;t chase it.&lt;/p&gt;
+&lt;p&gt;There&apos;s also slot affinity at work; my two test requests landed on the same slot (id 1), which kept the cached prefix next to the conversation instead of letting a round-robin bounce it around.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+How long does that cache live? Nothing expires by age; it&apos;s a question of how many other conversations arrive.&lt;/p&gt;
+&lt;p&gt;The three slots get recycled least-recently-used first: three unrelated conversations show up after mine and my slot is gone. Behind them sits a separate prompt cache in RAM, 8 GB by default (&lt;code&gt;-cram&lt;/code&gt;), and &lt;code&gt;--cache-idle-slots&lt;/code&gt; writes an idle slot into it before handing that slot to somebody else, so coming back to an older conversation is often cheaper than paying full price for it.&lt;/p&gt;
+&lt;p&gt;Obviously, since it&apos;s in RAM, mone of it survives a restart of the container. There is a &lt;code&gt;--slot-save-path&lt;/code&gt; option, but it only exposes REST endpoints that a client has to call itself, and neither of mine does.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;(4) The correctness check passed too. A weather question with one tool defined came back as structured output, no raw tokens leaking into the content field:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-json&quot;&gt;{
+  &amp;quot;reasoning&amp;quot;: &amp;quot;The user is asking about the weather in Hanoi...&amp;quot;,
+  &amp;quot;tool_calls&amp;quot;: [{ &amp;quot;function&amp;quot;: { &amp;quot;name&amp;quot;: &amp;quot;get_weather&amp;quot;, &amp;quot;arguments&amp;quot;: &amp;quot;{\&amp;quot;city\&amp;quot;: \&amp;quot;Hanoi\&amp;quot;}&amp;quot; } }],
+  &amp;quot;content&amp;quot;: &amp;quot;&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That&apos;s what agentic use needs (either Hermes or OpenWebUI tools to search on internet or such), so it goes back to pointing at a model that behaves.&lt;/p&gt;
+&lt;h2&gt;Slots turned my queue into a fight&lt;/h2&gt;
+&lt;p&gt;The background jobs didn&apos;t go away when I changed servers. What changed was how they hurt me. Under Ollama they queued behind my chat and finished &lt;s&gt;quickly&lt;/s&gt;. With three free slots they run concurrently with it and steal bandwidth from the request I&apos;m actually waiting on:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;7.43  slot 0 &amp;lt;- task 1005   (my chat)
+7.44  slot 1 &amp;lt;- task 1007   (6,374 tokens)
+8.17  slot 2 &amp;lt;- task 1071
+9.02  slot 1 &amp;lt;- task 1395   (6,593 tokens)
+9.38  slot 1 &amp;lt;- task 1486   (1,780 tokens)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Five tasks out of two chat turns. The ~6,400-token ones are OpenWebUI replaying the entire conversation to write titles and tags; at about &lt;em&gt;240 tok/s&lt;/em&gt; that&apos;s roughly 30 seconds of prefill per job, just to name one chat. Here&apos;s what happens to my decode speed:&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/llama-server-lfm-parallel-contention.webp&quot; alt=&quot;Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two.&quot; /&gt;
+    &lt;figcaption&gt;Each background job costs me roughly half my decode speed — just to name a chat [source: ollama-to-llama-server-parallel.md].&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;Parallel slots didn&apos;t remove the problem; they converted queuing into congestion. Same total work, but now it happens at the exact moment I&apos;m waiting for my answer.&lt;/p&gt;
+&lt;p&gt;Since it&apos;s working as expected, I need to fix this background issue in OpenWebUI: Admin -&amp;gt; Settings -&amp;gt; Interface, and turn off what you don&apos;t need.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/llama-server-lfm-parallel-owui.webp&quot; alt=&quot;OpenWeb UI interface to disable the background jobs.&quot; /&gt;
+    &lt;figcaption&gt;OpenWeb UI interface to disable the background jobs.&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;I disabled tag generation and follow-up suggestions and kept only title generation, which fires once per conversation when it starts (it&apos;s nicer for the interface, and runs only once when the chat is small). My chat went back to solo speed, and the three slots stayed available for other concurrency.&lt;/p&gt;
+&lt;h2&gt;Where it landed&lt;/h2&gt;
+&lt;p&gt;I&apos;m running both now.&lt;/p&gt;
+&lt;p&gt;Llama-server on port &lt;code&gt;11435&lt;/code&gt; for LFM2.5, Ollama on port &lt;code&gt;11434&lt;/code&gt; for everything else. It runs solo ~15 tok/s, accumulates up to 28 tok/s at full load (but individual answers are slower), follow-up turns in chatting are nearly free thanks to prefix reuse, and no queue between the chat UI and the agent.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Bref&lt;/em&gt;, the model I chose for being fast on small hardware needed a different runner to be fast for more than one client at a time, and getting there cost me reading logs and running one more docker container 🙃&lt;/p&gt;
+&lt;!-- --- --&gt;
+&lt;p&gt;[^1]: A 0.6B qwen, pulled purely as a canary. It got its three slots and went back to sleep.&lt;/p&gt;
+&lt;p&gt;[^2]: Most LLMs are transformers: every layer attends to every previous token, which is what makes them slow down as a conversation grows. LFM2 is a hybrid architecture. That specific design is why a 2.6B model reads 3,000 tokens at 240 tok/s on an iGPU, and why its speed barely moves as the conversation gets longer.&lt;/p&gt;
+</content:encoded></item><item><title>Running Ollama on iGPU on Linux</title><link>https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/</guid><description>How I got 3x inference speed on a five-year-old Intel NUC iGPU</description><pubDate>Sun, 16 Aug 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Like everyone, I&apos;m interested in running my own &lt;a href=&quot;https://en.wikipedia.org/wiki/Large_language_model&quot;&gt;Large Language Models (LLM)&lt;/a&gt;, so I installed Ollama in my homelab some time ago. Ollama is a tool to easily run LLM, and exposes this local AI as a server to be used by other applications. It&apos;s not the best tool to get the most out of the machine, but it&apos;s the simplest to install and manage with plenty of nice QoL.&lt;/p&gt;
 &lt;p&gt;But, since I installed it, Ollama has been the most disappointing service on my home server. The machine I installed it on is an &lt;a href=&quot;https://en.wikipedia.org/wiki/Intel_nuc&quot;&gt;Intel NUC&lt;/a&gt; &lt;a href=&quot;https://www.asus.com/supportonly/nuc11pahi5/helpdesk_manual/&quot;&gt;NUC11PAHi5&lt;/a&gt; from 2021 (an &lt;a href=&quot;https://www.intel.com/content/www/us/en/products/sku/208658/intel-core-i51135g7-processor-8m-cache-up-to-4-20-ghz/specifications.html&quot;&gt;11th-gen Tiger Lake i5-1135G7&lt;/a&gt; with 4 cores, 8 threads, Iris Xe graphics &lt;em&gt;(80@1.30 GHz)&lt;/em&gt;, and 32 GB of RAM). It runs headless Debian 13, doesn&apos;t have a dedicated GPU and hosts a little less than 40 other Docker containers, all sharing the same 4 CPU cores.&lt;/p&gt;
 &lt;figure&gt;
     &lt;img src=&quot;https://arthurbrugiere.fr/images/ollama-intel-igpu-nuc.webp&quot; alt=&quot;Spec. sheet of my Intel NUC.&quot; /&gt;
