@@ -2,14 +2,14 @@
 title: 'Three LFM2.5-2.6B in parallel on an iGPU'
 description: "Ollama queued every request in a single slot because lfm2 is blocklisted from parallelism. llama-server fixed it."
 #startDate: '2026-08-19'
-pubDate: '2026-08-20'
+pubDate: '2026-08-21'
 toc: true
 tags:
   - linux
   - LLM
   - llama.cpp
   - self-hosting
-publish: false
+publish: true
 ---
 
 Since [my last post](https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/), [Ollama](https://ollama.com) has been serving [LFM2.5-2.6B](https://www.liquid.ai/blog/lfm2-5-2-6b) from the Iris Xe iGPU of my Intel NUC. And, since it works, I started using it in my homelab.
@@ -33,7 +33,7 @@ Under Ollama those jobs didn't fail or get rejected; they queued. My requests an
 
 Ollama's log made it clear:
 
-```txt
+```bash
 $ docker logs docker-ollama-1 2>&1 | grep 'new prompt' | tail -3
 slot   operator(): id  0 | task 0 | new prompt, n_ctx_slot = 32768, ...
 slot   operator(): id  0 | task 1805 | new prompt, ...
@@ -153,6 +153,11 @@ I wrote a small script so I wouldn't have to redo these by hand. I checked four 
 
 (2) The scaling column is the point of the whole exercise: flat around 15 tok/s aggregate in Ollama  as it didn't have any concurrency, 28.4 here with three requests running. It's still climbing from two to three (+23%).[^3]
 
+<figure>
+    <img src="/images/llama-server-lfm-parallel-contention.webp" alt="Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4." />
+    <figcaption>Same engine, same iGPU: Ollama's single slot caps the box at ~15 tok/s no matter how many requests arrive [source: verify-llama.sh]; three slots in llama-server climb almost linearly to 28.</figcaption>
+</figure>
+
 ```txt
 3. CACHE-REUSE ACROSS TURNS
    turn 1 prefill: 6682 ms / 1758 tokens (263 tok/s)
@@ -198,15 +203,19 @@ The background jobs didn't go away when I changed servers. What changed was how 
 
 Five tasks out of two chat turns. The ~6,400-token ones are OpenWebUI replaying the entire conversation to write titles and tags; at about *240 tok/s* that's roughly 30 seconds of prefill per job, just to name one chat. Here's what happens to my decode speed:
 
-| | decode |
-|---|---|
-| solo | 15.05 t/s |
-| + 1 background task | ~7.2 t/s |
-| + 2 background tasks | 3.94 t/s, a 108 s response |
+<figure>
+    <img src="/images/llama-server-lfm-parallel-speed.webp" alt="Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two."style="background-color: white;" />
+    <figcaption>Each background job costs me roughly half my decode speed — just to name a chat [source: ollama-to-llama-server-parallel.md].</figcaption>
+</figure>
 
 Parallel slots didn't remove the problem; they converted queuing into congestion. Same total work, but now it happens at the exact moment I'm waiting for my answer.
 
 Since it's working as expected, I need to fix this background issue in OpenWebUI: Admin -> Settings -> Interface, and turn off what you don't need. 
+
+<figure>
+    <img src="/images/llama-server-lfm-parallel-owui.webp" alt="OpenWeb UI interface to disable the background jobs." />
+    <figcaption>OpenWeb UI interface to disable the background jobs.</figcaption>
+</figure>
 
 I disabled tag generation and follow-up suggestions and kept only title generation, which fires once per conversation when it starts (it's nicer for the interface, and runs only once when the chat is small). My chat went back to solo speed, and the three slots stayed available for other concurrency.
 
