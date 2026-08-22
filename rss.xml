@@ -138,7 +138,7 @@ llama_server: model loaded
 &lt;p&gt;(1) Solo decode at &lt;em&gt;15.05 tok/s&lt;/em&gt; is what Ollama gave a request running alone, so, as expected, this &amp;quot;new runner&amp;quot; costs me nothing per request: same engine, same Vulkan backend.&lt;/p&gt;
 &lt;p&gt;(2) The scaling column is the point of the whole exercise: flat around 15 tok/s aggregate in Ollama  as it didn&apos;t have any concurrency, 28.4 here with three requests running. It&apos;s still climbing from two to three (+23%).[^3]&lt;/p&gt;
 &lt;figure&gt;
-    &lt;img src=&quot;https://arthurbrugiere.fr/images/llama-server-lfm-parallel-speed.webp&quot; alt=&quot;Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4.&quot; /&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/llama-server-lfm-parallel-contention.webp&quot; alt=&quot;Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4.&quot; /&gt;
     &lt;figcaption&gt;Same engine, same iGPU: Ollama&apos;s single slot caps the box at ~15 tok/s no matter how many requests arrive [source: verify-llama.sh]; three slots in llama-server climb almost linearly to 28.&lt;/figcaption&gt;
 &lt;/figure&gt;
 &lt;pre&gt;&lt;code class=&quot;language-txt&quot;&gt;3. CACHE-REUSE ACROSS TURNS
@@ -172,7 +172,7 @@ How long does that cache live? Nothing expires by age; it&apos;s a question of h
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Five tasks out of two chat turns. The ~6,400-token ones are OpenWebUI replaying the entire conversation to write titles and tags; at about &lt;em&gt;240 tok/s&lt;/em&gt; that&apos;s roughly 30 seconds of prefill per job, just to name one chat. Here&apos;s what happens to my decode speed:&lt;/p&gt;
 &lt;figure&gt;
-    &lt;img src=&quot;https://arthurbrugiere.fr/images/llama-server-lfm-parallel-speed.webp&quot; alt=&quot;Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two.&quot; /&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/llama-server-lfm-parallel-speed.webp&quot; alt=&quot;Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two.&quot;style=&quot;background-color: white;&quot; /&gt;
     &lt;figcaption&gt;Each background job costs me roughly half my decode speed — just to name a chat [source: ollama-to-llama-server-parallel.md].&lt;/figcaption&gt;
 &lt;/figure&gt;
 &lt;p&gt;Parallel slots didn&apos;t remove the problem; they converted queuing into congestion. Same total work, but now it happens at the exact moment I&apos;m waiting for my answer.&lt;/p&gt;

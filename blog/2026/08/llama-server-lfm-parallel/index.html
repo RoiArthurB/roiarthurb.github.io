@@ -242,7 +242,7 @@
 <p>(1) Solo decode at <em>15.05 tok/s</em> is what Ollama gave a request running alone, so, as expected, this “new runner” costs me nothing per request: same engine, same Vulkan backend.</p>
 <p>(2) The scaling column is the point of the whole exercise: flat around 15 tok/s aggregate in Ollama  as it didn’t have any concurrency, 28.4 here with three requests running. It’s still climbing from two to three (+23%).[^3]</p>
 <figure>
-    <img src="/images/llama-server-lfm-parallel-speed.webp" alt="Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4.">
+    <img src="/images/llama-server-lfm-parallel-contention.webp" alt="Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4.">
     <figcaption>Same engine, same iGPU: Ollama's single slot caps the box at ~15 tok/s no matter how many requests arrive [source: verify-llama.sh]; three slots in llama-server climb almost linearly to 28.</figcaption>
 </figure>
 <pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="txt"><code><span class="line"><span>3. CACHE-REUSE ACROSS TURNS</span></span>
@@ -271,7 +271,7 @@
 <span class="line"><span>9.38  slot 1 &#x3C;- task 1486   (1,780 tokens)</span></span></code></pre>
 <p>Five tasks out of two chat turns. The ~6,400-token ones are OpenWebUI replaying the entire conversation to write titles and tags; at about <em>240 tok/s</em> that’s roughly 30 seconds of prefill per job, just to name one chat. Here’s what happens to my decode speed:</p>
 <figure>
-    <img src="/images/llama-server-lfm-parallel-speed.webp" alt="Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two.">
+    <img src="/images/llama-server-lfm-parallel-speed.webp" alt="Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two." style="background-color: white;">
     <figcaption>Each background job costs me roughly half my decode speed — just to name a chat [source: ollama-to-llama-server-parallel.md].</figcaption>
 </figure>
 <p>Parallel slots didn’t remove the problem; they converted queuing into congestion. Same total work, but now it happens at the exact moment I’m waiting for my answer.</p>
