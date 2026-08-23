@@ -439,6 +439,11 @@ volumes:
 &lt;p&gt;From &lt;em&gt;73 tok/s&lt;/em&gt; to &lt;em&gt;240 tok/s&lt;/em&gt; prefill, and &lt;em&gt;9.2 tok/s&lt;/em&gt; to &lt;em&gt;14.4 tok/s&lt;/em&gt; inference. On hardware without a dedicated GPU.&lt;/p&gt;
 &lt;p&gt;One bottleneck I didn&apos;t present stays, and it stays for a boring reason. &lt;code&gt;dmidecode&lt;/code&gt; shows that my two 16 GB SODIMM sticks are rated at different speeds (one at 3,200 MT/s and one at 2,400) so DDR4 clocks the whole subsystem down to 2,400 MT/s. Matching them should push decode to somewhere near 16 or 17 tok/s. But a single 16 GB DDR4-3200 stick now costs more than $100, which is too much money for three tokens per second on a five-year-old NUC.&lt;/p&gt;
 &lt;p&gt;Regardless, I&apos;m really happy about how things turned out and I now have my very own &lt;s&gt;slow&lt;/s&gt; not-that-slow personal AI that I&apos;ll be able to play a little with.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!TIP]
+I made a follow-up article to continue to fine-tune my installation and run concurrent job on my iGPU.&lt;/p&gt;
+&lt;p&gt;Feel free to discover it here : https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;!-- --- --&gt;
 &lt;p&gt;[^1]: This is useful to be able to have only a single chip but also get graphics and screen working on laptops.
 [^2]: I don&apos;t fully understand how quantization magic works. I just took the recommended one from LFM&apos;s own documentation, and generally that&apos;s what the internet recommends.&lt;/p&gt;

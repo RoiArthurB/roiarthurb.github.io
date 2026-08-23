@@ -349,6 +349,9 @@
 <p>From <em>73 tok/s</em> to <em>240 tok/s</em> prefill, and <em>9.2 tok/s</em> to <em>14.4 tok/s</em> inference. On hardware without a dedicated GPU.</p>
 <p>One bottleneck I didn’t present stays, and it stays for a boring reason. <code>dmidecode</code> shows that my two 16 GB SODIMM sticks are rated at different speeds (one at 3,200 MT/s and one at 2,400) so DDR4 clocks the whole subsystem down to 2,400 MT/s. Matching them should push decode to somewhere near 16 or 17 tok/s. But a single 16 GB DDR4-3200 stick now costs more than $100, which is too much money for three tokens per second on a five-year-old NUC.</p>
 <p>Regardless, I’m really happy about how things turned out and I now have my very own <del>slow</del> not-that-slow personal AI that I’ll be able to play a little with.</p>
+<div class="callout" data-callout="tip"><p>I made a follow-up article to continue to fine-tune my installation and run concurrent job on my iGPU.</p>
+<p>Feel free to discover it here : <a href="https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/" target="_blank" rel="noopener noreferrer nofollow">https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/</a></p>
+</div>
 <!-- --- -->
 <section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label">Footnotes</h2>
 <ol>
