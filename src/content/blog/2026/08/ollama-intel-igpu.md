@@ -294,6 +294,11 @@ One bottleneck I didn't present stays, and it stays for a boring reason. `dmidec
 
 Regardless, I'm really happy about how things turned out and I now have my very own ~~slow~~ not-that-slow personal AI that I'll be able to play a little with.
 
+> [!TIP]
+> I made a follow-up article to continue to fine-tune my installation and run concurrent job on my iGPU.
+>
+> Feel free to discover it here : https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/
+
 <!-- --- -->
 
 [^1]: This is useful to be able to have only a single chip but also get graphics and screen working on laptops.
