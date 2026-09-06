@@ -1,5 +1,14 @@
 [
   {
+    "id": "project-an-cu",
+    "title": "Project An Cư",
+    "description": "Developing digital simulations and interactive tools to help local officials and residents visualize and test practical solutions for managing climate-related flooding and extreme heat in South-East Asia.",
+    "ogLabel": "An Cư",
+    "year": [2026, 2028],
+    "status": "Coming Soon",
+    "authors": []
+  },
+  {
     "id": "project-tango",
     "title": "TAngible iNterface thought Gama Orchestration (TANGO)",
     "description": "An open-source research framework designed to bridge the gap between digital and physical simulations by using the GAMA platform to orchestrate a fleet of modular, low-cost robots that embody complex agent-based models in real time.",
@@ -15,7 +24,7 @@
     "title": "Environnements Virtuels pour l'Éducation Immersive au développement durable en Langue française (ÉVEIL)",
     "description": "An extension of the SIMPLE project, led by IRD and funded by the SCAC (the French Embassy's Service for Cooperation and Cultural Action) and the Institut Français. Using immersive education a step further by using Virtual Reality tools for French language learning.",
     "year": [2025, 2026],
-    "status": "Current",
+    "status": "Completed",
     "authors": [],
     "ogLabel": "EVEIL",
     "link": "https://project-simple.eu/projects/eveil/",
@@ -36,7 +45,7 @@
     "id": "project-star-farm",
     "title": "Smart Agro-ecological Transformation of Farming Systems towards Resilience and Sustainability in Middle and Coastal Zones of the Viet Nam Mekong Delta (STAR-FARM)",
     "description": "The overall objective of the STAR-FARM project is to facilitate smart agro-ecological transformation of agri-food farming systems of the Viet Nam’s Mekong Delta (VMD) and strengthen resilience to climate change, environmental degradation, and other external shocks.",
-    "year": [2025, 2027],
+    "year": [2025, 2026],
     "status": "Current",
     "authors": [],
     "ogLabel": "STAR-FARM",
