@@ -1,0 +1,190 @@
+/* Print stylesheet — linked with media="print" in BaseHead. */
+
+/* Generous margins around every page (esp. top/bottom) */
+@page {
+	margin: 2cm 1.8cm;
+}
+
+@media print {
+	:root,
+	[data-theme="dark"] {
+		--color-bg: #fff;
+		--color-text-main: #000;
+		--color-muted: #3d3d3d;
+	}
+	html {
+		background: #fff !important;
+		color-scheme: light;
+	}
+	body {
+		background-color: #fff !important;
+		margin: 0 !important;
+		padding: 1cm 0 0 0 !important; /* guaranteed top breathing room even where @page margins are ignored/overridden (e.g. Firefox with a non-Default Margins menu) */
+		font-size: 12px;
+		color: #000;
+		line-height: 1.75;
+	}
+
+	/* --- hide screen-only chrome & blocks that are redundant on paper --- */
+	header,
+	footer {
+		display: none !important;
+	}
+	.hero-image {
+		display: none !important;
+	} /* hero image dropped entirely */
+	.toc-container,
+	.toc-mobile-details {
+		display: none !important;
+	} /* table of contents block */
+	.giscus-wrapper,
+	header button,
+	div[role="button"],
+	input[type="search"] {
+		display: none !important;
+	}
+
+	/* kill any trailing margin after the last piece of visible content (no dangling line break at page end) */
+	main {
+		margin-top: 1cm !important;
+		padding: 0;
+	}
+	main > * :last-child,
+	.prose :last-child,
+	body > :last-child {
+		margin-bottom: 0 !important;
+	}
+
+	/* --- flattening everything to black on white --- */
+	a,
+	p,
+	h1,
+	h2,
+	h3,
+	h4,
+	li,
+	th,
+	td,
+	pre,
+	code,
+	figcaption {
+		background-color: #fff !important;
+		color: #000 !important;
+		box-shadow: none !important;
+		text-decoration-thickness: auto;
+	}
+	em,
+	small,
+	.reading-time,
+	.last-updated-on {
+		color: #3d3d3d !important;
+	}
+	img,
+	video {
+		filter: none !important;
+		max-width: 100% !important;
+		box-shadow: none !important;
+		border-radius: 0;
+		margin: 0.5rem auto;
+		display: block;
+	}
+
+	/* links reveal their target when printed (external only) */
+	a[href^="http"]::after {
+		content: " (" attr(href) ")";
+		/*font-size: 12px;*/
+		color: #555;
+		font-weight: normal;
+		font-style: italic;
+	}
+
+	/* --- more white space around content blocks --- */
+	h1,
+	h2,
+	h3,
+	h4,
+	blockquote,
+	pre,
+	img,
+	details,
+	figure,
+	.callout,
+	.publication-list .pub-mini-item,
+	.blog-tags {
+		margin-top: 0.8rem !important;
+	}
+	blockquote,
+	p,
+	li {
+		margin-bottom: 1em !important;
+	}
+	hr {
+		margin: 1cm 0 !important;
+		border-color: #ccc;
+	}
+
+	pre {
+		border-radius: 8px;
+		padding: 1rem 1.25rem;
+		overflow-x: auto;
+		font-size: 9pt;
+		line-height: 1.6;
+	}
+	code {
+		background-color: #f3f0e9 !important;
+	}
+	details > summary::marker {
+		content: "";
+	}
+
+	/* code blocks: force dark ink regardless of Shiki theme vars (gruvbox pastels are unreadable on white paper) */
+	pre * {
+		-webkit-text-fill-color: #1a2530 !important;
+		color: #1a2530 !important;
+		font-style: normal !important;
+		background-color: transparent !important;
+	}
+	span.code-block-label,
+	button.copy-code-button {
+		display: none !important;
+	}
+
+	/* keep code blocks on a single page (long tables stay breakable via the table rule below) */
+	pre,
+	.blog-container .code-block-frame {
+		break-inside: avoid;
+		page-break-inside: avoid;
+	}
+	h1,
+	h2,
+	h3 {
+		break-after: avoid-page;
+		page-break-after: avoid; /* legacy pair for older print engines */
+	}
+	blockquote,
+	figure,
+	details {
+		break-inside: auto;
+		page-break-inside: avoid;
+	}
+	table {
+		width: 100%;
+		border-collapse: collapse !important;
+		font-size: 9pt;
+		margin: 0.75em 0;
+		page-break-inside: auto;
+	}
+	th,
+	td {
+		padding: 0.4rem 0.6rem;
+		border-color: #ccc !important;
+		background: #fff !important;
+		color: #000 !important;
+	}
+
+	.copyright,
+	.social-links,
+	#search-overlay {
+		display: none !important;
+	}
+}
