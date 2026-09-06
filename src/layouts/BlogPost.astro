@@ -19,6 +19,10 @@ const fallbackHero = id ? url(`/blog/${id}.webp`) : url('/og.webp');
 <html lang="en">
 	<head>
 		<BaseHead title={title} description={description} />
+
+		<!-- Article dates for social previews: Slack shows the published date, Signal the modified date -->
+		<meta property="article:published_time" content={pubDate.toISOString()} />
+		{updatedDate && <meta property="article:modified_time" content={updatedDate.toISOString()} />}
 		<style>
 			html {
 				scroll-padding-top: 5.5rem; /* Account for sticky header height when scrolling to anchors */

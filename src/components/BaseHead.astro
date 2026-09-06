@@ -68,6 +68,9 @@ const resolveImage = (img: string) => {
 const imageUrl = typeof image === 'string'
 	? new URL(resolveImage(image), Astro.url)
 	: new URL(image.src, Astro.url);
+
+// Blog posts share as articles so app previews (Slack/Signal) can show the dates.
+const isArticle = /blog\/.+[^/]$/.test(currentPath);
 ---
 
 <meta charset="utf-8" />
@@ -156,7 +159,9 @@ const imageUrl = typeof image === 'string'
 	}
 </style>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<link rel="icon" type="image/svg+xml" href={url('/favicon.ico')} />
+<!-- Allows users to change text size on mobile (only in supporting browsers); test layouts with large OS fonts before relying on it -->
+<meta name="text-scale" content="scale" />
+<link rel="icon" type="image/x-icon" href={url('/favicon.ico')} />
 <link rel="sitemap" href={url('/sitemap-index.xml')} />
 <link
 	rel="alternate"
@@ -172,6 +177,14 @@ const imageUrl = typeof image === 'string'
 />
 <meta name="generator" content={Astro.generator} />
 <meta name="color-scheme" content="light dark" />
+<!-- Used by Chromium on Android to tint the browser chrome; matches the light background -->
+<meta
+	name="theme-color"
+	content="#ffffff"
+/>
+<!-- Print stylesheet: black-on-white, no navigation chrome -->
+<link rel="stylesheet" href={url('/print.css')} media="print" />
+
 <link rel="preload" href={atkinsonRegular} as="font" type="font/woff" crossorigin />
 <link rel="preload" href={atkinsonBold} as="font" type="font/woff" crossorigin />
 <link rel="preload" href={aginaRegular} as="font" type="font/otf" crossorigin />
@@ -218,13 +231,17 @@ const imageUrl = typeof image === 'string'
 
 <title>{title}</title>
 <meta name="title" content={title} />
+<!-- Document author so apps/scrapers know who wrote the page -->
+<meta name="author" content={`${SITE_TITLE}`} />
 <meta name="description" content={description} />
 
-<meta property="og:type" content="website" />
+<meta property="og:type" content={isArticle ? 'article' : 'website'} />
 <meta property="og:url" content={Astro.url} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={imageUrl} />
+<!-- Accessible name of the preview image, respected by Mastodon/Discord cards -->
+<meta property="og:image:alt" content={`${title} — ${SITE_TITLE}`} />
 
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:url" content={Astro.url} />
