@@ -1,4 +1,294 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Arthur Brugière</title><description>Computer Researcher / IT Geek</description><link>https://arthurbrugiere.fr/</link><item><title>Three LFM2.5-2.6B in parallel on an iGPU</title><link>https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/</guid><description>Ollama queued every request in a single slot because lfm2 is blocklisted from parallelism. llama-server fixed it.</description><pubDate>Fri, 21 Aug 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Since &lt;a href=&quot;https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/&quot;&gt;my last post&lt;/a&gt;, &lt;a href=&quot;https://ollama.com&quot;&gt;Ollama&lt;/a&gt; has been serving &lt;a href=&quot;https://www.liquid.ai/blog/lfm2-5-2-6b&quot;&gt;LFM2.5-2.6B&lt;/a&gt; from the Iris Xe iGPU of my Intel NUC. And, since it works, I started using it in my homelab.&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Arthur Brugière</title><description>Computer Researcher / IT Geek</description><link>https://arthurbrugiere.fr/</link><item><title>My $50 flea-market Dell with 7+ hours of video on one charge</title><link>https://arthurbrugiere.fr/blog/2026/09/my-inspiron-7-hours-battery/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/09/my-inspiron-7-hours-battery/</guid><description>How I turned a $50 flea-market Dell Inspiron 11 into my travel laptop, and got 7+ hours of video out of its damaged battery.</description><pubDate>Sun, 06 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h1&gt;Taming an Inspiron 11 for travel&lt;/h1&gt;
+&lt;p&gt;This is my travel laptop. It&apos;s a &lt;a href=&quot;https://dl.dell.com/manuals/all-products/esuprt_laptop/esuprt_inspiron_laptop/inspiron-11-3158-laptop_reference%20guide_en-us.pdf&quot;&gt;Dell Inspiron 11 2-in-1&lt;/a&gt; from 2015 that I bought at a flea market in Vietnam: it turned on, it cost very little, and now it goes everywhere with me. It&apos;s a ten-year-old machine with a &lt;a href=&quot;https://www.intel.com/content/www/us/en/products/sku/88180/intel-core-i36100u-processor-3m-cache-2-30-ghz/specifications.html&quot;&gt;6th gen i3 processor&lt;/a&gt;, the only test that mattered before buying it was &amp;quot;does it work?&amp;quot;, and it did.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/disabling-a-touchscreen-for-good-laptop.webp&quot; alt=&quot;My Inspiron laptop covered with stickers&quot; /&gt;
+    &lt;figcaption&gt;My Inspiron laptop covered with stickers, I love stickers!&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;What am I actually using it for, in priority order:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Travel. Holidays, limousine[^1], planes. Something light that works a long time without having to rely on an outlet.&lt;/li&gt;
+&lt;li&gt;Media playback. The main use case, the entire tuning project below is oriented around watching video for hours without hunting for a socket.&lt;/li&gt;
+&lt;li&gt;Web browsing. The &lt;em&gt;real&lt;/em&gt; number one use case, but optimization for browsing is a side effect of the work done above.&lt;/li&gt;
+&lt;li&gt;Light coding sessions, sometimes, in passing, killing a few hours at a coffeeshop during holidays.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;And here&apos;s where all of that landed: the battery is damaged, and I still get more than 7 hours of playback on one charge. That was good enough to stop tweaking and write this down instead.&lt;/p&gt;
+&lt;h2&gt;The machine&lt;/h2&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Chassis&lt;/td&gt;
+&lt;td&gt;Dell Inspiron 11 2-in-1 (2016), 11.6″, 1366×768 eDP panel&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;CPU&lt;/td&gt;
+&lt;td&gt;&lt;a href=&quot;https://www.intel.com/content/www/us/en/products/sku/95124/intel-core-i3-6100u-processor-3m-cache.html&quot;&gt;Intel Core i3-6100U&lt;/a&gt;, dual-core Skylake @ 2.3 GHz&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;GPU&lt;/td&gt;
+&lt;td&gt;Intel HD Graphics 520 (Skylake GT2, &lt;a href=&quot;https://en.wikipedia.org/wiki/Linux_Intel_graphics_driver&quot;&gt;i915 kernel driver&lt;/a&gt;)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;RAM&lt;/td&gt;
+&lt;td&gt;8 GiB DDR3 + zram/swap file&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Storage&lt;/td&gt;
+&lt;td&gt;WD Green 240 GB SATA SSD&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+The spec sheet above is a little different than the stock machine: it came with a spinning HDD and a single 4 GB stick of DDR3.&lt;/p&gt;
+&lt;p&gt;I replaced both.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The battery&apos;s designed maximum capacity is 43.8 Wh. It&apos;s an old machine and, obviously, the battery now is damaged and &lt;a href=&quot;https://en.wikipedia.org/wiki/UPower&quot;&gt;upower&lt;/a&gt; shows something around 31 Wh (~70% of health). Fine. The goal of this laptop is to be able to be used for a long time off charge, so the math is simple: hours = Wh ÷ W, so every watt counts double.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/my-inspiron-7-hours-battery-upower.webp&quot; alt=&quot;upower showing the damaged battery&quot; /&gt;
+    &lt;figcaption&gt;upower showing the damaged battery.&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;h3&gt;Replacing some parts&lt;/h3&gt;
+&lt;p&gt;The laptop initially came with a 500 GB spinning HDD. I haven&apos;t &lt;a href=&quot;https://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology&quot;&gt;&lt;em&gt;SMART&lt;/em&gt;&lt;/a&gt;-tested it, but I&apos;m pretty sure it was in bad health (at least as much as the battery), and I want a snappy machine. So I replaced it with a SSD I had around. It&apos;s also great energy-wise: no disk to spin equal less electricity used.&lt;/p&gt;
+&lt;p&gt;I also upgraded the RAM. This laptop only has 1 SO-DIMM slot, and the CPU spec shows that it can handles a maximum of 8 GB of RAM. So I ordered a new Samsung DDR3L 8 GiB 1600 MHz stick and maxed it out the capacity for 140k VND (~$5).&lt;/p&gt;
+&lt;p&gt;Finally, the stock RTL8723BE WiFi card is 2.4 GHz only, limited band, poor performance. Funny story: the Hanoi&apos;s international airport free wifi is 5 GHz, which my card couldn&apos;t even see. So I swapped that old card with an &lt;a href=&quot;https://www.intel.com/content/www/us/en/products/sku/83635/intel-dual-band-wirelessac-7265/specifications.html&quot;&gt;Intel Dual Band Wireless-AC 7265&lt;/a&gt; card from another dead laptop (my &lt;code&gt;inxi&lt;/code&gt; now reports it via &lt;code&gt;iwlwifi&lt;/code&gt;). It improved both Bluetooth and WiFi, added 5 GHz WiFi support, and is likely more energy efficient. So I also count that as an energy improvement.&lt;/p&gt;
+&lt;h2&gt;Step zero: Linux&lt;/h2&gt;
+&lt;p&gt;Before any tuning, there&apos;s an order to things, and step one was leaving the old Windows 7 pre-installed entirely.&lt;/p&gt;
+&lt;p&gt;The reason is simple: I don&apos;t like Windows, I don&apos;t want to travel with an outdated (abandonned?) system, and all the optimizations in this article (&lt;a href=&quot;https://en.wikipedia.org/wiki/Power_states&quot;&gt;CPU C-states&lt;/a&gt;, GPU sleep states in sysfs, TLP, thermald, powertop) are Linux-side controls. I&apos;ve tried to write this article as a kind of tutorial, so everything below assumes you&apos;re on Linux.&lt;/p&gt;
+&lt;h3&gt;The distro hopping&lt;/h3&gt;
+&lt;p&gt;Linux is the kernel and is shipped in a &lt;a href=&quot;https://en.wikipedia.org/wiki/Linux_distribution&quot;&gt;distribution (distro)&lt;/a&gt;. So I had to pick one.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;span&gt;EndeavourOS → MX Linux → Debian&lt;/span&gt;
+    &lt;figcaption&gt;OSs I tried in order. EndeavourOS needs too much maintenance, MX had a lot of tools I wasn&apos;t using, Debian is boringly great.&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://endeavouros.com/&quot;&gt;EndeavourOS&lt;/a&gt;, my main OS for +5 years, &lt;a href=&quot;https://en.wikipedia.org/wiki/List_of_Linux_distributions#Arch_Linux-based&quot;&gt;Arch-based&lt;/a&gt;. But Arch Linux needs regular updates to stay healthy (it&apos;s a &lt;a href=&quot;https://en.wikipedia.org/wiki/Arch_Linux&quot;&gt;rolling release Linux distribution&lt;/a&gt;), and a travel laptop can sit untouched for weeks between trips. Rolling release is a bad fit for it.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://mxlinux.org/&quot;&gt;MX Linux&lt;/a&gt;, I listened to the internet crowd that recommends &amp;quot;distros focused on old laptops&amp;quot; and gave it a try. It was fine. It wasn&apos;t useful either, and, since I wasn&apos;t using any of their tools, I replaced it.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.debian.org/&quot;&gt;Debian&lt;/a&gt;, the obvious choice, and where I ended up: stable, boring in the best sense, no update treadmill while traveling. This is what runs on the machine today.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;The desktop hopping&lt;/h3&gt;
+&lt;p&gt;The distro is just the base, and I still had to pick a &lt;a href=&quot;https://en.wikipedia.org/wiki/Desktop_environment&quot;&gt;desktop environment (&lt;em&gt;DE&lt;/em&gt; for short)&lt;/a&gt; (the graphical interface of the OS). My criteria: get something super lightweight (resources wise) to get the best battery, and comfortable on a small screen (11 inches at 720p).&lt;/p&gt;
+&lt;p&gt;Those criteria match pretty well the &lt;a href=&quot;https://en.wikipedia.org/wiki/Tiling_window_manager&quot;&gt;tiling window manager&lt;/a&gt; target. I had some experience with &lt;a href=&quot;https://i3wm.org/&quot;&gt;i3&lt;/a&gt; back in the day, so I&apos;m not lost in the UX or in the ton of small configuration files. So I tried the new cool kids in that category.&lt;/p&gt;
+&lt;p&gt;The issue with tiling (on top of having windows either too big or too small, but never the right size), is that it&apos;s not that great to use if the keyboard isn&apos;t great. And this 10-year-old machine was never super great keyboard-wise (never super great in general?). So the experience wasn&apos;t as good as I expected.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;span&gt;Hyprland → Sway/SwayFX -|→ XFCE → Cinnamon → Budgie&lt;/span&gt;&lt;br/&gt;
+    &lt;span&gt;[Tiling environment] | [Classic x11 environment]&lt;/span&gt;
+    &lt;figcaption&gt;DEs I tried in order. Tiling is not good with a bad keyboard, X11 stayed.&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;One general lesson came out from tuning those DEs (obvious but good to note): compositor effects keep your iGPU awake. Disabling animations, shadows, transparency, etc; and letting the compositor stop redrawing when nothing changes was a real, watt-level, win.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+There&apos;s a lot of interesting stuff to discuss about Wayland compositor details, but I&apos;m not going into it in this article. On this machine, it didn&apos;t have much of an impact and the DE I tried after are not using it &lt;a href=&quot;https://wiki.xfce.org/releng/wayland_roadmap&quot;&gt;yet&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;So I moved to more traditional lightweight DEs. In order of testing then rejection:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://xfce.org/&quot;&gt;XFCE&lt;/a&gt;, light enough, but a little too rough for me after a few weeks of use (no system-wide dark theme, couldn&apos;t make it really pretty).&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)&quot;&gt;Cinnamon&lt;/a&gt;, comfortable, but ~1 GiB of RAM just for the shell on an 8 GiB machine shows up as swap writeback more than it does in watts. Also it was CPU-heavier and was taking some long time to comeback from sleep.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://gnome.org/&quot;&gt;GNOME&lt;/a&gt;, I use it on my main laptop, but no: too heavy for this one, and the UI is simply too large for a small 11″ 720p display.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://buddiesofbudgie.org/&quot;&gt;Budgie&lt;/a&gt;, kind of in-between XFCE and GNOME. It&apos;s pretty enough out of the box and uses as much resources as XFCE (ie. not much). Verdict after living with it: I surprisingly really like it!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!TIP]
+Budgie&apos;s default GTK theme looks a bit dated. I use &lt;a href=&quot;https://github.com/lassekongo83/adw-gtk3&quot;&gt;adw-gtk3&lt;/a&gt; to get a GNOME-style modern look without the GNOME weight. Install it, set it as the GTK theme in Budgie&apos;s appearance settings, and it immediately felt better to me.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/my-inspiron-7-hours-battery-adw.webp&quot; alt=&quot;Dark preview from adw-gtk3&quot; /&gt;
+    &lt;figcaption&gt;Dark preview from https://github.com/lassekongo83/adw-gtk3&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;The power stack&lt;/h2&gt;
+&lt;p&gt;This is the part you can reproduce. Plain Debian + standard tooling, nothing distro-magic. Order matters: kernel parameters first, then GPU, then daemons, then the browser.&lt;/p&gt;
+&lt;h3&gt;[0.] Install Debian with Budgie&lt;/h3&gt;
+&lt;p&gt;Debian doesn&apos;t propose Budgie in its installer, so you install Debian without any GUI then install the desktop environment (one package which pulls everything as dependencies):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;apt install -y budgie-desktop-environment
+reboot
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And now you&apos;ll be greeted with Budgie&apos;s GUI !&lt;/p&gt;
+&lt;h3&gt;[1.] Kernel boot parameters (CPU side)&lt;/h3&gt;
+&lt;p&gt;First step, making the kernel more friendly with the CPU and configuring it to use the hardware as efficiently as possible. To do so, we need to add those parameters in &lt;code&gt;/etc/default/grub&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;GRUB_CMDLINE_LINUX_DEFAULT=&amp;quot;intel_pstate=enable processor.max_cstate=6 intel_idle.max_cstate=6&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then &lt;code&gt;sudo update-grub&lt;/code&gt; and &lt;code&gt;sudo reboot&lt;/code&gt; to apply them.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Debian comes with &lt;a href=&quot;https://en.wikipedia.org/wiki/GNU_GRUB&quot;&gt;GRUB&lt;/a&gt; and not systemd-boot, so configuration is in GRUB.&lt;/li&gt;
+&lt;li&gt;Your &lt;code&gt;GRUB_CMDLINE_LINUX_DEFAULT&lt;/code&gt; might already have some options (like &lt;code&gt;quiet&lt;/code&gt;), just add those new parameters in the existing string.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;What each one does:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;intel_pstate=enable&lt;/code&gt;, switches CPU frequency scaling to Intel&apos;s &lt;a href=&quot;https://docs.kernel.org/admin-guide/pm/intel_pstate.html&quot;&gt;P-state driver&lt;/a&gt; instead of the generic ACPI path. It lets the hardware manage frequencies in-band, which means much better idle behavior than the old driver on this generation.
+&lt;ul&gt;
+&lt;li&gt;To verify it&apos;s actually active, run &lt;code&gt;cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver&lt;/code&gt; and it should print &lt;code&gt;intel_pstate&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;processor.max_cstate=6&lt;/code&gt; and &lt;code&gt;intel_idle.max_cstate=6&lt;/code&gt;, &lt;a href=&quot;https://en.wikipedia.org/wiki/Power_states&quot;&gt;C-states&lt;/a&gt; are CPU sleep depths; deeper states save more idle power at the cost of longer wake latency. Pinning both to 6 makes sure cores actually go deep when idle instead of hovering in shallow states.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;[2.] &lt;code&gt;i915.conf&lt;/code&gt; (GPU side), this is where media playback lives&lt;/h3&gt;
+&lt;p&gt;On this machine, all video decoding happens on the &lt;a href=&quot;https://www.notebookcheck.net/Intel-HD-Graphics-520.149940.0.html&quot;&gt;HD 520&lt;/a&gt;. It&apos;s weak, it&apos;s 15W TDP, it needs to be used efficiently: both not using it when nothing is happening, and using it well (hardware acceleration) when decoding video.&lt;/p&gt;
+&lt;p&gt;So the question for battery life isn&apos;t &amp;quot;how fast does it decode?&amp;quot; but &amp;quot;does it actually sleep when a frame doesn&apos;t need rendering?&amp;quot;. By default, the &lt;a href=&quot;https://www.kernel.org/doc/html/latest/gpu/i915.html&quot;&gt;i915 driver&lt;/a&gt; often doesn&apos;t.&lt;/p&gt;
+&lt;p&gt;Let&apos;s tune it properly in &lt;code&gt;/etc/modprobe.d/i915.conf&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;options i915 enable_rc6=1
+options i915 enable_fbc=1
+options i915 enable_psr=1
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;enable_rc6=1&lt;/code&gt;, &lt;a href=&quot;https://wiki.ubuntu.com/Kernel/PowerManagementRC6&quot;&gt;RC6&lt;/a&gt; is the GPU&apos;s deep idle state. When nothing is being rendered, the 3D engine powers down instead of idling awake. This did most of the heavy lifting on my machine, the iGPU was simply staying up for no reason before.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;enable_fbc=1&lt;/code&gt;, &lt;a href=&quot;https://wiki.archlinux.org/title/Intel_graphics#Framebuffer_compression_(enable_fbc)&quot;&gt;framebuffer compression&lt;/a&gt;. If the screen content doesn&apos;t change (a paused video, a static page), the display reads from compressed memory instead of forcing full-bandwidth refreshes: less RAM traffic, less iGPU work, less power.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;enable_psr=1&lt;/code&gt;, &lt;a href=&quot;https://wiki.archlinux.org/title/Intel_graphics#Panel_Self_Refresh&quot;&gt;panel self-refresh&lt;/a&gt;: the display controller keeps showing the last frame itself while nothing changes, so the GPU doesn&apos;t re-send it at all. Caveat: PSR is panel-dependent and can cause flickering on some panels (mine survived it; if yours doesn&apos;t, try PSR2, or drop this line entirely).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;[3.] thermald&lt;/h3&gt;
+&lt;p&gt;As it&apos;s a travel laptop, having good battery is great, but having a laptop not burning me is even better. Good thermal also helps power: no fan = more battery, etc.&lt;/p&gt;
+&lt;p&gt;To do so, I install &lt;a href=&quot;https://wiki.debian.org/thermald&quot;&gt;&lt;code&gt;thermald&lt;/code&gt;&lt;/a&gt; :&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sudo apt install -y thermald &amp;amp;&amp;amp; sudo systemctl enable --now thermald
+# Check that it&apos;s running
+systemctl status thermald
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;a href=&quot;https://wiki.debian.org/thermald&quot;&gt;thermald&lt;/a&gt; is Intel&apos;s thermal daemon: it reads the CPU/GPU thermal sensors and adjusts cooling policy &lt;em&gt;before&lt;/em&gt; you hit hard throttling. On sustained video decode that matters. Without a proper thermal policy, the GPU oscillates between &amp;quot;too hot&amp;quot; and &amp;quot;thermal throttle&amp;quot;, which is both noisier and less efficient than staying in a stable state.&lt;/p&gt;
+&lt;h3&gt;[4.] TLP instead of power-profiles-daemon&lt;/h3&gt;
+&lt;p&gt;Debian uses &lt;a href=&quot;https://linrunner.de/tlp/faq/ppd.html&quot;&gt;power-profiles-daemon (PPD)&lt;/a&gt; by default. PPD is built for modern hardware: it exposes three coarse profiles (balanced / power-saver / performance) that the user has to manually manage, and hands the rest to the kernel. I read that, on older Intel, that&apos;s not enough surface area; but mainly, that&apos;s not really interesting to me as I would leave it on &lt;em&gt;power-saving&lt;/em&gt; all the time anyway.&lt;/p&gt;
+&lt;p&gt;So I replaced it with &lt;a href=&quot;https://linrunner.de/en/tlp/docs/tlp-home.html&quot;&gt;TLP&lt;/a&gt; which is &lt;em&gt;&amp;quot;a feature-rich Linux utility designed to save laptop battery power&amp;quot;[^2]&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;One thing worth knowing about TLP: it has no auto-tune mode, so it needs to be configured manually. But its defaults already implement &lt;em&gt;powertop&lt;/em&gt;&apos;s recommendations out of the box (so &amp;quot;install and leave it&amp;quot; is a legitimate baseline), and it supports per-machine drop-in configs in &lt;code&gt;/etc/tlp.d/&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sudo apt install tlp tlp-rdw
+sudo systemctl enable --now tlp
+tlp-stat -s   # sanity check
+&lt;/code&gt;&lt;/pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;[!NOTE]
+PPD and TLP are conflicting packages, so installing TLP will automatically remove the pre-installed PPD package.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;My drop-in for this machine, &lt;code&gt;/etc/tlp.d/01-skylake-dell.conf&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;# CPU
+CPU_SCALING_GOVERNOR_ON_AC=powersave
+CPU_SCALING_GOVERNOR_ON_BAT=powersave
+CPU_MAX_PERF_ON_AC=100
+CPU_MAX_PERF_ON_BAT=50
+CPU_MIN_PERF_ON_AC=5
+CPU_MIN_PERF_ON_BAT=5
+CPU_BOOST_ON_AC=1
+# Disabling would improve battery, but it really impacts experience
+# CPU_BOOST_ON_BAT=0
+CPU_ENERGY_PERF_POLICY_ON_AC=balance_performance
+CPU_ENERGY_PERF_POLICY_ON_BAT=power
+
+# Intel GPU
+INTEL_GPU_MIN_FREQ_ON_AC=350
+INTEL_GPU_MIN_FREQ_ON_BAT=350
+INTEL_GPU_MAX_FREQ_ON_AC=1000
+INTEL_GPU_MAX_FREQ_ON_BAT=650
+INTEL_GPU_BOOST_FREQ_ON_AC=1000
+INTEL_GPU_BOOST_FREQ_ON_BAT=650
+
+# SSD -- no spindown, SSDs don&apos;t spin
+DISK_APM_LEVEL_ON_AC=&amp;quot;254 254&amp;quot;
+DISK_APM_LEVEL_ON_BAT=&amp;quot;254 254&amp;quot;
+DISK_SPINDOWN_TIMEOUT_ON_AC=&amp;quot;0 0&amp;quot;
+DISK_SPINDOWN_TIMEOUT_ON_BAT=&amp;quot;0 0&amp;quot;
+
+# WiFi power saving
+WIFI_PWR_ON_AC=off
+# Disabling would improve battery, but it really impacts experience
+# WIFI_PWR_ON_BAT=on
+
+# USB autosuspend
+USB_AUTOSUSPEND=1
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;[5.] Screen brightness&lt;/h3&gt;
+&lt;p&gt;Before talking about the softwares: screen brightness is the single most impactful variable on this machine. The 11.6″ 1366×768 panel draws somewhere between 0.8 W and 2.5 W depending on brightness, which on a 31 Wh battery quickly adds up. At full brightness that&apos;s 10–12% of my energy budget.&lt;/p&gt;
+&lt;p&gt;Unfortunalty, there&apos;s no configuration I can use to optimize this power consumption, I should just be careful to not have my screen uselessly too bright if I want to keep good battery life.&lt;/p&gt;
+&lt;h3&gt;[6.] Firefox, tuning for streaming&lt;/h3&gt;
+&lt;p&gt;Every power snapshot I took showed the same #1 consumer: &lt;a href=&quot;https://www.mozilla.org/firefox/&quot;&gt;Firefox&lt;/a&gt;. All the settings below go in &lt;a href=&quot;about:config&quot;&gt;&lt;code&gt;about:config&lt;/code&gt;&lt;/a&gt; setting page: accept the warning, then search for each key in the top bar and change the values accordingly.&lt;/p&gt;
+&lt;details&gt;
+  &lt;summary&gt;The list is quite long.So feel free to extend it if you&apos;re interested, or skip it :)&lt;/summary&gt;
+&lt;h4&gt;Hardware acceleration and graphics&lt;/h4&gt;
+&lt;p&gt;This is the core of it. On the HD 520, hardware video decode versus software decode is a 2~3× difference in CPU load on a single 720p stream:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;media.ffmpeg.vaapi.enabled = true
+media.hardware-video-decoding.enabled = true
+media.hardware-video-decoding.force-enabled = true
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;These three enable &lt;a href=&quot;https://en.wikipedia.org/wiki/Video_Acceleration_API&quot;&gt;VA-API&lt;/a&gt; hardware decode; without them, every video plays entirely on the CPU.
+After enabling them, verify in &lt;code&gt;about:support&lt;/code&gt; that &lt;strong&gt;Hardware Video Decoding&lt;/strong&gt; shows &amp;quot;available&amp;quot; and &lt;strong&gt;Compositing&lt;/strong&gt; is not &amp;quot;Basic&amp;quot;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;media.av1.enabled = false
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;YouTube increasingly serves &lt;a href=&quot;https://en.wikipedia.org/wiki/AV1&quot;&gt;AV1&lt;/a&gt; by default (and it&apos;s great, open-source format, better performance, etc), and AV1 decode is software-only on the HD 520 (bad). Disabling it forces fallback to VP9 or H.264, both of which the iGPU decodes in hardware (cf. point above). So we disable it.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;gfx.webrender.all = false
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;WebRender increases power draw on this GPU generation; disabling it lets the i915 driver use its own compositing path, which behaves better on Skylake. If you&apos;re on newer Intel (Tiger Lake and up), skip this one. Check &lt;code&gt;about:support&lt;/code&gt; afterwards: if Compositing reads &amp;quot;Basic&amp;quot;, WebRender was your only working GPU compositor and this line is costing more than it saves.&lt;/p&gt;
+&lt;p&gt;Not what it sounds like in current Firefox: this does not turn WebRender off. &lt;code&gt;about:support&lt;/code&gt; still reports Compositing as &amp;quot;WebRender&amp;quot; afterwards, which I&apos;ve verified on this machine. It switches WebRender to a different rendering path, the i915 driver&apos;s default, and that&apos;s where the power saving comes from on the HD 520. If you&apos;re on newer Intel (Tiger Lake and up), skip it, that path is an old-driver thing.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;layers.acceleration.disabled = false
+layers.omtp.enabled = true
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Keep GPU compositing on. And enabling &lt;code&gt;omtp&lt;/code&gt; to offload painting to a separate thread, which smooths out the compositor without increasing draw calls.&lt;/p&gt;
+&lt;h4&gt;Power and background activity&lt;/h4&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;browser.tabs.remote.warmup.enabled = false
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Firefox pre-warms content processes for tabs you haven&apos;t opened yet. On a dual-core machine with limited RAM that&apos;s wasted overhead; if you&apos;d rather keep it, &lt;code&gt;browser.tabs.remote.warmup.maxTabs = 1&lt;/code&gt; limits how many get warmed.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;layout.frame_rate = 30
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Caps the browser&apos;s render rate at 30 fps. On a 60 Hz panel that cuts compositor work roughly in half during scrolling and animations; pages still feel fine, and you&apos;d only notice the cap on something heavier than a news article. (Known quirk: &lt;a href=&quot;https://bugzilla.mozilla.org/show_bug.cgi?id=1897251&quot;&gt;an open bug&lt;/a&gt; has this pref ignored when &lt;code&gt;privacy.resistFingerprinting&lt;/code&gt; is active).&lt;/p&gt;
+&lt;h4&gt;Memory management&lt;/h4&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;browser.cache.disk.enable = false
+browser.cache.memory.enable = true
+browser.cache.memory.capacity = 51200
+browser.cache.memory.max_entry_size = 5120
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Disabling the disk cache in favor of a fixed ~50 MB memory cache trades some I/O for RAM. On an SSD the speed difference is small, but it removes the periodic cache-write stalls that can show up as brief freezes on lighter hardware.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;browser.tabs.unloadOnLowMemory = true
+dom.ipc.processCount = 4
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;unloadOnLowMemory&lt;/code&gt; lets Firefox discard background tabs from RAM under pressure instead of letting you hit swap (it skips anything playing media or in Picture-in-Picture). &lt;code&gt;dom.ipc.processCount = 4&lt;/code&gt; caps content processes; the default scales with core count and creates more than a dual-core machine benefits from.&lt;/p&gt;
+&lt;h4&gt;AI features, telemetry, prefetching&lt;/h4&gt;
+&lt;p&gt;Recent Firefox versions ship background ML features that run local inference: the sidebar chat, smart tab grouping, link previews. None of them are useful for me on this travel machine:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;browser.ml.chat.enabled = false
+browser.tabs.groups.smart.enabled = false
+browser.urlbar.suggest.addons = false
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In the settings UI as well: &lt;strong&gt;Settings → Privacy &amp;amp; Security → Firefox Data Collection and Use&lt;/strong&gt;, turn everything off. It won&apos;t move the power needle, but it cuts background network activity.&lt;/p&gt;
+&lt;p&gt;And stop speculative networking entirely:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ini&quot;&gt;network.dns.disablePrefetch = true
+network.prefetch-next = false
+network.predictor.enabled = false
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;By default Firefox resolves DNS ahead of time and prefetches links it guesses you&apos;ll click. On a travel machine with limited WiFi those requests are pure waste, and each one is another radio wake-up to work around in power saving mode.&lt;/p&gt;
+&lt;h4&gt;Addons&lt;/h4&gt;
+&lt;p&gt;Three addons that compound the &lt;code&gt;about:config&lt;/code&gt; work:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://addons.mozilla.org/en-US/firefox/addon/ublock-origin/&quot;&gt;uBlock Origin&lt;/a&gt;: blocks ads and trackers. Fewer network requests, less DOM to render, lower CPU load across every page you visit.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://addons.mozilla.org/en-US/firefox/addon/youtube-high-definition/&quot;&gt;YouTube High Definition&lt;/a&gt;: set YouTube preferred resolution to 720p. The screen is 1366×768, so anything above that is purely waste work (default setting of the addon is &amp;quot;highest quality possible&amp;quot;, which is the opposite of what we want here).&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://addons.mozilla.org/en-US/firefox/addon/auto-tab-discard/&quot;&gt;Auto Tab Discard&lt;/a&gt;: suspends background tabs after a timeout, but keep some QoL like saving the playtime position on Youtube, not discarding tabs with forms filled, etc.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/details&gt;
+&lt;h3&gt;[-1.] What I did &lt;em&gt;not&lt;/em&gt; do: Undervolting&lt;/h3&gt;
+&lt;p&gt;Skylake in principle supports it via &lt;code&gt;intel-undervolt&lt;/code&gt; (unlike my &lt;a href=&quot;../../08/ollama-intel-igpu&quot;&gt;Intel NUC&lt;/a&gt;, which Intel locked after &lt;a href=&quot;https://plundervolt.com/&quot;&gt;Plundervolt&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;But, because of my good habit of updating everything, this laptop&apos;s latest BIOS version locks the voltage MSRs. When I applied a core offset and read the MSR back with &lt;code&gt;rdmsr&lt;/code&gt;, the value hadn&apos;t changed, the write never stuck. No experimentation there possible...&lt;/p&gt;
+&lt;h2&gt;The numbers&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;YouTube playback at stock defaults: 10~15 W. That&apos;s the baseline to beat for &amp;quot;watching video on an old laptop.&amp;quot;&lt;/li&gt;
+&lt;li&gt;After the full stack (kernel params + i915.conf + thermald + TLP + Firefox tuning):
+&lt;ul&gt;
+&lt;li&gt;Idle in power-saver mode drops from the ~5 W region to under 3.5 W;&lt;/li&gt;
+&lt;li&gt;Web browsing (light load): ~5.5 W (deep sleep S3 active, powersave governor everywhere);&lt;/li&gt;
+&lt;li&gt;Watching YouTube is around 7~9 W.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I also did some A/B-testing over the DEs under identical load: XFCE, Cinnamon, and Budgie all came within ~0.3 W of each other (within my measurement noise). Expected, since they share mostly identical libraries, but it confirms the shell is not a meaningful power-saving lever.&lt;/p&gt;
+&lt;h2&gt;Bref&lt;/h2&gt;
+&lt;p&gt;This is how a decade-old slow laptop can become a great machine with 7+ hours of video playback. Not as good as it could be (tiling was better battery-wise, I could tune some settings more aggressively to save more battery but it would impact my experience), but this laptop now does its job, which was the actual goal all along.&lt;/p&gt;
+&lt;figure&gt;
+    &lt;img src=&quot;https://arthurbrugiere.fr/images/my-inspiron-7-hours-battery-fetch.webp&quot; alt=&quot;Screenshot of the desktop with a terminal and fastfetch displayed&quot; /&gt;
+    &lt;figcaption&gt;Final obliged fastfetch of my laptop.&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;I now have a snappy, cheap (probably $40~50 total), small and lightweight machine (both to carry and resource wise) that I carry on for holidays to watch movies and stuff 😁&lt;/p&gt;
+&lt;!-- --- --&gt;
+&lt;p&gt;[^1]: In Vietnam, what is called &lt;em&gt;&amp;quot;limousine&amp;quot;&lt;/em&gt; is more of a small bus, quite common for travel between cities. I&apos;m not rich enough to move with &lt;em&gt;real&lt;/em&gt; limousines.
+[^2]: https://linrunner.de/tlp/introduction.html&lt;/p&gt;
+</content:encoded></item><item><title>Three LFM2.5-2.6B in parallel on an iGPU</title><link>https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/</link><guid isPermaLink="true">https://arthurbrugiere.fr/blog/2026/08/llama-server-lfm-parallel/</guid><description>Ollama queued every request in a single slot because lfm2 is blocklisted from parallelism. llama-server fixed it.</description><pubDate>Fri, 21 Aug 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Since &lt;a href=&quot;https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/&quot;&gt;my last post&lt;/a&gt;, &lt;a href=&quot;https://ollama.com&quot;&gt;Ollama&lt;/a&gt; has been serving &lt;a href=&quot;https://www.liquid.ai/blog/lfm2-5-2-6b&quot;&gt;LFM2.5-2.6B&lt;/a&gt; from the Iris Xe iGPU of my Intel NUC. And, since it works, I started using it in my homelab.&lt;/p&gt;
 &lt;p&gt;&lt;a href=&quot;https://openwebui.com&quot;&gt;OpenWebUI&lt;/a&gt; for chat, my &lt;a href=&quot;https://hermes-agent.nousresearch.com&quot;&gt;agent Hermes&lt;/a&gt; pointed at the same Ollama endpoint, both expecting something that answers while they talk. Within a day or two, the machine felt broken again: I&apos;d send one message and Ollama was slow again to begin answering, even when nothing else should have been talking to my model.&lt;/p&gt;
 &lt;h2&gt;What OpenWebUI actually sends&lt;/h2&gt;
 &lt;p&gt;I discovered that OpenWebUI does work on its own. After every exchange it fires background jobs that generate a conversation title, tags, follow-up suggestions and such, and each job replays the whole conversation as context. Mine were around &lt;code&gt;6,400 tokens&lt;/code&gt; by then (around 30s to prefill), so a single title job asked my iGPU to re-read everything just to write one short name for the chat.&lt;/p&gt;
