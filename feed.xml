@@ -3,10 +3,23 @@
 	<id>https://arthurbrugiere.fr/</id>
 	<title>Arthur Brugière</title>
 	<subtitle>Computer Researcher / IT Geek</subtitle>
-	<updated>2026-09-06T00:00:00.000Z</updated>
+	<updated>2026-09-23T00:00:00.000Z</updated>
 	<link rel="self" type="application/atom+xml" href="https://arthurbrugiere.fr/feed.xml" />
 	<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/" />
 	<author><name>Arthur Brugière</name></author>
+	<entry>
+		<id>https://theconversation.com/fusion-ird-cnrs-les-specificites-de-lird-qui-seraient-perdues-a-la-suite-du-projet-de-reorganisation-289436</id>
+		<title>Fusion IRD‑CNRS : les spécificités de l’IRD qui seraient perdues à la suite du projet de réorganisation</title>
+		<link rel="alternate" type="text/html" href="https://theconversation.com/fusion-ird-cnrs-les-specificites-de-lird-qui-seraient-perdues-a-la-suite-du-projet-de-reorganisation-289436" />
+		<published>2026-09-23T00:00:00.000Z</published>
+		<updated>2026-09-23T00:00:00.000Z</updated>
+		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
+		<category term="french research" />
+		<summary type="html">France’s proposed merger of the IRD with the CNRS could put at risk the IRD’s unique role in sustainable development research and eight decades of partnerships with countries in the Global South.</summary>
+		<content type="html"><![CDATA[<p>France’s proposed merger of the IRD with the CNRS could put at risk the IRD’s unique role in sustainable development research and eight decades of partnerships with countries in the Global South.</p>
+<p><a href="https://theconversation.com/fusion-ird-cnrs-les-specificites-de-lird-qui-seraient-perdues-a-la-suite-du-projet-de-reorganisation-289436">Read on The Conversation ↗</a></p>
+]]></content>
+	</entry>
 	<entry>
 		<id>https://arthurbrugiere.fr/blog/2026/09/my-inspiron-7-hours-battery/</id>
 		<title>My $50 flea-market Dell with 7+ hours of video on one charge</title>
