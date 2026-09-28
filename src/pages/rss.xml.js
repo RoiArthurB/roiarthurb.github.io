@@ -1,6 +1,6 @@
 import rss from '@astrojs/rss';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import { renderPostHtml } from '../utils/feed';
+import { renderEntryHtml } from '../utils/feed';
 import { getPublishedPosts } from '../utils/posts';
 
 export async function GET(context) {
@@ -12,8 +12,8 @@ export async function GET(context) {
 		site: context.site,
 		items: posts.map((post) => ({
 			...post.data,
-			link: `/blog/${post.id}/`,
-			content: renderPostHtml(post.body, origin),
+			link: post.data.url ?? `/blog/${post.id}/`,
+			content: renderEntryHtml(post, origin),
 		})),
 	});
 }

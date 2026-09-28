@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { resolve } from "node:path";
 import { getCollection } from "astro:content";
 import { generateOgImage, type OgOptions } from "../utils/generateOgImage";
+import { fetchExternalThumbnail } from "../utils/externalThumbnail";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import projectsData from "../data/projects.json";
 
@@ -40,6 +41,8 @@ export async function getStaticPaths() {
             icon: 'book',
             bgImage: post.data.heroImage ? resolveBlogHeroImage(post.data.heroImage.src) : undefined,
             seed: post.id,
+            // External posts without their own hero borrow the remote article's image.
+            externalUrl: post.data.heroImage ? undefined : post.data.url,
         },
     }));
 
@@ -59,6 +62,11 @@ export async function getStaticPaths() {
 }
 
 export const GET: APIRoute = async ({ props }) => {
+    const external = props.externalUrl && await fetchExternalThumbnail(props.externalUrl as string);
+    if (external) {
+        return new Response(new Uint8Array(external), { headers: { "Content-Type": "image/webp" } });
+    }
+
     const safeTitle = (props.title as string).replace(/&/g, 'and');
     return new Response(
         await generateOgImage(safeTitle, props.subtitle as string, {

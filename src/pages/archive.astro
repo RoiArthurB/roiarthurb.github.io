@@ -4,8 +4,7 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import { url } from '../utils/paths';
-import { getPublishedPosts } from '../utils/posts';
+import { getPublishedPosts, postLink } from '../utils/posts';
 
 const posts = await getPublishedPosts();
 
@@ -70,6 +69,16 @@ const years = Object.keys(groupedPosts).map(Number).sort((a, b) => b - a);
             .archive-link:hover {
                 color: var(--color-accent);
             }
+            .archive-external {
+                color: var(--color-accent);
+                font-size: 0.8em;
+            }
+            .archive-publisher {
+                color: var(--color-text-muted);
+                font-size: 0.9rem;
+                font-style: italic;
+                white-space: nowrap;
+            }
 
             @media (max-width: 600px) {
                 .archive-item {
@@ -105,9 +114,11 @@ const years = Object.keys(groupedPosts).map(Number).sort((a, b) => b - a);
                                             <span class="archive-date">
                                                 <FormattedDate date={post.data.pubDate} />
                                             </span>
-                                            <a href={url(`/blog/${post.id}/`)} class="archive-link">
+                                            <a href={postLink(post).href} target={postLink(post).target} rel={postLink(post).rel} class="archive-link">
                                                 {post.data.title}
+                                                {post.data.url && <span class="archive-external" aria-label="(external, opens in a new tab)">&nearr;</span>}
                                             </a>
+                                            {post.data.publisher && <span class="archive-publisher">on {post.data.publisher}</span>}
                                         </li>
                                     ))}
                                 </ul>

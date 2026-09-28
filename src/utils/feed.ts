@@ -1,3 +1,4 @@
+import type { CollectionEntry } from 'astro:content';
 import MarkdownIt from 'markdown-it';
 import { url } from './paths';
 
@@ -21,4 +22,14 @@ export function renderPostHtml(body: string | undefined, origin: URL): string {
 			ROOT_RELATIVE_ATTR,
 			(_match, attr: string, path: string) => `${attr}${new URL(url(path), origin).href}"`,
 		);
+}
+
+/**
+ * Feed-ready HTML for any post. External posts have no body, so subscribers get
+ * the summary and a link to the real article instead.
+ */
+export function renderEntryHtml(post: CollectionEntry<'blog'>, origin: URL): string {
+	const { url: href, publisher, description } = post.data;
+	if (!href) return renderPostHtml(post.body, origin);
+	return md.render(`${description}\n\n[Read on ${publisher} ↗](${href})`);
 }

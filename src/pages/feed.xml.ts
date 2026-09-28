@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import authorsData from '../data/authors.json';
-import { renderPostHtml } from '../utils/feed';
+import { renderEntryHtml } from '../utils/feed';
 import { url } from '../utils/paths';
 import { getPublishedPosts } from '../utils/posts';
 
@@ -25,7 +25,7 @@ export const GET: APIRoute = async ({ site, request }) => {
 	const authorFor = (id: string) => authorsData.find((author) => author.id === id);
 
 	const entries = posts.map((post) => {
-		const link = absolute(`/blog/${post.id}/`);
+		const link = post.data.url ?? absolute(`/blog/${post.id}/`);
 		const published = new Date(post.data.pubDate).toISOString();
 		const updated = new Date(post.data.updatedDate ?? post.data.pubDate).toISOString();
 
@@ -55,7 +55,7 @@ export const GET: APIRoute = async ({ site, request }) => {
 			...authorTags,
 			...categories,
 			`\t\t<summary type="html">${escapeXml(post.data.description)}</summary>`,
-			`\t\t<content type="html">${cdata(renderPostHtml(post.body, origin))}</content>`,
+			`\t\t<content type="html">${cdata(renderEntryHtml(post, origin))}</content>`,
 			'\t</entry>',
 		].join('\n');
 	});

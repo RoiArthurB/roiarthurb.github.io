@@ -20,6 +20,15 @@ const blog = defineCollection({
 			comments: z.boolean().optional(),
 			tags: z.array(z.string()).optional(),
 			publish: z.boolean().optional(),
+			// External posts: frontmatter-only entries pointing to an article published elsewhere.
+			url: z.string().url().optional(),
+			publisher: z.string().optional(),
+			lang: z.string().optional(),
+			doi: z.string().optional(),
+			archived: z.string().url().optional(),
+		}).refine((data) => !data.url || data.publisher, {
+			message: 'External posts (with a `url`) need a `publisher`',
+			path: ['publisher'],
 		}),
 });
 

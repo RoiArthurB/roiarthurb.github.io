@@ -7,7 +7,7 @@ import { Image } from 'astro:assets';
 import bibFileRaw from '../data/publications.bib?raw';
 import { type Author, formatAuthor, parsePublications } from '../utils/bibtex';
 import { url } from '../utils/paths';
-import { getPublishedPosts } from '../utils/posts';
+import { getPublishedPosts, postLink } from '../utils/posts';
 
 const posts = (await getPublishedPosts()).slice(0, 3);
 
@@ -115,8 +115,9 @@ const publications = parsePublications(bibFileRaw).slice(0, 3);
                     <ul style="list-style: none; padding: 0;">
                         {posts.map((post) => (
                             <li style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--color-border);">
-                                <a href={url(`/blog/${post.id}/`)} style="display: block; font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.25rem;">
+                                <a href={postLink(post).href} target={postLink(post).target} rel={postLink(post).rel} style="display: block; font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.25rem;">
                                     {post.data.title}
+                                    {post.data.url && <span style="color: var(--color-accent);" aria-label="(external, opens in a new tab)"> &nearr;</span>}
                                 </a>
                                 <small style="color: var(--color-text-muted); text-transform: uppercase; font-size: 0.8rem;">
                                     {post.data.pubDate.toLocaleDateString('en-us', {
@@ -124,6 +125,7 @@ const publications = parsePublications(bibFileRaw).slice(0, 3);
                                         month: 'short',
                                         day: 'numeric',
                                     })}
+                                    {post.data.publisher && <> &bull; on {post.data.publisher}</>}
                                 </small>
                             </li>
                         ))}

@@ -3,7 +3,8 @@ import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
+	// External posts only point elsewhere: nothing to render locally.
+	const posts = await getCollection('blog', (post) => !post.data.url);
 	return posts.map((post) => ({
 		params: { slug: post.id },
 		props: post,
