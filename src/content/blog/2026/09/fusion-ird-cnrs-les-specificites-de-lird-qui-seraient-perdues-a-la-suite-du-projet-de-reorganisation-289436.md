@@ -9,6 +9,6 @@ tags: ["french research"]
 lang: "fr"
 doi: "10.64628/AAK.my9ue3krq"
 archived: "https://web.archive.org/web/20260928051303/https://theconversation.com/fusion-ird-cnrs-les-specificites-de-lird-qui-seraient-perdues-a-la-suite-du-projet-de-reorganisation-289436"
-# heroImage:
+heroImage: /public/images/fusion-ird-cnrs-les-specificites-de-lird-qui-seraient-perdues-a-la-suite-du-projet-de-reorganisation-289436.webp
 publish: true
 ---
