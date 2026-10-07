@@ -159,5 +159,41 @@
     "linkedin": "https://www.linkedin.com/in/pierre-larmande-5110b91a/",
     "google_scholar": "https://scholar.google.com/citations?user=BjYnqe8AAAAJ",
     "alumni": false
+  },
+  {
+    "id": "edi-prifti",
+    "name": "Edi Prifti",
+    "role": "Senior researcher",
+    "avatar": "https://github.com/eprifti.png",
+    "github": "https://github.com/eprifti",
+    "linkedin": "https://www.linkedin.com/in/edi-prifti-340304a/",
+    "google_scholar": "https://scholar.google.com/citations?user=Jr_DW_QAAAAJ",
+    "alumni": false
+  },
+  {
+    "id": "jihad-zahir",
+    "name": "Jihad Zahir",
+    "role": "Associate professor",
+    "avatar": "https://media.licdn.com/dms/image/v2/C4D03AQF10XHhskSzmQ/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1635784883897?e=1793232000&v=beta&t=JLEm1CwN621W7F7IvnXtEzlhOjUPtdI3D0N4Dica70Y",
+    "google_scholar": "https://scholar.google.com/citations?user=ufi9sL8AAAAJ",
+    "linkedin": "https://www.linkedin.com/in/jihad-z-00a93a23/",
+    "alumni": false
+  },
+  {
+    "id": "mamadou-sy",
+    "name": "Mamadou Sy",
+    "role": "Senior researcher",
+    "avatar": "https://media.licdn.com/dms/image/v2/D4D03AQH-rQ-3lIx67A/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1697561099615?e=1793232000&v=beta&t=vW7_nWsz2yotOptyyQBZNQy8NfE0OPiXAyU83rmKyLI",
+    "linkedin": "https://www.linkedin.com/in/mamadou-sy-9b495b80/",
+    "alumni": false
+  },
+  {
+    "id": "ramses-djidjou-demasse",
+    "name": "Ramsès Djidjou-Demasse",
+    "role": "Senior researcher",
+    "avatar": "https://media.licdn.com/dms/image/v2/D4E03AQFs6lTwstFezQ/profile-displayphoto-crop_800_800/B4EZn9z2eUIoAI-/0/1760899858614?e=1793232000&v=beta&t=n-Io6yjwPfKZiV2i5rEt3EHIw1KlEw8Im5fCbHxdrNc",
+    "linkedin": "https://www.linkedin.com/in/ramses-djidjou-demasse-58a36234/",
+    "google_scholar": "https://scholar.google.com/citations?user=tIgNPfkAAAAJ",
+    "alumni": false
   }
 ]
