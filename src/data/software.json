@@ -26,6 +26,7 @@
     "title": "Auto Sci-Hub",
     "description": "Cross-Browser Plugin to open Sci-Hub page with the article from your current tab.",
     "since": [2019, 2022],
+    "logo": "https://raw.githubusercontent.com/RoiArthurB/Side-Auto_Sci-Hub/master/icons/logo-128.png",
     "role": "Lead Developer",
     "tags": ["JavaScript", "browser extension", "science"],
     "github": "https://github.com/RoiArthurB/Side-Auto_Sci-Hub"
