@@ -31,7 +31,11 @@ async function encodeImageAsDataUri(source: string): Promise<string | null> {
             const mime = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim();
             return `data:${mime};base64,${buf.toString('base64')}`;
         }
-        const data = await readFile(source);
+        const resolved = resolve(source);
+        if (!resolved.startsWith(process.cwd() + '/')) {
+            return null;
+        }
+        const data = await readFile(resolved);
         const ext = source.split('.').pop()?.toLowerCase() ?? 'jpg';
         const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
         return `data:${mime};base64,${data.toString('base64')}`;
