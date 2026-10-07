@@ -10,7 +10,7 @@ import { getPublishedPosts } from '../../utils/posts';
 export async function getStaticPaths() {
     const posts = await getPublishedPosts();
 
-    const pageSize = 4;
+    const pageSize = 6;
     const totalPages = Math.max(1, Math.ceil(posts.length / pageSize));
     const paths = [];
 
