@@ -3,10 +3,241 @@
 	<id>https://arthurbrugiere.fr/</id>
 	<title>Arthur Brugière</title>
 	<subtitle>Computer Researcher / IT Geek</subtitle>
-	<updated>2026-09-23T00:00:00.000Z</updated>
+	<updated>2026-10-21T00:00:00.000Z</updated>
 	<link rel="self" type="application/atom+xml" href="https://arthurbrugiere.fr/feed.xml" />
 	<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/" />
 	<author><name>Arthur Brugière</name></author>
+	<entry>
+		<id>https://arthurbrugiere.fr/blog/2026/10/eduvpn-split-tunnel/</id>
+		<title>Making a split tunnel out of eduVPN for mail and intranet only</title>
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/2026/10/eduvpn-split-tunnel/" />
+		<published>2026-10-21T00:00:00.000Z</published>
+		<updated>2026-10-21T00:00:00.000Z</updated>
+		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
+		<category term="linux" />
+		<category term="network" />
+		<category term="wireguard" />
+		<category term="networkmanager" />
+		<category term="vpn" />
+		<summary type="html">My institute wants me on a VPN to send mail, but I made that VPN carry only my mails and nothing more.</summary>
+		<content type="html"><![CDATA[<p>My institute (IRD) was hacked recently and is strengthening its security by requiring all users to use a VPN. As a result, I can only send mail from Thunderbird on my professional laptop when I'm connected to its <a href="https://www.eduvpn.org/">eduVPN</a> (an institutional VPN solution). The problem: I'm working in Vietnam and the VPN is hosted in France. I don't want my whole laptop behind that VPN for the sake of one SMTP server (a ping to <code>1.1.1.1</code> went from around <em>37 ms</em> to around <em>330 ms</em> on the VPN).</p>
+<p>I tweaked and tried a lot of things, and ended up letting the official client connect, then using a NetworkManager dispatcher script to remove the VPN's catch-all rule and re-enable the tunnel only for the few destinations that really need it (such as the mail server).</p>
+<p>Here is the path in order, dead ends included, so you can skip the ones I fell into. If you're on Linux with <a href="https://en.wikipedia.org/wiki/NetworkManager"><em>NetworkManager</em></a> and a <a href="https://en.wikipedia.org/wiki/WireGuard"><em>WireGuard</em></a> VPN that grabs your whole default route, this should help even if you're not using eduVPN.</p>
+<h2>The setup</h2>
+<ul>
+<li>A Linux laptop on Wi-Fi (<code>wlan0</code>).
+<ul>
+<li>This article should apply to any distro, but I'm running <a href="https://endeavouros.com/">EndeavourOS</a> (Arch Linux based) with NetworkManager <code>v1.58.1</code>.</li>
+</ul>
+</li>
+<li>The official <a href="https://www.eduvpn.org/">eduVPN</a> Linux client. You open the app, log in through the browser with SSO, and it hands a <em>WireGuard</em> connection named <code>eduVPN</code> to NetworkManager.
+<ul>
+<li>The client creates a new 12-hour session every time I connect.</li>
+<li>More on this below.</li>
+</ul>
+</li>
+</ul>
+<p>My goal is to keep my work's VPN active all the time, but only send the needed traffic (mail, intranet, etc.) through it. The solution needs to be as robust and low-maintenance as possible (zero maintenance would be even better). A set-and-forget setup would be perfect 😇</p>
+<blockquote>
+<p>[!NOTE]
+Four terms I'll use a lot:</p>
+<ul>
+<li><strong>Split tunnel</strong>: only some of my traffic goes through the VPN, the rest uses the normal connection (i.e. not the VPN) (<a href="https://en.wikipedia.org/wiki/Split_tunneling">Wikipedia</a>).</li>
+<li><strong>Dispatcher script</strong>: an executable file in <code>/etc/NetworkManager/dispatcher.d/</code> that NetworkManager runs on network events (<em>interface up</em>, <em>interface down</em>...). It receives the interface name and the event as arguments.</li>
+<li><strong>Policy routing</strong> (<code>ip rule</code>): a list of rules, checked in order, that choose <em>which routing table</em> a packet uses (you'll understand it in the article) (<a href="https://en.wikipedia.org/wiki/Policy-based_routing">Wikipedia</a>).</li>
+<li><strong>Handshake</strong>: the WireGuard packet exchange between your VPN client and the server. If <code>wg show</code> says nothing about a &quot;latest handshake&quot;, the server never answered you.</li>
+</ul>
+</blockquote>
+<h2>Idea 1: containerize the VPN and proxy Thunderbird</h2>
+<p>My first idea: run the VPN in a container (with <a href="https://github.com/qdm12/gluetun">gluetun</a> or similar), expose a SOCKS5 proxy, and point Thunderbird at it. I'm fine with 1 s of latency on my whole inbox.</p>
+<p>To do so, gluetun wants a WireGuard or OpenVPN config file, and eduVPN doesn't give a clean config through the client. Also, it's hard to run eduVPN directly in a headless container, as it needs a browser to log in.</p>
+<h3>Let's steal a WireGuard config</h3>
+<p>Looking more closely at what eduVPN is doing, I see that the connection is a WireGuard (lightweight VPN protocol) connection.</p>
+<p>More precisely, the client validates my institute's SSO login and hands its connection (i.e. a WireGuard configuration) to NetworkManager, so the config is in there somewhere[^1]. Let's inspect this new connection with NetworkManager's utility <code>nmcli</code>. By default, <code>nmcli</code> hides the private key (<code>wireguard.private-key: &lt;hidden&gt;</code>), which is needed to rebuild a config file, but not if you ask nicely:</p>
+<pre><code class="language-bash">sudo nmcli --show-secrets -g wireguard.private-key connection show eduVPN
+</code></pre>
+<p>There, I got everything and rebuilt an <code>eduvpn0.conf</code> by hand with one nice twist: <code>AllowedIPs</code> set to the mail server's IP only, instead of the default wildcard (<code>0.0.0.0/0</code>). That makes it a <em>split tunnel</em> by itself: only the mail server goes through the VPN and not the rest of my traffic, and it would even remove the need for Docker. I brought it up with the client disconnected:</p>
+<pre><code class="language-bash">$ sudo wg show
+interface: eduvpn0
+  listening port: 47821
+
+peer: &lt;server-key&gt;
+  endpoint: &lt;endpoint&gt;:51820
+  allowed ips: &lt;mail-ip&gt;/32
+  transfer: 0 B received, 1.45 KiB sent
+  persistent keepalive: every 25 seconds
+
+$ ip route get &lt;mail-ip&gt;
+&lt;mail-ip&gt; dev eduvpn0 src &lt;tunnel-ip&gt; uid 1000
+</code></pre>
+<blockquote>
+<p>[!TIP]
+<code>eduvpn0.conf</code> is my rebuilt WireGuard configuration file.</p>
+<p>WireGuard creates a new interface named after the configuration file (here <code>eduvpn0</code>), as visible in the log above.</p>
+</blockquote>
+<p>The route was right. But look at the transfer line: <em>0 B received</em>, and no <code>latest handshake</code> line at all. My config isn't connecting.</p>
+<p>The reason showed up when I compared my notes: every time I connect and disconnect with the eduVPN client, I get a different public/private key. My explanation (I haven't verified it server-side) is that each session registers a fresh peer, and the old key is dead as soon as the client disconnects (probably both for GDPR reasons, to avoid identifying users, and to keep the pool of VPN IPs rolling). So we can't steal a WireGuard config file. 😥</p>
+<h2>Idea 2: let the client connect, then cut the catch-all rule</h2>
+<p>If I can't have my own config, I can still tweak my laptop: I'll use the client's connection and change its routing afterwards. How does the client send everything into the tunnel? By having NetworkManager set up the appropriate policy rules:</p>
+<pre><code class="language-bash">$ ip rule show
+0:      from all lookup local
+1:      from all to &lt;tunnel-ip&gt;/21 lookup 51860 suppress_prefixlength 0 proto static
+2:      from all to 10.0.0.0/8 lookup main suppress_prefixlength 0 proto static
+2:      from all to &lt;netbird-ip&gt;/12 lookup main suppress_prefixlength 0 proto static
+2:      from all to &lt;laptop-ip&gt;/16 lookup main suppress_prefixlength 0 proto static
+3:      not from all fwmark 0xca94 lookup 51860 proto static
+105:    from all lookup main suppress_prefixlength 0
+110:    not from all fwmark 0x1bd00 lookup 7120
+32766:  from all lookup main
+32767:  from all lookup default
+</code></pre>
+<p>In words: the rule at priority 3 sends everything through routing table <code>51860</code>, whose default route is the tunnel. The WireGuard packets themselves carry a mark (<code>0xca94</code>[^2]) that lets them skip the rule and reach the server through the normal network. Delete the rule, and the catch-all is gone. Then add back a route for what I actually want:</p>
+<pre><code class="language-bash">sudo ip rule del priority 3     # Removing IPv4 catch-all rule
+sudo ip -6 rule del priority 3  # Removing IPv6 catch-all rule
+sudo ip route replace &lt;mail-ip&gt;/32 dev eduVPN # Adding mail server IP to use eduVPN interface
+</code></pre>
+<p>Testing:</p>
+<pre><code class="language-bash">$ ip route get 1.1.1.1
+1.1.1.1 via &lt;gateway&gt; dev wlan0 src &lt;laptop-ip&gt; uid 1000
+$ ip route get &lt;mail-ip&gt;
+&lt;mail-ip&gt; dev eduVPN src &lt;tunnel-ip&gt; uid 1000
+$ sudo wg show eduVPN
+...
+  latest handshake: 17 seconds ago
+  transfer: 6.70 KiB received, 9.16 KiB sent
+</code></pre>
+<p>The internet goes out through Wi-Fi, the mail server goes through the tunnel, and the handshake is fresh. Routing solved. Then I tried to resolve the mail server's name, and nothing: I couldn't resolve my work's webmail anymore.</p>
+<h3>It was DNS</h3>
+<p>The VPN profile pushes a search domain <code>~.</code>, which in resolver language means &quot;send <em>every</em> lookup to the VPN's DNS servers&quot;. Those servers are only reachable through the tunnel, and I had just removed the tunnel from the picture. Every lookup timed out.</p>
+<p>My attempts, in order, all of them wrong:</p>
+<ol>
+<li><code>resolvectl revert eduVPN</code>: <code>Failed to revert interface configuration: ... unknown unit</code>. No <code>systemd-resolved</code>[^3] on this machine.</li>
+<li><code>nmcli connection modify eduVPN ipv4.dns-search ...</code>: worked once, then everything reset at the next connect. The journal explains it: the client <em>deletes and recreates</em> the NetworkManager connection every time (<code>connection-delete</code>), so edits to the profile never survive.</li>
+</ol>
+<ul>
+<li>This could be a good solution, but I don't want to run that command by hand every time, so I'm rejecting it.</li>
+</ul>
+<ol start="3">
+<li>The same <code>nmcli</code> commands from inside the dispatcher script didn't work either, for some reason.</li>
+</ol>
+<p>The actual culprit, much later: on this laptop <code>/etc/resolv.conf</code> isn't owned by NetworkManager at all. <a href="https://netbird.io/">NetBird</a>, my mesh VPN (<a href="https://arthurbrugiere.fr/blog/2026/08/headscale-to-netbird-benchmark/">I talked about it here</a>), rewrites it. So two systems were fighting over one file, which is probably why my NetworkManager edits kept making things worse.</p>
+<p>Long story short, DNS configuration is hard. The fix I went for is to resolve the name at connect time. There's a good window for it: right after the VPN comes up, the catch-all rule is still in place, so the VPN's DNS is reachable and answers. Resolve first, <em>then</em> delete the rule, then add the routes. And since eduVPN ends my session every 12 hours anyway, resolving once per connection is fresh enough (I could even build a proper caching system with a caching DNS resolver like <a href="https://en.wikipedia.org/wiki/Unbound_(DNS_server)">unbound</a>... but that's overkill).</p>
+<h3>More than one host: routing the institute's block</h3>
+<p>Mail works. But I also wanted to reach a couple of institute web services that seem to care where the traffic comes from. Adding hosts by name works (with a simple <code>HOSTS=&quot;a b c&quot;</code> list), but the list only grows, and a wildcard like <code>*.ird.fr</code> can't work: the script routes <em>IP addresses</em>, and DNS has no way to list every host under a domain.</p>
+<p>What does work is routing a whole IP block. <code>whois</code> on one of the institute's addresses:</p>
+<pre><code class="language-txt">$ whois &lt;ird-address&gt; | grep -iE 'inetnum|netname|route|descr'
+inetnum:        91.203.32.0 - 91.203.35.255
+netname:        IRD-NET
+</code></pre>
+<p><code>91.203.32.0</code> to <code>91.203.35.255</code> is exactly <code>91.203.32.0/22</code>. One route, a thousand addresses.</p>
+<p>There's a trap, though, and it's a good one: <strong>the VPN server's own endpoint sits inside that block.</strong> If I route the whole <code>/22</code> into <code>eduVPN</code>, the WireGuard packets to the server get sent into the tunnel itself, and the tunnel dies in a loop. The client's packets skip the <em>catch-all rule</em> thanks to their mark, but they still follow the <em>main routing table</em>, which now says &quot;this /22 goes into the tunnel&quot;. So the script has to pin the endpoint to the real gateway first.</p>
+<h2>Where it landed</h2>
+<p>The final <code>/etc/NetworkManager/dispatcher.d/90-eduvpn-split</code>, with my private values replaced by placeholders:</p>
+<pre><code class="language-sh">#!/bin/sh
+# root:root, chmod 755. Don't forget this part.
+[ &quot;$1&quot; = &quot;eduVPN&quot; ] &amp;&amp; [ &quot;$2&quot; = &quot;up&quot; ] || exit 0
+
+HOSTS=&quot;mail.ird.fr intra.ird.fr&quot;    # hosted at Renater and elsewhere, resolved by name every time
+NETS=&quot;91.203.32.0/22&quot;               # IRD-NET, routed as a whole
+VPN_DNS=&quot;&lt;vpn-dns-1&gt; &lt;vpn-dns-2&gt;&quot;   # the DNS servers pushed by the VPN profile
+DNS1=${VPN_DNS%% *}
+
+{ # 0. Save and date the logs
+  echo &quot;== $(date '+%F %T') eduVPN up&quot;
+
+  # 1. Resolve via the VPN DNS while the tunnel still carries everything
+  IPS4=&quot;&quot;; IPS6=&quot;&quot;
+  for h in $HOSTS; do
+    IPS4=&quot;$IPS4 $(dig +short +time=2 +tries=1 @&quot;$DNS1&quot; &quot;$h&quot; A    | grep -E '^[0-9.]+$')&quot;
+    IPS6=&quot;$IPS6 $(dig +short +time=2 +tries=1 @&quot;$DNS1&quot; &quot;$h&quot; AAAA | grep -E '^[0-9a-f:]+$')&quot;
+  done
+
+  # 2. Pin the WireGuard endpoint to the real gateway (it sits inside IRD-NET)
+  EP=$(wg show eduVPN endpoints | awk '{print $2}' | cut -d: -f1)
+  if [ -n &quot;$EP&quot; ]; then
+    R=$(ip route get &quot;$EP&quot; mark 0xca94 | head -1 | sed -E 's/ (src|uid) .*//; s/^[0-9.]+ //')
+    ip route replace &quot;$EP/32&quot; $R
+    echo &quot;endpoint $EP pinned: $R&quot;
+  else
+    echo &quot;no endpoint found, skipping NETS to avoid a routing loop&quot;
+    NETS=&quot;&quot;
+  fi
+
+  # 3. Drop the catch-all rules
+  ip rule del priority 3
+  ip -6 rule del priority 3
+
+  # 4. Only these destinations use the tunnel
+  for s in $VPN_DNS; do ip route replace &quot;$s/32&quot; dev eduVPN; done
+  for n in $NETS;    do ip route replace &quot;$n&quot; dev eduVPN; done
+  for a in $IPS4;    do ip route replace &quot;$a/32&quot; dev eduVPN; done
+  for a in $IPS6;    do ip -6 route replace &quot;$a/128&quot; dev eduVPN; done
+
+  echo &quot;routed via eduVPN: $VPN_DNS $NETS $IPS4 $IPS6&quot;
+} &gt;&gt; /tmp/eduvpn-split.log 2&gt;&amp;1
+</code></pre>
+<p>What each step does:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Resolve <code>HOSTS</code> through the VPN's DNS</td>
+<td>The tunnel still carries everything at this point, so that DNS answers. Nothing hard-coded: if the mail server's IP changes, the next connection picks it up.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Pin the endpoint to the normal gateway</td>
+<td>Avoids the routing loop described above. If no endpoint is found, the script skips the big route instead of risking it.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Delete the catch-all <code>ip rule</code>, IPv4 and IPv6</td>
+<td>This is what turns &quot;full tunnel&quot; into &quot;split tunnel&quot;.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Add routes for the VPN DNS, the block and the resolved hosts</td>
+<td>Keeps the DNS servers pushed by the profile reachable, so a resolver still pointing at them doesn't time out.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>[!TIP]
+The dispatcher file needs to be (1) a script (in our case a shell script, <code>#!/bin/sh</code>), and (2) executable. It sounds obvious, but I forgot it a lot and complained that nothing was working 😅</p>
+<p>So don't be me, and don't forget to run:</p>
+<pre><code class="language-bash">sudo chmod 755 /etc/NetworkManager/dispatcher.d/90-eduvpn-split
+</code></pre>
+</blockquote>
+<p>The check after connecting:</p>
+<pre><code class="language-bash">$ cat /tmp/eduvpn-split.log
+== 2026-10-20 14:31:12 eduVPN up
+endpoint &lt;endpoint&gt; pinned: via &lt;gateway&gt; dev wlan0
+routed via eduVPN: &lt;vpn-dns-1&gt; &lt;vpn-dns-2&gt; 91.203.32.0/22  &lt;mail-ip&gt;
+== 2026-10-21 10:32:00 eduVPN up
+endpoint &lt;endpoint&gt; pinned: via &lt;gateway&gt; dev wlan0
+routed via eduVPN: &lt;vpn-dns-1&gt; &lt;vpn-dns-2&gt; 91.203.32.0/22  &lt;mail-ip&gt; &lt;internal-host-ip&gt;
+
+$ ip route get &lt;ird-address&gt;
+&lt;ird-address&gt; dev eduVPN src &lt;tunnel-ip&gt; uid 1000
+$ ip route get &lt;endpoint&gt;
+&lt;endpoint&gt; via &lt;gateway&gt; dev wlan0 src &lt;laptop-ip&gt; uid 1000
+$ sudo wg show eduVPN | grep handshake
+  latest handshake: 20 seconds ago
+</code></pre>
+<p>Two connections, two runs of the script, and the handshake keeps refreshing, so no loop. The script also runs automatically every time I enable the VPN, so there's no manual task (other than starting the VPN and reconnecting every 12 hours). And I can now send email from Thunderbird without having my whole network travel around the planet.</p>
+<!-- --- -->
+<p>[^1]: I'm a <em>H4cK3r</em>, so I'll do most of the things in the terminal.
+[^2]: <code>0xca94</code> is <code>51860</code> in hexadecimal, the same number as the routing table.
+[^3]: EndeavourOS uses <code>systemd-resolvconf</code> instead.</p>
+]]></content>
+	</entry>
 	<entry>
 		<id>https://theconversation.com/fusion-ird-cnrs-les-specificites-de-lird-qui-seraient-perdues-a-la-suite-du-projet-de-reorganisation-289436</id>
 		<title>Fusion IRD‑CNRS : les spécificités de l’IRD qui seraient perdues à la suite du projet de réorganisation</title>
