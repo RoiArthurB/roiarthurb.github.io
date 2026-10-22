@@ -15,6 +15,12 @@ publish: true
 
 My institute (IRD) was hacked recently and is strengthening its security by requiring all users to use a VPN. As a result, I can only send mail from Thunderbird on my professional laptop when I'm connected to its [eduVPN](https://www.eduvpn.org/) (an institutional VPN solution). The problem: I'm working in Vietnam and the VPN is hosted in France. I don't want my whole laptop behind that VPN for the sake of one SMTP server (a ping to `1.1.1.1` went from around *37 ms* to around *330 ms* on the VPN).
 
+<figure>
+    <img src="/images/eduvpn-split-tunnel-eduVPN-logo.webp" alt="eduVPN Logo" />
+    <figcaption>eduVPN Logo</figcaption>
+</figure>
+
+
 I tweaked and tried a lot of things, and ended up letting the official client connect, then using a NetworkManager dispatcher script to remove the VPN's catch-all rule and re-enable the tunnel only for the few destinations that really need it (such as the mail server).
 
 Here is the path in order, dead ends included, so you can skip the ones I fell into. If you're on Linux with [*NetworkManager*](https://en.wikipedia.org/wiki/NetworkManager) and a [*WireGuard*](https://en.wikipedia.org/wiki/WireGuard) VPN that grabs your whole default route, this should help even if you're not using eduVPN.
@@ -79,13 +85,18 @@ The reason showed up when I compared my notes: every time I connect and disconne
 
 ## Idea 2: let the client connect, then cut the catch-all rule
 
+<figure>
+    <img src="/images/eduvpn-split-tunnel-eduVPN-client.webp" alt="eduVPN client connected to my institute" />
+    <figcaption>eduVPN client connected to my institute</figcaption>
+</figure>
+
 If I can't have my own config, I can still tweak my laptop: I'll use the client's connection and change its routing afterwards. How does the client send everything into the tunnel? By having NetworkManager set up the appropriate policy rules:
 
 ```bash
 $ ip rule show
 0:      from all lookup local
 1:      from all to <tunnel-ip>/21 lookup 51860 suppress_prefixlength 0 proto static
-2:      from all to 10.0.0.0/8 lookup main suppress_prefixlength 0 proto static
+2:      from all to <not-sure-ip>/8 lookup main suppress_prefixlength 0 proto static
 2:      from all to <netbird-ip>/12 lookup main suppress_prefixlength 0 proto static
 2:      from all to <laptop-ip>/16 lookup main suppress_prefixlength 0 proto static
 3:      not from all fwmark 0xca94 lookup 51860 proto static
