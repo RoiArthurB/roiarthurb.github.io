@@ -21,6 +21,10 @@
 		<category term="vpn" />
 		<summary type="html">My institute wants me on a VPN to send mail, but I made that VPN carry only my mails and nothing more.</summary>
 		<content type="html"><![CDATA[<p>My institute (IRD) was hacked recently and is strengthening its security by requiring all users to use a VPN. As a result, I can only send mail from Thunderbird on my professional laptop when I'm connected to its <a href="https://www.eduvpn.org/">eduVPN</a> (an institutional VPN solution). The problem: I'm working in Vietnam and the VPN is hosted in France. I don't want my whole laptop behind that VPN for the sake of one SMTP server (a ping to <code>1.1.1.1</code> went from around <em>37 ms</em> to around <em>330 ms</em> on the VPN).</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/eduvpn-split-tunnel-eduVPN-logo.webp" alt="eduVPN Logo" />
+    <figcaption>eduVPN Logo</figcaption>
+</figure>
 <p>I tweaked and tried a lot of things, and ended up letting the official client connect, then using a NetworkManager dispatcher script to remove the VPN's catch-all rule and re-enable the tunnel only for the few destinations that really need it (such as the mail server).</p>
 <p>Here is the path in order, dead ends included, so you can skip the ones I fell into. If you're on Linux with <a href="https://en.wikipedia.org/wiki/NetworkManager"><em>NetworkManager</em></a> and a <a href="https://en.wikipedia.org/wiki/WireGuard"><em>WireGuard</em></a> VPN that grabs your whole default route, this should help even if you're not using eduVPN.</p>
 <h2>The setup</h2>
@@ -78,11 +82,15 @@ $ ip route get &lt;mail-ip&gt;
 <p>The route was right. But look at the transfer line: <em>0 B received</em>, and no <code>latest handshake</code> line at all. My config isn't connecting.</p>
 <p>The reason showed up when I compared my notes: every time I connect and disconnect with the eduVPN client, I get a different public/private key. My explanation (I haven't verified it server-side) is that each session registers a fresh peer, and the old key is dead as soon as the client disconnects (probably both for GDPR reasons, to avoid identifying users, and to keep the pool of VPN IPs rolling). So we can't steal a WireGuard config file. 😥</p>
 <h2>Idea 2: let the client connect, then cut the catch-all rule</h2>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/eduvpn-split-tunnel-eduVPN-client.webp" alt="eduVPN client connected to my institute" />
+    <figcaption>eduVPN client connected to my institute</figcaption>
+</figure>
 <p>If I can't have my own config, I can still tweak my laptop: I'll use the client's connection and change its routing afterwards. How does the client send everything into the tunnel? By having NetworkManager set up the appropriate policy rules:</p>
 <pre><code class="language-bash">$ ip rule show
 0:      from all lookup local
 1:      from all to &lt;tunnel-ip&gt;/21 lookup 51860 suppress_prefixlength 0 proto static
-2:      from all to 10.0.0.0/8 lookup main suppress_prefixlength 0 proto static
+2:      from all to &lt;not-sure-ip&gt;/8 lookup main suppress_prefixlength 0 proto static
 2:      from all to &lt;netbird-ip&gt;/12 lookup main suppress_prefixlength 0 proto static
 2:      from all to &lt;laptop-ip&gt;/16 lookup main suppress_prefixlength 0 proto static
 3:      not from all fwmark 0xca94 lookup 51860 proto static
