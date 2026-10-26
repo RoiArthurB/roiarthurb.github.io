@@ -4,9 +4,10 @@
     "title": "Forgeline",
     "description": "A fast, discovery-first Android client for GitHub, GitLab and Codeberg. Native, Material You, no tracking.",
     "since": 2026,
-    "logo": "https://git.arthurbrugiere.fr/repo-avatars/caeb4c1766954e45fdf72146b34510bace5a4704330bf5bff1b74474a45c14f9",
+    "logo": "/images/software/forgeline.svg",
     "role": "Lead Developer",
     "tags": ["kotlin", "jetpack-compose", "git social"],
+    "link": "https://arthurbrugiere.fr/forgeline/",
     "github": "https://github.com/RoiArthurB/forgeline/"
   },
   {
