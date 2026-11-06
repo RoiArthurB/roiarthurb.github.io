@@ -26,14 +26,14 @@ Here is every issue I ran into, in order, so you don't have to repeat my mistake
 I do have some experience installing Linux systems, so I pretty much followed the same steps as described in the [official documentation](https://docs.openmediavault.org/en/latest/installation/via_iso.html): Downloaded the iso, flashed a USB stick, boot the OMV ISO, follow the first steps, connect to your WiFi network, type the password, see the "Configuring DHCP" loading screen, see the "Configuring DHCP**v6**" loading screen...
 
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-dhcp.webp" alt="Debian installer DHCP loading screen" />
+    <img src="/images/2026/06/install-omv-8-without-ipv6-dhcp.webp" alt="Debian installer DHCP loading screen" />
     <figcaption>I don't have ways to capture my installation screen, imagine it's written `DHCPv6` please....</figcaption>
 </figure>
 
 The popup closes. You're staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and displays them on the screen, but nothing happens.
 
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-bsod.webp" alt="Debian installer blue screen" />
+    <img src="/images/2026/06/install-omv-8-without-ipv6-bsod.webp" alt="Debian installer blue screen" />
     <figcaption>The BSOD (Blue Screen Of <s>Death</s> Debian), not my most useful illustration...</figcaption>
 </figure>
 
@@ -101,7 +101,7 @@ systemctl restart nginx
 The web UI comes up. Log in, with the default credentials (`admin` / `openmediavault`), go to Network → Interfaces, configure your WiFi interface (me `wlp2s0`) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer uses the faulty IPv6.
 
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-network-config.webp" alt="OMV network config with IPv6 disabled" />
+    <img src="/images/2026/06/install-omv-8-without-ipv6-network-config.webp" alt="OMV network config with IPv6 disabled" />
     <figcaption>Saved working network with IPv6 disabled</figcaption>
 </figure>
 
@@ -124,7 +124,7 @@ Btrfs is a copy-on-write filesystem with built-in checksums, snapshots, and nati
 1. Hit create, wait a few minutes, then mount it.
 
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-btrfs.webp" alt="OMV FS configured with BTRFS and displaying 1TB of usable storage" />
+    <img src="/images/2026/06/install-omv-8-without-ipv6-btrfs.webp" alt="OMV FS configured with BTRFS and displaying 1TB of usable storage" />
     <figcaption>Saved working network with IPv6 disabled</figcaption>
 </figure>
 
@@ -171,7 +171,7 @@ On each Windows machine, when the credential prompt appears:
 Windows caches the credentials after the first successful connection. You enter them once per machine and you won't need to enter them again.
 
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-final.webp" alt="OMV dashboard with plenty of stats" />
+    <img src="/images/2026/06/install-omv-8-without-ipv6-final.webp" alt="OMV dashboard with plenty of stats" />
     <figcaption>The dashboard of the NAS with plenty of stats but nobody using it there</figcaption>
 </figure>
 

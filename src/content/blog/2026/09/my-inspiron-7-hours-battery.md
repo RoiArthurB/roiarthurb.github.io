@@ -17,7 +17,7 @@ publish: true
 This is my travel laptop. It's a [Dell Inspiron 11 2-in-1](https://dl.dell.com/manuals/all-products/esuprt_laptop/esuprt_inspiron_laptop/inspiron-11-3158-laptop_reference%20guide_en-us.pdf) from 2015 that I bought at a flea market in Vietnam: it turned on, it cost very little, and now it goes everywhere with me. It's a ten-year-old machine with a [6th gen i3 processor](https://www.intel.com/content/www/us/en/products/sku/88180/intel-core-i36100u-processor-3m-cache-2-30-ghz/specifications.html), the only test that mattered before buying it was "does it work?", and it did.
 
 <figure>
-    <img src="/images/disabling-a-touchscreen-for-good-laptop.webp" alt="My Inspiron laptop covered with stickers" />
+    <img src="/images/2026/08/disabling-a-touchscreen-for-good-laptop.webp" alt="My Inspiron laptop covered with stickers" />
     <figcaption>My Inspiron laptop covered with stickers, I love stickers!</figcaption>
 </figure>
 
@@ -48,7 +48,7 @@ And here's where all of that landed: the battery is damaged, and I still get mor
 The battery's designed maximum capacity is 43.8 Wh. It's an old machine and, obviously, the battery now is damaged and [upower](https://en.wikipedia.org/wiki/UPower) shows something around 31 Wh (~70% of health). Fine. The goal of this laptop is to be able to be used for a long time off charge, so the math is simple: hours = Wh ÷ W, so every watt counts double.
 
 <figure>
-    <img src="/images/my-inspiron-7-hours-battery-upower.webp" alt="upower showing the damaged battery" />
+    <img src="/images/2026/09/my-inspiron-7-hours-battery-upower.webp" alt="upower showing the damaged battery" />
     <figcaption>upower showing the damaged battery.</figcaption>
 </figure>
 
@@ -110,7 +110,7 @@ So I moved to more traditional lightweight DEs. In order of testing then rejecti
 > Budgie's default GTK theme looks a bit dated. I use [adw-gtk3](https://github.com/lassekongo83/adw-gtk3) to get a GNOME-style modern look without the GNOME weight. Install it, set it as the GTK theme in Budgie's appearance settings, and it immediately felt better to me.
 >
 > <figure>
->     <img src="/images/my-inspiron-7-hours-battery-adw.webp" alt="Dark preview from adw-gtk3" />
+>     <img src="/images/2026/09/my-inspiron-7-hours-battery-adw.webp" alt="Dark preview from adw-gtk3" />
 >     <figcaption>Dark preview from https://github.com/lassekongo83/adw-gtk3</figcaption>
 > </figure>
 
@@ -370,7 +370,7 @@ I also did some A/B-testing over the DEs under identical load: XFCE, Cinnamon, a
 This is how a decade-old slow laptop can become a great machine with 7+ hours of video playback. Not as good as it could be (tiling was better battery-wise, I could tune some settings more aggressively to save more battery but it would impact my experience), but this laptop now does its job, which was the actual goal all along.
 
 <figure>
-    <img src="/images/my-inspiron-7-hours-battery-fetch.webp" alt="Screenshot of the desktop with a terminal and fastfetch displayed" />
+    <img src="/images/2026/09/my-inspiron-7-hours-battery-fetch.webp" alt="Screenshot of the desktop with a terminal and fastfetch displayed" />
     <figcaption>Final obliged fastfetch of my laptop.</figcaption>
 </figure>
 

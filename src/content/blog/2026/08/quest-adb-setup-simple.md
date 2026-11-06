@@ -111,7 +111,7 @@ This one is interesting! 😋
 When you remove a Quest headset, a proximity sensor detects the gap and blacks out the display to save power (or doze if you didn't applied any of the above parameters, remember: lazy device). In any multi-user setup, demo, else, headsets get passed around or set on charging stations between activities. If the display blacks out, the streaming session breaks and the next person sees a dark screen instead of the simulation.
 
 <figure>
-    <img src="/images/quest-adb-setup-simple-sensor.webp" alt="Picture of proximity sensors inside of a meta quest headset" />
+    <img src="/images/2026/08/quest-adb-setup-simple-sensor.webp" alt="Picture of proximity sensors inside of a meta quest headset" />
     <figcaption>This captor exists in both <i>Meta Quest 2</i> and <i>Meta Quest 3</i> (not the 3s)</figcaption>
 </figure>
 

@@ -15,7 +15,7 @@ publish: true
 I own an old [*Dell Inspiron 2-in-1 11-3158*](https://www.dell.com/support/product-details/en-vn/product/inspiron-11-3158-laptop/overview) that I bought at a flea market years ago and made my travel machine: an i3-6100U running [MX Linux](https://mxlinux.org/) with [Cinnamon](https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)), maxed at 8GB of DDR3 RAM[^1].
 
 <figure>
-    <img src="/images/disabling-a-touchscreen-for-good-laptop.webp" alt="My Inspiron laptop covered with stickers" />
+    <img src="/images/2026/08/disabling-a-touchscreen-for-good-laptop.webp" alt="My Inspiron laptop covered with stickers" />
     <figcaption>My Inspiron laptop covered with stickers, I love stickers!</figcaption>
 </figure>
 

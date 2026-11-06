@@ -18,7 +18,7 @@ A mesh [Virtual Private Network](https://en.wikipedia.org/wiki/Virtual_private_n
 Modern mesh VPNs split into two halves. The control plane is a small server that knows every peer, distributes keys, and tells each machine how to reach the others. The connection between machines is generally [WireGuard](https://www.wireguard.com/) running straight between the peers, with the control server staying out of it. WireGuard is what made this class of tool practical: short keys, no session negotiation, and little enough overhead that the tunnel disappears into the noise.
 
 <figure>
-    <img src="/images/headscale-to-netbird-benchmark-netbird-front.webp" alt="Architecture of Netbird's mesh VPN" />
+    <img src="/images/2026/08/headscale-to-netbird-benchmark-netbird-front.webp" alt="Architecture of Netbird's mesh VPN" />
     <figcaption>Illustration of a mesh VPN layout. One central server coordinating direct connections between all the peers.<br/>Credits to <a href="https://netbird.io/" target="_blank">Netbird</a></figcaption>
 </figure>
 
@@ -46,7 +46,7 @@ For these tests, I decided to use the widest range of machines I have running.
 Two peers, both in Hanoi on Viettel connections in different parts of the city: an Intel NUC running [Debian](https://www.debian.org/) on x86_64, and a OnePlus 6 running [postmarketOS](https://postmarketos.org/)[^2] as a small ARM64 server. My trusty cheap [OVH](https://www.ovh.com/) [VPS](https://en.wikipedia.org/wiki/Virtual_private_server)[^1] in Singapore carries both control planes (Headscale and NetBird) during the parallel run, including NetBird's built-in relay. Tailscale's nearest DERP region for this path is Hong Kong.
 
 <figure>
-    <img src="/images/headscale-to-netbird-benchmark-architecture.webp" alt="Architecture of this series of tests" />
+    <img src="/images/2026/08/headscale-to-netbird-benchmark-architecture.webp" alt="Architecture of this series of tests" />
     <figcaption>Architecture of this series of tests.</figcaption>
 </figure>
 
@@ -129,7 +129,7 @@ Putting a number on that needs `tailscaled` against `netbird` CPU time over an h
 | Raspberry Pi 4 | 41.7 CPU-s per hour, 1.16% of one core |
 
 <figure>
-    <img src="/images/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5" />
+    <img src="/images/2026/08/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5" />
     <figcaption>Close to nothing on my NUC while streaming music and homelabbing.</figcaption>
 </figure>
 

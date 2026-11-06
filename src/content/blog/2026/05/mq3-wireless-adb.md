@@ -14,7 +14,7 @@ publish: true
 Meta Quest headsets have a nasty habit of forgetting your wireless ADB trust relationship every time they reboot. For a research project deploying ten headsets to a classroom of teachers who've never touched a terminal, *"just run `adb tcpip 5555` again"* isn't a solution, it's a support ticket generator at best. I spent weeks trying to automate the "Allow wireless debugging?" popup out of existence. The path involved dead ends, Android security walls, and finally a brute-force accessibility hack that actually works.
 
 <figure>
-    <img src="/images/mq3-wireless-adb.webp" alt="ADB Wireless Popup visible in a Meta Quest 3 headset" />
+    <img src="/images/2026/05/mq3-wireless-adb.webp" alt="ADB Wireless Popup visible in a Meta Quest 3 headset" />
     <figcaption>The "Allow wireless debugging?" popup on a Meta Quest 3.<br/>Credit: Image from <a href="https://www.quest-games-optimizer.com/how-to-enable-adb-from-your-meta-quest">QGO</a></figcaption>
 </figure>
 

@@ -154,7 +154,7 @@ I wrote a small script so I wouldn't have to redo these by hand. I checked four 
 (2) The scaling column is the point of the whole exercise: flat around 15 tok/s aggregate in Ollama  as it didn't have any concurrency, 28.4 here with three requests running. It's still climbing from two to three (+23%).[^3]
 
 <figure>
-    <img src="/images/llama-server-lfm-parallel-contention.webp" alt="Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4." />
+    <img src="/images/2026/08/llama-server-lfm-parallel-contention.webp" alt="Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4." />
     <figcaption>Same engine, same iGPU: Ollama's single slot caps the box at ~15 tok/s no matter how many requests arrive [source: verify-llama.sh]; three slots in llama-server climb almost linearly to 28.</figcaption>
 </figure>
 
@@ -204,7 +204,7 @@ The background jobs didn't go away when I changed servers. What changed was how 
 Five tasks out of two chat turns. The ~6,400-token ones are OpenWebUI replaying the entire conversation to write titles and tags; at about *240 tok/s* that's roughly 30 seconds of prefill per job, just to name one chat. Here's what happens to my decode speed:
 
 <figure>
-    <img src="/images/llama-server-lfm-parallel-speed.webp" alt="Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two."style="background-color: white;" />
+    <img src="/images/2026/08/llama-server-lfm-parallel-speed.webp" alt="Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two."style="background-color: white;" />
     <figcaption>Each background job costs me roughly half my decode speed — just to name a chat [source: ollama-to-llama-server-parallel.md].</figcaption>
 </figure>
 
@@ -213,7 +213,7 @@ Parallel slots didn't remove the problem; they converted queuing into congestion
 Since it's working as expected, I need to fix this background issue in OpenWebUI: Admin -> Settings -> Interface, and turn off what you don't need. 
 
 <figure>
-    <img src="/images/llama-server-lfm-parallel-owui.webp" alt="OpenWeb UI interface to disable the background jobs." />
+    <img src="/images/2026/08/llama-server-lfm-parallel-owui.webp" alt="OpenWeb UI interface to disable the background jobs." />
     <figcaption>OpenWeb UI interface to disable the background jobs.</figcaption>
 </figure>
 

@@ -114,7 +114,7 @@ The CI pipeline now has three parallel jobs: `ubuntu-latest` for Linux, `macos-l
 The SIMPLE Webplatform now ships as a single executable on all three platforms. Windows uses a Go self-extracting launcher that bundles a SEA-built `node.exe` and extracts it to temp on first run. Linux and macOS use native SEA binaries without wrappers. The packaging pipeline relies on Node.js built-in tools plus `postject` and Go. No deprecated third-party packagers, no emulation layers, no platform-specific native module patching.
 
 <figure>
-    <img src="/images/packaging-nodejs-windows-sea-compilation.webp" alt="Compilation logs of the windows binary" />
+    <img src="/images/2026/05/packaging-nodejs-windows-sea-compilation.webp" alt="Compilation logs of the windows binary" />
     <figcaption>Compilation logs of the windows binary on Github Actions</figcaption>
 </figure>
 

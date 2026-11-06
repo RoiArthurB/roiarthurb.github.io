@@ -18,7 +18,7 @@ Like everyone, I'm interested in running my own [Large Language Models (LLM)](ht
 But, since I installed it, Ollama has been the most disappointing service on my home server. The machine I installed it on is an [Intel NUC](https://en.wikipedia.org/wiki/Intel_nuc) [NUC11PAHi5](https://www.asus.com/supportonly/nuc11pahi5/helpdesk_manual/) from 2021 (an [11th-gen Tiger Lake i5-1135G7](https://www.intel.com/content/www/us/en/products/sku/208658/intel-core-i51135g7-processor-8m-cache-up-to-4-20-ghz/specifications.html) with 4 cores, 8 threads, Iris Xe graphics *(80\@1.30 GHz)*, and 32 GB of RAM). It runs headless Debian 13, doesn't have a dedicated GPU and hosts a little less than 40 other Docker containers, all sharing the same 4 CPU cores.
 
 <figure>
-    <img src="/images/ollama-intel-igpu-nuc.webp" alt="Spec. sheet of my Intel NUC." />
+    <img src="/images/2026/08/ollama-intel-igpu-nuc.webp" alt="Spec. sheet of my Intel NUC." />
     <figcaption>Spec. sheet of my Intel NUC.</figcaption>
 </figure>
 
@@ -27,7 +27,7 @@ Every model I tried on it felt like a bad joke: the time to generate responses h
 Then [Liquid AI](https://www.liquid.ai) released [LFM2.5-2.6B](https://www.liquid.ai/blog/lfm2-5-2-6b). A 2.6B-parameter model with tool calling, a thinking mode, and a GGUF that weighs under 2 GB. Their CPU benchmarks were published on small devices, going all the way down to smartphone inference, not data-center GPUs. That told me everything: this thing was built for hardware exactly like mine. Time to dive in.
 
 <figure>
-    <img src="/images/ollama-intel-igpu-lfm-benchmark.webp" alt="LFM2.5-2.6B benchmark, above all the others." />
+    <img src="/images/2026/08/ollama-intel-igpu-lfm-benchmark.webp" alt="LFM2.5-2.6B benchmark, above all the others." />
     <figcaption>Mandatory LLM benchmark image. Honestly not that bad!</figcaption>
 </figure>
 
@@ -232,7 +232,7 @@ No gain, and it reserves an extra 200 MiB on the iGPU to achieve it. I put it ba
 
 
 <figure>
-    <img src="/images/ollama-intel-igpu-openwebui.webp" alt="Open WebUI v0.11.0 empty chat interface with LFM2.5-2.6B ready." />
+    <img src="/images/2026/08/ollama-intel-igpu-openwebui.webp" alt="Open WebUI v0.11.0 empty chat interface with LFM2.5-2.6B ready." />
     <figcaption>My instance of Open WebUI v0.11.0 with LFM2.5-2.6B ready to chat!</figcaption>
 </figure>
 

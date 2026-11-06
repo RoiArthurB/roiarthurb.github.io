@@ -16,7 +16,7 @@ publish: true
 My institute (IRD) was hacked recently and is strengthening its security by requiring all users to use a VPN. As a result, I can only send mail from Thunderbird on my professional laptop when I'm connected to its [eduVPN](https://www.eduvpn.org/) (an institutional VPN solution). The problem: I'm working in Vietnam and the VPN is hosted in France. I don't want my whole laptop behind that VPN for the sake of one SMTP server (a ping to `1.1.1.1` went from around *37 ms* to around *330 ms* on the VPN).
 
 <figure>
-    <img src="/images/eduvpn-split-tunnel-eduVPN-logo.webp" alt="eduVPN Logo" />
+    <img src="/images/2026/10/eduvpn-split-tunnel-eduVPN-logo.webp" alt="eduVPN Logo" />
     <figcaption>eduVPN Logo</figcaption>
 </figure>
 
@@ -86,7 +86,7 @@ The reason showed up when I compared my notes: every time I connect and disconne
 ## Idea 2: let the client connect, then cut the catch-all rule
 
 <figure>
-    <img src="/images/eduvpn-split-tunnel-eduVPN-client.webp" alt="eduVPN client connected to my institute" />
+    <img src="/images/2026/10/eduvpn-split-tunnel-eduVPN-client.webp" alt="eduVPN client connected to my institute" />
     <figcaption>eduVPN client connected to my institute</figcaption>
 </figure>
 

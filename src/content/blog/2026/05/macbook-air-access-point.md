@@ -31,7 +31,7 @@ So I did follow the documentation and the internet's recommendations. I went to 
 Everything appeared enabled. No error messages. No warnings. But **the WiFi network simply never appeared**. Not on my phone, not on any other device. macOS accepted the configuration but silently refused to actually broadcast the signal.
 
 <figure>
-    <img src="/images/macbook-air-access-point-wifi-not-working.webp" alt="Internet sharing is enabled, but not wifi is broadcasted" />
+    <img src="/images/2026/05/macbook-air-access-point-wifi-not-working.webp" alt="Internet sharing is enabled, but not wifi is broadcasted" />
     <figcaption>Internet sharing is enabled, but not wifi is broadcasted (it should be displayed here as we will see later)</figcaption>
 </figure>
 
@@ -50,7 +50,7 @@ curl -L https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2/raw/s
 ```
 
 <figure>
-    <img src="/images/macbook-air-access-point-wifi-terminal.webp" alt="Running zhuhuilin's setup script" />
+    <img src="/images/2026/05/macbook-air-access-point-wifi-terminal.webp" alt="Running zhuhuilin's setup script" />
     <figcaption>Running zhuhuilin's setup script</figcaption>
 </figure>
 
@@ -62,7 +62,7 @@ This will automatically:
 - Save state for safe removal
 
 <figure>
-    <img src="/images/macbook-air-access-point-wifi-AdHoc-setup.webp" alt="MacOS Settings window with the Internet Sharing configured with the AdHoc interface" />
+    <img src="/images/2026/05/macbook-air-access-point-wifi-AdHoc-setup.webp" alt="MacOS Settings window with the Internet Sharing configured with the AdHoc interface" />
     <figcaption>Internet Sharing configured with the AdHoc interface, just need to enable it now</figcaption>
 </figure>
 
@@ -72,7 +72,7 @@ Then you can select this `AdHoc` service as your source in Internet Sharing. Onc
 > The WiFi should be enabled on MacOS to have the beacon activated. But it should not be connected to any networks.
 >
 > <figure>
->    <img src="/images/macbook-air-access-point-wifi-enabled.webp" alt="Keeping wifi enabled and seeing the shared network broadcasted" />
+>    <img src="/images/2026/05/macbook-air-access-point-wifi-enabled.webp" alt="Keeping wifi enabled and seeing the shared network broadcasted" />
 >    <figcaption>WiFi is enabled, and is showing the "Internet Sharing" on Channel 11</figcaption>
 > </figure>
 
