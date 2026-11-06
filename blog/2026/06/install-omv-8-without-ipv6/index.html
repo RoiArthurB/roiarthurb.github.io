@@ -121,12 +121,12 @@
 <h2 id="issue-1-the-installer-blue-screens-after-wifi-connection">Issue 1: The installer blue-screens after WiFi connection</h2>
 <p>I do have some experience installing Linux systems, so I pretty much followed the same steps as described in the <a href="https://docs.openmediavault.org/en/latest/installation/via_iso.html" target="_blank" rel="noopener noreferrer nofollow">official documentation</a>: Downloaded the iso, flashed a USB stick, boot the OMV ISO, follow the first steps, connect to your WiFi network, type the password, see the “Configuring DHCP” loading screen, see the “Configuring DHCP<strong>v6</strong>” loading screen…</p>
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-dhcp.webp" alt="Debian installer DHCP loading screen">
+    <img src="/images/2026/06/install-omv-8-without-ipv6-dhcp.webp" alt="Debian installer DHCP loading screen">
     <figcaption>I don't have ways to capture my installation screen, imagine it's written `DHCPv6` please....</figcaption>
 </figure>
 <p>The popup closes. You’re staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and displays them on the screen, but nothing happens.</p>
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-bsod.webp" alt="Debian installer blue screen">
+    <img src="/images/2026/06/install-omv-8-without-ipv6-bsod.webp" alt="Debian installer blue screen">
     <figcaption>The BSOD (Blue Screen Of <s>Death</s> Debian), not my most useful illustration...</figcaption>
 </figure>
 <p>The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request timed out with no response or got an unexpected message… Anyway, the installer broke and after waiting 1 hour, I tried to fix it: I disabled IPv6 at the kernel level for this boot only.</p>
@@ -163,7 +163,7 @@
 <pre class="astro-code astro-code-themes github-light gruvbox-dark-medium" style="background-color:#fff;--shiki-dark-bg:#282828;color:#24292e;--shiki-dark:#ebdbb2; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1;--shiki-dark:#FABD2F">systemctl</span><span style="color:#032F62;--shiki-dark:#B8BB26"> restart</span><span style="color:#032F62;--shiki-dark:#B8BB26"> nginx</span></span></code></pre>
 <p>The web UI comes up. Log in, with the default credentials (<code>admin</code> / <code>openmediavault</code>), go to Network → Interfaces, configure your WiFi interface (me <code>wlp2s0</code>) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer uses the faulty IPv6.</p>
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-network-config.webp" alt="OMV network config with IPv6 disabled">
+    <img src="/images/2026/06/install-omv-8-without-ipv6-network-config.webp" alt="OMV network config with IPv6 disabled">
     <figcaption>Saved working network with IPv6 disabled</figcaption>
 </figure>
 <p>Finally :)</p>
@@ -181,7 +181,7 @@
 <li>Hit create, wait a few minutes, then mount it.</li>
 </ol>
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-btrfs.webp" alt="OMV FS configured with BTRFS and displaying 1TB of usable storage">
+    <img src="/images/2026/06/install-omv-8-without-ipv6-btrfs.webp" alt="OMV FS configured with BTRFS and displaying 1TB of usable storage">
     <figcaption>Saved working network with IPv6 disabled</figcaption>
 </figure>
 <p>After that, create a shared folder on the volume and enable SMB, NFS and other network protocols under <code>Services</code>.</p>
@@ -212,7 +212,7 @@
 </ul>
 <p>Windows caches the credentials after the first successful connection. You enter them once per machine and you won’t need to enter them again.</p>
 <figure>
-    <img src="/images/install-omv-8-without-ipv6-final.webp" alt="OMV dashboard with plenty of stats">
+    <img src="/images/2026/06/install-omv-8-without-ipv6-final.webp" alt="OMV dashboard with plenty of stats">
     <figcaption>The dashboard of the NAS with plenty of stats but nobody using it there</figcaption>
 </figure>
 <p>Two weeks in, the NAS just works. The Windows machines all connect, the scrubs run monthly (I hope), and everyone’s happy about it.</p>

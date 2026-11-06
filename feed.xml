@@ -22,7 +22,7 @@
 		<summary type="html">My institute wants me on a VPN to send mail, but I made that VPN carry only my mails and nothing more.</summary>
 		<content type="html"><![CDATA[<p>My institute (IRD) was hacked recently and is strengthening its security by requiring all users to use a VPN. As a result, I can only send mail from Thunderbird on my professional laptop when I'm connected to its <a href="https://www.eduvpn.org/">eduVPN</a> (an institutional VPN solution). The problem: I'm working in Vietnam and the VPN is hosted in France. I don't want my whole laptop behind that VPN for the sake of one SMTP server (a ping to <code>1.1.1.1</code> went from around <em>37 ms</em> to around <em>330 ms</em> on the VPN).</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/eduvpn-split-tunnel-eduVPN-logo.webp" alt="eduVPN Logo" />
+    <img src="https://arthurbrugiere.fr/images/2026/10/eduvpn-split-tunnel-eduVPN-logo.webp" alt="eduVPN Logo" />
     <figcaption>eduVPN Logo</figcaption>
 </figure>
 <p>I tweaked and tried a lot of things, and ended up letting the official client connect, then using a NetworkManager dispatcher script to remove the VPN's catch-all rule and re-enable the tunnel only for the few destinations that really need it (such as the mail server).</p>
@@ -83,7 +83,7 @@ $ ip route get &lt;mail-ip&gt;
 <p>The reason showed up when I compared my notes: every time I connect and disconnect with the eduVPN client, I get a different public/private key. My explanation (I haven't verified it server-side) is that each session registers a fresh peer, and the old key is dead as soon as the client disconnects (probably both for GDPR reasons, to avoid identifying users, and to keep the pool of VPN IPs rolling). So we can't steal a WireGuard config file. 😥</p>
 <h2>Idea 2: let the client connect, then cut the catch-all rule</h2>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/eduvpn-split-tunnel-eduVPN-client.webp" alt="eduVPN client connected to my institute" />
+    <img src="https://arthurbrugiere.fr/images/2026/10/eduvpn-split-tunnel-eduVPN-client.webp" alt="eduVPN client connected to my institute" />
     <figcaption>eduVPN client connected to my institute</figcaption>
 </figure>
 <p>If I can't have my own config, I can still tweak my laptop: I'll use the client's connection and change its routing afterwards. How does the client send everything into the tunnel? By having NetworkManager set up the appropriate policy rules:</p>
@@ -274,7 +274,7 @@ $ sudo wg show eduVPN | grep handshake
 		<content type="html"><![CDATA[<h1>Taming an Inspiron 11 for travel</h1>
 <p>This is my travel laptop. It's a <a href="https://dl.dell.com/manuals/all-products/esuprt_laptop/esuprt_inspiron_laptop/inspiron-11-3158-laptop_reference%20guide_en-us.pdf">Dell Inspiron 11 2-in-1</a> from 2015 that I bought at a flea market in Vietnam: it turned on, it cost very little, and now it goes everywhere with me. It's a ten-year-old machine with a <a href="https://www.intel.com/content/www/us/en/products/sku/88180/intel-core-i36100u-processor-3m-cache-2-30-ghz/specifications.html">6th gen i3 processor</a>, the only test that mattered before buying it was &quot;does it work?&quot;, and it did.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/disabling-a-touchscreen-for-good-laptop.webp" alt="My Inspiron laptop covered with stickers" />
+    <img src="https://arthurbrugiere.fr/images/2026/08/disabling-a-touchscreen-for-good-laptop.webp" alt="My Inspiron laptop covered with stickers" />
     <figcaption>My Inspiron laptop covered with stickers, I love stickers!</figcaption>
 </figure>
 <p>What am I actually using it for, in priority order:</p>
@@ -323,7 +323,7 @@ The spec sheet above is a little different than the stock machine: it came with 
 </blockquote>
 <p>The battery's designed maximum capacity is 43.8 Wh. It's an old machine and, obviously, the battery now is damaged and <a href="https://en.wikipedia.org/wiki/UPower">upower</a> shows something around 31 Wh (~70% of health). Fine. The goal of this laptop is to be able to be used for a long time off charge, so the math is simple: hours = Wh ÷ W, so every watt counts double.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/my-inspiron-7-hours-battery-upower.webp" alt="upower showing the damaged battery" />
+    <img src="https://arthurbrugiere.fr/images/2026/09/my-inspiron-7-hours-battery-upower.webp" alt="upower showing the damaged battery" />
     <figcaption>upower showing the damaged battery.</figcaption>
 </figure>
 <h3>Replacing some parts</h3>
@@ -369,7 +369,7 @@ There's a lot of interesting stuff to discuss about Wayland compositor details, 
 <p>[!TIP]
 Budgie's default GTK theme looks a bit dated. I use <a href="https://github.com/lassekongo83/adw-gtk3">adw-gtk3</a> to get a GNOME-style modern look without the GNOME weight. Install it, set it as the GTK theme in Budgie's appearance settings, and it immediately felt better to me.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/my-inspiron-7-hours-battery-adw.webp" alt="Dark preview from adw-gtk3" />
+    <img src="https://arthurbrugiere.fr/images/2026/09/my-inspiron-7-hours-battery-adw.webp" alt="Dark preview from adw-gtk3" />
     <figcaption>Dark preview from https://github.com/lassekongo83/adw-gtk3</figcaption>
 </figure>
 </blockquote>
@@ -554,7 +554,7 @@ network.predictor.enabled = false
 <h2>Bref</h2>
 <p>This is how a decade-old slow laptop can become a great machine with 7+ hours of video playback. Not as good as it could be (tiling was better battery-wise, I could tune some settings more aggressively to save more battery but it would impact my experience), but this laptop now does its job, which was the actual goal all along.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/my-inspiron-7-hours-battery-fetch.webp" alt="Screenshot of the desktop with a terminal and fastfetch displayed" />
+    <img src="https://arthurbrugiere.fr/images/2026/09/my-inspiron-7-hours-battery-fetch.webp" alt="Screenshot of the desktop with a terminal and fastfetch displayed" />
     <figcaption>Final obliged fastfetch of my laptop.</figcaption>
 </figure>
 <p>I now have a snappy, cheap (probably $40~50 total), small and lightweight machine (both to carry and resource wise) that I carry on for holidays to watch movies and stuff 😁</p>
@@ -715,7 +715,7 @@ llama_server: model loaded
 <p>(1) Solo decode at <em>15.05 tok/s</em> is what Ollama gave a request running alone, so, as expected, this &quot;new runner&quot; costs me nothing per request: same engine, same Vulkan backend.</p>
 <p>(2) The scaling column is the point of the whole exercise: flat around 15 tok/s aggregate in Ollama  as it didn't have any concurrency, 28.4 here with three requests running. It's still climbing from two to three (+23%).[^3]</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/llama-server-lfm-parallel-contention.webp" alt="Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4." />
+    <img src="https://arthurbrugiere.fr/images/2026/08/llama-server-lfm-parallel-contention.webp" alt="Ollama flat at ~15 aggregate tok/s for 1, 2 or 3 concurrent requests; llama-server climbs to 14.4 / 23.1 / 28.4." />
     <figcaption>Same engine, same iGPU: Ollama's single slot caps the box at ~15 tok/s no matter how many requests arrive [source: verify-llama.sh]; three slots in llama-server climb almost linearly to 28.</figcaption>
 </figure>
 <pre><code class="language-txt">3. CACHE-REUSE ACROSS TURNS
@@ -749,13 +749,13 @@ How long does that cache live? Nothing expires by age; it's a question of how ma
 </code></pre>
 <p>Five tasks out of two chat turns. The ~6,400-token ones are OpenWebUI replaying the entire conversation to write titles and tags; at about <em>240 tok/s</em> that's roughly 30 seconds of prefill per job, just to name one chat. Here's what happens to my decode speed:</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/llama-server-lfm-parallel-speed.webp" alt="Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two."style="background-color: white;" />
+    <img src="https://arthurbrugiere.fr/images/2026/08/llama-server-lfm-parallel-speed.webp" alt="Solo decode 15.05 tok/s, dropping to about 7.2 with one OpenWebUI background job and 3.94 with two."style="background-color: white;" />
     <figcaption>Each background job costs me roughly half my decode speed — just to name a chat [source: ollama-to-llama-server-parallel.md].</figcaption>
 </figure>
 <p>Parallel slots didn't remove the problem; they converted queuing into congestion. Same total work, but now it happens at the exact moment I'm waiting for my answer.</p>
 <p>Since it's working as expected, I need to fix this background issue in OpenWebUI: Admin -&gt; Settings -&gt; Interface, and turn off what you don't need.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/llama-server-lfm-parallel-owui.webp" alt="OpenWeb UI interface to disable the background jobs." />
+    <img src="https://arthurbrugiere.fr/images/2026/08/llama-server-lfm-parallel-owui.webp" alt="OpenWeb UI interface to disable the background jobs." />
     <figcaption>OpenWeb UI interface to disable the background jobs.</figcaption>
 </figure>
 <p>I disabled tag generation and follow-up suggestions and kept only title generation, which fires once per conversation when it starts (it's nicer for the interface, and runs only once when the chat is small). My chat went back to solo speed, and the three slots stayed available for other concurrency.</p>
@@ -784,13 +784,13 @@ How long does that cache live? Nothing expires by age; it's a question of how ma
 		<content type="html"><![CDATA[<p>Like everyone, I'm interested in running my own <a href="https://en.wikipedia.org/wiki/Large_language_model">Large Language Models (LLM)</a>, so I installed Ollama in my homelab some time ago. Ollama is a tool to easily run LLM, and exposes this local AI as a server to be used by other applications. It's not the best tool to get the most out of the machine, but it's the simplest to install and manage with plenty of nice QoL.</p>
 <p>But, since I installed it, Ollama has been the most disappointing service on my home server. The machine I installed it on is an <a href="https://en.wikipedia.org/wiki/Intel_nuc">Intel NUC</a> <a href="https://www.asus.com/supportonly/nuc11pahi5/helpdesk_manual/">NUC11PAHi5</a> from 2021 (an <a href="https://www.intel.com/content/www/us/en/products/sku/208658/intel-core-i51135g7-processor-8m-cache-up-to-4-20-ghz/specifications.html">11th-gen Tiger Lake i5-1135G7</a> with 4 cores, 8 threads, Iris Xe graphics <em>(80@1.30 GHz)</em>, and 32 GB of RAM). It runs headless Debian 13, doesn't have a dedicated GPU and hosts a little less than 40 other Docker containers, all sharing the same 4 CPU cores.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/ollama-intel-igpu-nuc.webp" alt="Spec. sheet of my Intel NUC." />
+    <img src="https://arthurbrugiere.fr/images/2026/08/ollama-intel-igpu-nuc.webp" alt="Spec. sheet of my Intel NUC." />
     <figcaption>Spec. sheet of my Intel NUC.</figcaption>
 </figure>
 <p>Every model I tried on it felt like a bad joke: the time to generate responses has always been somewhere between &quot;go make coffee&quot; and &quot;why did I even install this.&quot;</p>
 <p>Then <a href="https://www.liquid.ai">Liquid AI</a> released <a href="https://www.liquid.ai/blog/lfm2-5-2-6b">LFM2.5-2.6B</a>. A 2.6B-parameter model with tool calling, a thinking mode, and a GGUF that weighs under 2 GB. Their CPU benchmarks were published on small devices, going all the way down to smartphone inference, not data-center GPUs. That told me everything: this thing was built for hardware exactly like mine. Time to dive in.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/ollama-intel-igpu-lfm-benchmark.webp" alt="LFM2.5-2.6B benchmark, above all the others." />
+    <img src="https://arthurbrugiere.fr/images/2026/08/ollama-intel-igpu-lfm-benchmark.webp" alt="LFM2.5-2.6B benchmark, above all the others." />
     <figcaption>Mandatory LLM benchmark image. Honestly not that bad!</figcaption>
 </figure>
 <blockquote>
@@ -981,7 +981,7 @@ load_tensors:      Vulkan0 model buffer size =  1589.03 MiB
 <h2>The context length trap</h2>
 <p><a href="https://openwebui.com">Open WebUI</a> is the chat front end I point at Ollama, a self-hosted web UI that handles conversations, models, users and a lot more instead of using Ollama via the CLI. It also fires background requests of its own, and that turned out to matter.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/ollama-intel-igpu-openwebui.webp" alt="Open WebUI v0.11.0 empty chat interface with LFM2.5-2.6B ready." />
+    <img src="https://arthurbrugiere.fr/images/2026/08/ollama-intel-igpu-openwebui.webp" alt="Open WebUI v0.11.0 empty chat interface with LFM2.5-2.6B ready." />
     <figcaption>My instance of Open WebUI v0.11.0 with LFM2.5-2.6B ready to chat!</figcaption>
 </figure>
 <p>Having seen how well the Iris Xe holds decode speed, I raised the context window to 122K (close to the documentation's maximum) to see how far it would go. Load times climbed from 34 seconds (after the first message) to 123 seconds across a few turns of a single conversation, on a model that was supposed to stay resident.</p>
@@ -1056,7 +1056,7 @@ I made a follow-up article to continue to fine-tune my installation and run conc
 <p>A mesh <a href="https://en.wikipedia.org/wiki/Virtual_private_network">Virtual Private Network</a> (<em>mesh VPN</em> for short) solves that. Every machine gets a private address that belongs to it and an encrypted tunnel to every other machine, built peer-to-peer instead of routed through a central concentrator. <code>ssh my-server.internal</code> is the same command whether I type it from the living room or from a phone on 5G.</p>
 <p>Modern mesh VPNs split into two halves. The control plane is a small server that knows every peer, distributes keys, and tells each machine how to reach the others. The connection between machines is generally <a href="https://www.wireguard.com/">WireGuard</a> running straight between the peers, with the control server staying out of it. WireGuard is what made this class of tool practical: short keys, no session negotiation, and little enough overhead that the tunnel disappears into the noise.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/headscale-to-netbird-benchmark-netbird-front.webp" alt="Architecture of Netbird's mesh VPN" />
+    <img src="https://arthurbrugiere.fr/images/2026/08/headscale-to-netbird-benchmark-netbird-front.webp" alt="Architecture of Netbird's mesh VPN" />
     <figcaption>Illustration of a mesh VPN layout. One central server coordinating direct connections between all the peers.<br/>Credits to <a href="https://netbird.io/" target="_blank">Netbird</a></figcaption>
 </figure>
 <p>Peers cannot always reach each other, and homes behind carrier NAT often cannot. When the direct tunnel fails to come up, traffic falls back to a relay server that both sides can reach. Hold on to that word, because it decides most of this article.</p>
@@ -1077,7 +1077,7 @@ I didn't find many people complaining about any of that, so it might be a me pro
 <p>For these tests, I decided to use the widest range of machines I have running.</p>
 <p>Two peers, both in Hanoi on Viettel connections in different parts of the city: an Intel NUC running <a href="https://www.debian.org/">Debian</a> on x86_64, and a OnePlus 6 running <a href="https://postmarketos.org/">postmarketOS</a>[^2] as a small ARM64 server. My trusty cheap <a href="https://www.ovh.com/">OVH</a> <a href="https://en.wikipedia.org/wiki/Virtual_private_server">VPS</a>[^1] in Singapore carries both control planes (Headscale and NetBird) during the parallel run, including NetBird's built-in relay. Tailscale's nearest DERP region for this path is Hong Kong.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/headscale-to-netbird-benchmark-architecture.webp" alt="Architecture of this series of tests" />
+    <img src="https://arthurbrugiere.fr/images/2026/08/headscale-to-netbird-benchmark-architecture.webp" alt="Architecture of this series of tests" />
     <figcaption>Architecture of this series of tests.</figcaption>
 </figure>
 <p>That topology is what makes this comparison interesting, at least to me. Published comparisons of these tools tend to run between well-connected servers on clean paths (VPS to VPS over fiber), where every difference listed below rounds to zero. Half of my test rig is a phone with Android scraped off it, sitting behind a residential line in a city with flaky internet connectivity.</p>
@@ -1194,7 +1194,7 @@ ping -c 500 -i 0.05 nuc.nb.internal    # NetBird
 </tbody>
 </table>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5" />
+    <img src="https://arthurbrugiere.fr/images/2026/08/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5" />
     <figcaption>Close to nothing on my NUC while streaming music and homelabbing.</figcaption>
 </figure>
 <h2>The one column DERP wins</h2>
@@ -1277,7 +1277,7 @@ ping -c 500 -i 0.05 nuc.nb.internal    # NetBird
 		<summary type="html">A @reboot cron never disabled my laptop touchscreen. Finding the layer that does.</summary>
 		<content type="html"><![CDATA[<p>I own an old <a href="https://www.dell.com/support/product-details/en-vn/product/inspiron-11-3158-laptop/overview"><em>Dell Inspiron 2-in-1 11-3158</em></a> that I bought at a flea market years ago and made my travel machine: an i3-6100U running <a href="https://mxlinux.org/">MX Linux</a> with <a href="https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)">Cinnamon</a>, maxed at 8GB of DDR3 RAM[^1].</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/disabling-a-touchscreen-for-good-laptop.webp" alt="My Inspiron laptop covered with stickers" />
+    <img src="https://arthurbrugiere.fr/images/2026/08/disabling-a-touchscreen-for-good-laptop.webp" alt="My Inspiron laptop covered with stickers" />
     <figcaption>My Inspiron laptop covered with stickers, I love stickers!</figcaption>
 </figure>
 <p>As it's a convertible (<em>2-in-1</em> model), it has a touchscreen, but it's broken and sometimes it bugs and blocks the cursor clicking in the upper corner, which makes it impossible to use. So I wanted to disable the touchscreen from that machine, for good.</p>
@@ -1457,7 +1457,7 @@ You can also set <code>autosleep_time</code> through the headset's system settin
 <p>This one is interesting! 😋</p>
 <p>When you remove a Quest headset, a proximity sensor detects the gap and blacks out the display to save power (or doze if you didn't applied any of the above parameters, remember: lazy device). In any multi-user setup, demo, else, headsets get passed around or set on charging stations between activities. If the display blacks out, the streaming session breaks and the next person sees a dark screen instead of the simulation.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/quest-adb-setup-simple-sensor.webp" alt="Picture of proximity sensors inside of a meta quest headset" />
+    <img src="https://arthurbrugiere.fr/images/2026/08/quest-adb-setup-simple-sensor.webp" alt="Picture of proximity sensors inside of a meta quest headset" />
     <figcaption>This captor exists in both <i>Meta Quest 2</i> and <i>Meta Quest 3</i> (not the 3s)</figcaption>
 </figure>
 <p>SIMPLE disable this behavior by sending a broadcast on each headset's boot:</p>
@@ -1516,12 +1516,12 @@ This <em>&quot;guide&quot;</em> is describing the struggle I had to install <str
 <h2>Issue 1: The installer blue-screens after WiFi connection</h2>
 <p>I do have some experience installing Linux systems, so I pretty much followed the same steps as described in the <a href="https://docs.openmediavault.org/en/latest/installation/via_iso.html">official documentation</a>: Downloaded the iso, flashed a USB stick, boot the OMV ISO, follow the first steps, connect to your WiFi network, type the password, see the &quot;Configuring DHCP&quot; loading screen, see the &quot;Configuring DHCP<strong>v6</strong>&quot; loading screen...</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-dhcp.webp" alt="Debian installer DHCP loading screen" />
+    <img src="https://arthurbrugiere.fr/images/2026/06/install-omv-8-without-ipv6-dhcp.webp" alt="Debian installer DHCP loading screen" />
     <figcaption>I don't have ways to capture my installation screen, imagine it's written `DHCPv6` please....</figcaption>
 </figure>
 <p>The popup closes. You're staring at a blank blue Debian installer background. Nothing works. The keyboard registers keys and displays them on the screen, but nothing happens.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-bsod.webp" alt="Debian installer blue screen" />
+    <img src="https://arthurbrugiere.fr/images/2026/06/install-omv-8-without-ipv6-bsod.webp" alt="Debian installer blue screen" />
     <figcaption>The BSOD (Blue Screen Of <s>Death</s> Debian), not my most useful illustration...</figcaption>
 </figure>
 <p>The likely cause: the Debian installer tried DHCPv6 after getting an IPv4 address. However, my router has IPv6 disabled, the request timed out with no response or got an unexpected message... Anyway, the installer broke and after waiting 1 hour, I tried to fix it: I disabled IPv6 at the kernel level for this boot only.</p>
@@ -1565,7 +1565,7 @@ Jun 02 14:46:27 systemd[1]: Failed to start A high performance web server and a 
 </code></pre>
 <p>The web UI comes up. Log in, with the default credentials (<code>admin</code> / <code>openmediavault</code>), go to Network → Interfaces, configure your WiFi interface (me <code>wlp2s0</code>) with your WiFi credentials, set the IPv4 as DHCP and the IPv6 as Disabled, save and apply. On the next reboot the web UI starts without trouble, because the saved network config no longer uses the faulty IPv6.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-network-config.webp" alt="OMV network config with IPv6 disabled" />
+    <img src="https://arthurbrugiere.fr/images/2026/06/install-omv-8-without-ipv6-network-config.webp" alt="OMV network config with IPv6 disabled" />
     <figcaption>Saved working network with IPv6 disabled</figcaption>
 </figure>
 <p>Finally :)</p>
@@ -1583,7 +1583,7 @@ Jun 02 14:46:27 systemd[1]: Failed to start A high performance web server and a 
 <li>Hit create, wait a few minutes, then mount it.</li>
 </ol>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-btrfs.webp" alt="OMV FS configured with BTRFS and displaying 1TB of usable storage" />
+    <img src="https://arthurbrugiere.fr/images/2026/06/install-omv-8-without-ipv6-btrfs.webp" alt="OMV FS configured with BTRFS and displaying 1TB of usable storage" />
     <figcaption>Saved working network with IPv6 disabled</figcaption>
 </figure>
 <p>After that, create a shared folder on the volume and enable SMB, NFS and other network protocols under <code>Services</code>.</p>
@@ -1615,7 +1615,7 @@ Command: btrfs scrub start /srv/dev-disk-by-uuid-XXXX
 </ul>
 <p>Windows caches the credentials after the first successful connection. You enter them once per machine and you won't need to enter them again.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/install-omv-8-without-ipv6-final.webp" alt="OMV dashboard with plenty of stats" />
+    <img src="https://arthurbrugiere.fr/images/2026/06/install-omv-8-without-ipv6-final.webp" alt="OMV dashboard with plenty of stats" />
     <figcaption>The dashboard of the NAS with plenty of stats but nobody using it there</figcaption>
 </figure>
 <p>Two weeks in, the NAS just works. The Windows machines all connect, the scrubs run monthly (I hope), and everyone's happy about it.</p>
@@ -1701,7 +1701,7 @@ module.exports = mod.exports;
 <h2>Summary</h2>
 <p>The SIMPLE Webplatform now ships as a single executable on all three platforms. Windows uses a Go self-extracting launcher that bundles a SEA-built <code>node.exe</code> and extracts it to temp on first run. Linux and macOS use native SEA binaries without wrappers. The packaging pipeline relies on Node.js built-in tools plus <code>postject</code> and Go. No deprecated third-party packagers, no emulation layers, no platform-specific native module patching.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/packaging-nodejs-windows-sea-compilation.webp" alt="Compilation logs of the windows binary" />
+    <img src="https://arthurbrugiere.fr/images/2026/05/packaging-nodejs-windows-sea-compilation.webp" alt="Compilation logs of the windows binary" />
     <figcaption>Compilation logs of the windows binary on Github Actions</figcaption>
 </figure>
 <p>If you are packaging a Node.js application with native modules for Windows, use <em>Node.js SEA</em> (it's been in beta for very long time, but it really works fine nowadays), name your binary <code>node.exe</code>, and wrap it with a launcher if your users need a branded filename. Those three things would have saved me days of debugging.</p>
@@ -1734,7 +1734,7 @@ module.exports = mod.exports;
 </ul>
 <p>Everything appeared enabled. No error messages. No warnings. But <strong>the WiFi network simply never appeared</strong>. Not on my phone, not on any other device. macOS accepted the configuration but silently refused to actually broadcast the signal.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-not-working.webp" alt="Internet sharing is enabled, but not wifi is broadcasted" />
+    <img src="https://arthurbrugiere.fr/images/2026/05/macbook-air-access-point-wifi-not-working.webp" alt="Internet sharing is enabled, but not wifi is broadcasted" />
     <figcaption>Internet sharing is enabled, but not wifi is broadcasted (it should be displayed here as we will see later)</figcaption>
 </figure>
 <p>The reason: macOS Internet Sharing is built to share an <em>existing</em> (i.e. activated, up) connection, not blindly bridge one network stack to another. Without an active upstream connection that the system recognizes as active, the underlying service doesn't actually bring up the access point, even though the UI lets you enable everything.</p>
@@ -1745,7 +1745,7 @@ module.exports = mod.exports;
 <pre><code class="language-bash">curl -L https://gist.github.com/zhuhuilin/01656866b3e73a677a434c21183b40d2/raw/setup-adhoc-network.sh | bash
 </code></pre>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-terminal.webp" alt="Running zhuhuilin's setup script" />
+    <img src="https://arthurbrugiere.fr/images/2026/05/macbook-air-access-point-wifi-terminal.webp" alt="Running zhuhuilin's setup script" />
     <figcaption>Running zhuhuilin's setup script</figcaption>
 </figure>
 <p>This will automatically:</p>
@@ -1756,7 +1756,7 @@ module.exports = mod.exports;
 <li>Save state for safe removal</li>
 </ul>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-AdHoc-setup.webp" alt="MacOS Settings window with the Internet Sharing configured with the AdHoc interface" />
+    <img src="https://arthurbrugiere.fr/images/2026/05/macbook-air-access-point-wifi-AdHoc-setup.webp" alt="MacOS Settings window with the Internet Sharing configured with the AdHoc interface" />
     <figcaption>Internet Sharing configured with the AdHoc interface, just need to enable it now</figcaption>
 </figure>
 <p>Then you can select this <code>AdHoc</code> service as your source in Internet Sharing. Once configured, macOS actually brings up the WiFi access point, and devices can see and connect to it.</p>
@@ -1764,7 +1764,7 @@ module.exports = mod.exports;
 <p>[!CAUTION]
 The WiFi should be enabled on MacOS to have the beacon activated. But it should not be connected to any networks.</p>
 <figure>
-   <img src="https://arthurbrugiere.fr/images/macbook-air-access-point-wifi-enabled.webp" alt="Keeping wifi enabled and seeing the shared network broadcasted" />
+   <img src="https://arthurbrugiere.fr/images/2026/05/macbook-air-access-point-wifi-enabled.webp" alt="Keeping wifi enabled and seeing the shared network broadcasted" />
    <figcaption>WiFi is enabled, and is showing the "Internet Sharing" on Channel 11</figcaption>
 </figure>
 </blockquote>
@@ -1801,7 +1801,7 @@ Settings seems to cache these parameters. Quit the Settings application before a
 		<summary type="html">How I&apos;ve been able to enable ADB Wireless without user interaction.</summary>
 		<content type="html"><![CDATA[<p>Meta Quest headsets have a nasty habit of forgetting your wireless ADB trust relationship every time they reboot. For a research project deploying ten headsets to a classroom of teachers who've never touched a terminal, <em>&quot;just run <code>adb tcpip 5555</code> again&quot;</em> isn't a solution, it's a support ticket generator at best. I spent weeks trying to automate the &quot;Allow wireless debugging?&quot; popup out of existence. The path involved dead ends, Android security walls, and finally a brute-force accessibility hack that actually works.</p>
 <figure>
-    <img src="https://arthurbrugiere.fr/images/mq3-wireless-adb.webp" alt="ADB Wireless Popup visible in a Meta Quest 3 headset" />
+    <img src="https://arthurbrugiere.fr/images/2026/05/mq3-wireless-adb.webp" alt="ADB Wireless Popup visible in a Meta Quest 3 headset" />
     <figcaption>The "Allow wireless debugging?" popup on a Meta Quest 3.<br/>Credit: Image from <a href="https://www.quest-games-optimizer.com/how-to-enable-adb-from-your-meta-quest">QGO</a></figcaption>
 </figure>
 <h2>The Problem That Shouldn't Exist</h2>

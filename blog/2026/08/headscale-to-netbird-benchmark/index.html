@@ -116,7 +116,7 @@
 <p>A mesh <a href="https://en.wikipedia.org/wiki/Virtual_private_network" target="_blank" rel="noopener noreferrer nofollow">Virtual Private Network</a> (<em>mesh VPN</em> for short) solves that. Every machine gets a private address that belongs to it and an encrypted tunnel to every other machine, built peer-to-peer instead of routed through a central concentrator. <code>ssh my-server.internal</code> is the same command whether I type it from the living room or from a phone on 5G.</p>
 <p>Modern mesh VPNs split into two halves. The control plane is a small server that knows every peer, distributes keys, and tells each machine how to reach the others. The connection between machines is generally <a href="https://www.wireguard.com/" target="_blank" rel="noopener noreferrer nofollow">WireGuard</a> running straight between the peers, with the control server staying out of it. WireGuard is what made this class of tool practical: short keys, no session negotiation, and little enough overhead that the tunnel disappears into the noise.</p>
 <figure>
-    <img src="/images/headscale-to-netbird-benchmark-netbird-front.webp" alt="Architecture of Netbird&#x27;s mesh VPN">
+    <img src="/images/2026/08/headscale-to-netbird-benchmark-netbird-front.webp" alt="Architecture of Netbird&#x27;s mesh VPN">
     <figcaption>Illustration of a mesh VPN layout. One central server coordinating direct connections between all the peers.<br>Credits to <a href="https://netbird.io/" target="_blank" rel="nofollow noopener noreferrer">Netbird</a></figcaption>
 </figure>
 <p>Peers cannot always reach each other, and homes behind carrier NAT often cannot. When the direct tunnel fails to come up, traffic falls back to a relay server that both sides can reach. Hold on to that word, because it decides most of this article.</p>
@@ -135,7 +135,7 @@
 <p>For these tests, I decided to use the widest range of machines I have running.</p>
 <p>Two peers, both in Hanoi on Viettel connections in different parts of the city: an Intel NUC running <a href="https://www.debian.org/" target="_blank" rel="noopener noreferrer nofollow">Debian</a> on x86_64, and a OnePlus 6 running <a href="https://postmarketos.org/" target="_blank" rel="noopener noreferrer nofollow">postmarketOS</a><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup> as a small ARM64 server. My trusty cheap <a href="https://www.ovh.com/" target="_blank" rel="noopener noreferrer nofollow">OVH</a> <a href="https://en.wikipedia.org/wiki/Virtual_private_server" target="_blank" rel="noopener noreferrer nofollow">VPS</a><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup> in Singapore carries both control planes (Headscale and NetBird) during the parallel run, including NetBird’s built-in relay. Tailscale’s nearest DERP region for this path is Hong Kong.</p>
 <figure>
-    <img src="/images/headscale-to-netbird-benchmark-architecture.webp" alt="Architecture of this series of tests">
+    <img src="/images/2026/08/headscale-to-netbird-benchmark-architecture.webp" alt="Architecture of this series of tests">
     <figcaption>Architecture of this series of tests.</figcaption>
 </figure>
 <p>That topology is what makes this comparison interesting, at least to me. Published comparisons of these tools tend to run between well-connected servers on clean paths (VPS to VPS over fiber), where every difference listed below rounds to zero. Half of my test rig is a phone with Android scraped off it, sitting behind a residential line in a city with flaky internet connectivity.</p>
@@ -249,7 +249,7 @@
 
 <table><thead><tr><th>Machine</th><th>NetBird’s idle cost</th></tr></thead><tbody><tr><td>Intel NUC, x86_64</td><td>15 CPU-s per hour, 0.42% of one core</td></tr><tr><td>OnePlus 6 linux, arm64</td><td>13.2 CPU-s per hour, 0.37% of one core</td></tr><tr><td>Raspberry Pi 4</td><td>41.7 CPU-s per hour, 1.16% of one core</td></tr></tbody></table>
 <figure>
-    <img src="/images/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5">
+    <img src="/images/2026/08/headscale-to-netbird-benchmark-htop.webp" alt="Picture of Htop showing Netbird process far from the top 5">
     <figcaption>Close to nothing on my NUC while streaming music and homelabbing.</figcaption>
 </figure>
 <h2 id="the-one-column-derp-wins">The one column DERP wins</h2>
