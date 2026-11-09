@@ -56,7 +56,7 @@ Before running models with llama.cpp, the main model inference engine, we need t
 - [*OpenVINO*](https://en.wikipedia.org/wiki/OpenVINO) is Intel's newer (and still experimental) way to run LLM compute on its ecosystem (CPU, GPU, NPU), and llama.cpp also has a backend for it.
 
 
-Similarly [to before](https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/), I chose to run everything on SYCL on my Intel machine. Why not the other backends? I tried Vulkan several times, and every time the model and the desktop fought over the GPU through the same graphics API. The laptop became really unpleasant to use, and I need to keep working while the agent runs. And OpenVINO has been a bit of a fight that led nowhere, which I'm detailing [here if you're interested](https://arthurbrugiere.fr/blog/2026/11/openvino-arc-igpu-llama-cpp/).
+Similarly [to before](https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/), I chose to run everything on SYCL on my Intel machine. Why not the other backends? I tried Vulkan several times, and every time the model and the desktop fought over the GPU through the same graphics API. The laptop became really unpleasant to use, and I need to keep working while the agent runs. And OpenVINO has been a bit of a fight that led nowhere, which I'm detailing [here if you're interested](https://arthurbrugiere.fr/blog/2026/11/trying-openvino-arc-igpu/).
 
 So SYCL it is.
 
