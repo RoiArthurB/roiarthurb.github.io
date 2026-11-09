@@ -88,7 +88,7 @@ A few terms I use everywhere below:</p>
 <li><a href="https://en.wikipedia.org/wiki/SYCL"><em>SYCL</em></a> is Intel's way to run general compute code on its GPUs, and llama.cpp has a backend for it.</li>
 <li><a href="https://en.wikipedia.org/wiki/OpenVINO"><em>OpenVINO</em></a> is Intel's newer (and still experimental) way to run LLM compute on its ecosystem (CPU, GPU, NPU), and llama.cpp also has a backend for it.</li>
 </ul>
-<p>Similarly <a href="https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/">to before</a>, I chose to run everything on SYCL on my Intel machine. Why not the other backends? I tried Vulkan several times, and every time the model and the desktop fought over the GPU through the same graphics API. The laptop became really unpleasant to use, and I need to keep working while the agent runs. And OpenVINO has been a bit of a fight that led nowhere, which I'm detailing <a href="https://arthurbrugiere.fr/blog/2026/11/openvino-arc-igpu-llama-cpp/">here if you're interested</a>.</p>
+<p>Similarly <a href="https://arthurbrugiere.fr/blog/2026/08/ollama-intel-igpu/">to before</a>, I chose to run everything on SYCL on my Intel machine. Why not the other backends? I tried Vulkan several times, and every time the model and the desktop fought over the GPU through the same graphics API. The laptop became really unpleasant to use, and I need to keep working while the agent runs. And OpenVINO has been a bit of a fight that led nowhere, which I'm detailing <a href="https://arthurbrugiere.fr/blog/2026/11/trying-openvino-arc-igpu/">here if you're interested</a>.</p>
 <p>So SYCL it is.</p>
 <p>Every llama-bench run below (llama.cpp's built-in benchmarking tool) uses the same flags: <code>-ngl 99 -fa on -t 6 -b 1024 -ub 256</code> (the most important option here is <code>-ngl 99</code>, which pushes the full model onto the GPU, so no offloading), three repetitions each, laptop on AC.</p>
 <h3>i915 or xe: pick the right driver first</h3>
@@ -536,6 +536,317 @@ A word on noise: with two runs per prompt, the speculative numbers at depth vary
 <p>[^4]: Again, ByteShape has already demonstrated this on <a href="https://byteshape.com/blogs/">their blog</a>.</p>
 <p>[^kv]: I also tried quantizing the KV cache (the model's memory of the context) to q8_0. It didn't speed up decode at 16k: 11.6-11.8 t/s with only K or only V quantized, same as f16, and 9.5 t/s with both. Mixed K/V types also made prefill much slower. Another hint that the attention kernel is the limit, not the size of what it reads. And I didn't try TurboQuant or anything other than the default, as most of them (all?) aren't available for SYCL.</p>
 <p>[^graph]: <code>GGML_SYCL_ENABLE_GRAPH=1</code>. On Ling, decode went from 22.9 to 22.4 t/s, which is noise. On MiniCPM5 it aborted with &quot;Graph nodes cannot depend on events from outside the graph&quot;.</p>
+]]></content>
+	</entry>
+	<entry>
+		<id>https://arthurbrugiere.fr/blog/2026/11/trying-openvino-arc-igpu/</id>
+		<title>Trying OpenVINO on my ThinkPad&apos;s Arc iGPU</title>
+		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/2026/11/trying-openvino-arc-igpu/" />
+		<published>2026-11-09T00:00:00.000Z</published>
+		<updated>2026-11-09T00:00:00.000Z</updated>
+		<author><name>Arthur Brugière</name><uri>https://arthurbrugiere.fr/</uri></author>
+		<category term="LLM" />
+		<category term="llama.cpp" />
+		<category term="intel" />
+		<category term="openvino" />
+		<summary type="html">Intel&apos;s own AI toolkit on Intel&apos;s own laptop chip should be a perfect match. I tried three ways in, here&apos;s why I went back to SYCL.</summary>
+		<content type="html"><![CDATA[<p>Intel makes the chip in my laptop, and Intel makes <a href="https://docs.openvino.ai/"><em>OpenVINO</em></a>, a toolkit to run AI models on Intel hardware: CPU, GPU and NPU from one runtime. On paper, it's the obvious way to run a small LLM on my ThinkPad. In practice, I struggled. A lot. Several times over the full month of October 2026: crashes, one silent fallback to the CPU, some requantization shenanigans before I got anything useful.</p>
+<p>No suspense: on an empty context, OpenVINO reads prompts nearly <em>three times faster</em> than <a href="https://arthurbrugiere.fr/blog/2026/11/small-coding-model-arc-igpu/">my llama.cpp SYCL setup</a>. But that number needs an asterisk, and past 8k tokens the advantage is gone. Here's my journey, every wall I hit, and why I stayed on SYCL.</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/2026/11/openvino-arc-igpu-llama-cpp-OpenVINO_logo.webp" alt="OpenVINO Logo" />
+    <figcaption>(goofy looking) OpenVINO logo</figcaption>
+</figure>
+<blockquote>
+<p>DISCLAIMER
+I'm not a professional, I probably did a lot of things wrong and I just want to share my experience with the world. Feel free to correct me if I'm wrong anywhere, if I could test things differently, etc.</p>
+<p>The goal is for us all to learn and avoid each other's mistakes :)</p>
+</blockquote>
+<h2>The setup</h2>
+<p>This is a side story to my <a href="https://arthurbrugiere.fr/blog/2026/11/small-coding-model-arc-igpu-long-context/">post on running a small coding model on this laptop</a>, so I'll keep the rig short:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Laptop</td>
+<td>ThinkPad E16 Gen 3</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>Intel Core Ultra 7 255H (Arrow Lake-H)</td>
+</tr>
+<tr>
+<td>GPU</td>
+<td>Intel Arc 140T (integrated)</td>
+</tr>
+<tr>
+<td>NPU</td>
+<td>Intel AI Boost (NPU 3720)</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>48 GiB DDR5 (5200 MT/s)</td>
+</tr>
+<tr>
+<td>OS</td>
+<td>EndeavourOS, kernel 7.2.11, <code>xe</code> GPU driver</td>
+</tr>
+</tbody>
+</table>
+<p>The model is the one I use daily: <a href="https://huggingface.co/peculiar-ragdoll/Sharp-MiniCPM5-2B-GGUF">Sharp-MiniCPM5-2B</a> at Q6_K_XL, a 2B <em>dense</em> model (every parameter works for every token). My reference is llama.cpp with its <a href="https://en.wikipedia.org/wiki/SYCL"><em>SYCL</em></a> backend, Intel's general (and older) way to run compute code on its GPUs. Every llama-bench run below uses the same flags as in the main post: <code>-ngl 99 -fa on -t 6 -b 1024 -ub 256</code>, three repetitions, laptop on AC.</p>
+<p>What I want is simple: something faster than SYCL that still leaves me a usable laptop, and that I can plug into a coding agent. Using an Arch-based distro, I also want to test the latest technologies (especially with the hope of exploiting my NPU).</p>
+<blockquote>
+<p>[!NOTE]</p>
+<ul>
+<li><em>Prefill</em> (<code>pp</code>): reading the prompt. It's the wait before the model starts writing.</li>
+<li><em>Decode</em> (<code>tg</code>): writing the answer, one token at a time. The usual &quot;model speed&quot;.</li>
+<li><em>NPU</em>: a small accelerator built for AI workloads,<br/>&lt;spoiler&gt;<em>slower than the GPU but meant to sip less power</em>&lt;/spoiler&gt;.</li>
+</ul>
+</blockquote>
+<h2>Door 1: llama.cpp's OpenVINO backend</h2>
+<p>llama.cpp has an OpenVINO backend. Same GGUF files, same tools, same flags. That's the cheapest experiment possible.</p>
+<h3>First try: crash on the first prompt</h3>
+<p>My first attempt, in early October, used a pre-compiled llama.cpp release (<code>build 11406</code>) and llama-server. Both models I tried crashed on their very first request:</p>
+<ul>
+<li><a href="https://huggingface.co/inclusionAI/Ling-3.0-tiny-GGUF">Ling-3.0-tiny</a>, a <a href="https://en.wikipedia.org/wiki/Mixture_of_experts"><em>Mixture of Experts</em></a> (<em>MoE</em>, a model where a router picks a few &quot;expert&quot; sub-networks per token):</li>
+</ul>
+<pre><code class="language-log">E GGML OpenVINO backend ov::Exception: Exception from src/core/src/dimension.cpp:208:
+Cannot get length of dynamic dimension
+</code></pre>
+<ul>
+<li>Sharp-MiniCPM5[^1], on an 186-token prompt:</li>
+</ul>
+<pre><code class="language-log">E GGML OpenVINO backend ov::Exception: [...] [GPU] The input tensor size is not equal to model [...]
+</code></pre>
+<p>From what I understand, OpenVINO pre-compiles the model into a fixed execution graph before running it, and both errors are about shapes that don't fit that graph. For the dense model, a newer build fixed it (see below). For the MoE, I never got it to run: its router picks different experts for every token, which seems to be exactly the opposite of what a fixed graph likes. As far as I can tell, MoE support in this backend just isn't there yet[^ling] (as of October 2026).</p>
+<h3>Second try: OpenVINO, but slow</h3>
+<p>Some time later, the AUR had a package: <code>llama.cpp-openvino-bin</code> (build 11552). Simple to install with all the dependencies pre-configured, drop-in replacement for my running <code>llama.cpp-sycl-bin</code> (using SYCL backend), same llama-bench command. First result:</p>
+<pre><code class="language-bash">$ /usr/lib/llama.cpp-openvino/llama-bench -m Sharp-MiniCPM5-2B-Q6_K_XL.gguf -ngl 99 -fa on -t 6 -b 1024 -ub 256 -p 512 -n 256 -d 0,8192,16384,32768 -r 3 -o md
+OpenVINO: using device CPU
+[...]
+| llama ?B Q6_K | 2.04 GiB | 2.52 B | OPENVINO | 99 | ... | pp512         | 198.54 ± 2.32 |
+| llama ?B Q6_K | 2.04 GiB | 2.52 B | OPENVINO | 99 | ... | tg256         |  14.97 ± 0.74 |
+| llama ?B Q6_K | 2.04 GiB | 2.52 B | OPENVINO | 99 | ... | pp512 @ d8192 |  44.70 ± 1.33 |
+</code></pre>
+<p>The catch is in the second line: <code>using device CPU</code>. With this backend, <code>-ngl 99</code> doesn't pick the best device automatically. Instead, I have to use an environment variable to choose where to run the model, and the default is the CPU. The device list confirms the GPU and the NPU are detected and supported, just not selected:</p>
+<pre><code class="language-bash">$ /usr/lib/llama.cpp-openvino/llama-cli --list-devices
+Available devices:
+  OPENVINO0: GGML_OPENVINO_DEVICE=CPU (selected) - Intel(R) Core(TM) Ultra 7 255H (47071 MiB, 47071 MiB free)
+  OPENVINO1: GGML_OPENVINO_DEVICE=GPU - Intel(R) Arc(TM) Graphics (iGPU) (43796 MiB, 29496 MiB free)
+  OPENVINO2: GGML_OPENVINO_DEVICE=NPU - Intel(R) AI Boost (NPU 3720) (47071 MiB, 29496 MiB free)
+</code></pre>
+<h3>Third try: GPU, then a crash, then a workaround</h3>
+<p>Two variables to set. One picks the GPU, the other turns on <em>stateful execution</em>, which keeps the KV cache (the model's memory of the context) inside OpenVINO's compiled model instead of passing it back and forth:</p>
+<pre><code class="language-bash">GGML_OPENVINO_DEVICE=GPU \
+GGML_OPENVINO_STATEFUL_EXECUTION=1 \
+llama-bench -m Sharp-MiniCPM5-2B-Q6_K_XL.gguf -ngl 99 -fa 1 -t 6 -b 1024 -ub 256 \
+  -p 512 -n 256 -d 0,8192,16384,32768 -r 3 -o md
+</code></pre>
+<p>It crashed while compiling the model, in an optimization pass of the GPU plugin:</p>
+<pre><code class="language-log">GGML OpenVINO backend ov::Exception: [...]
+[FullyConnectedHorizontalFusion] END: node: gpu_opset::FullyConnectedCompressed MatMul_1900_Qcur-0#n3 [...]
+Argument shapes are inconsistent; they must have the same rank, and must have equal dimension everywhere except on the concatenation axis (axis 0).
+</code></pre>
+<p>That pass tries to merge several matrix multiplications into one (or something like that, I have no idea), and apparently it choked on Q6_K weights whose scales don't line up. The docs say Q6_K is supported on the GPU (converted to <code>Q8_0_C</code>), but not on my model, apparently. The workaround is a third variable:</p>
+<pre><code class="language-bash">GGML_OPENVINO_REQUANT_KQUANT=q4_asym64_all   # requantize all K-quant weights to 4-bit, groups of 64
+</code></pre>
+<p>It converts the K-quant weights to one common 4-bit format when loading the model[^2]. The GGUF file isn't modified, but the pre-compiled model loaded in OpenVINO on my machine is a 4-bit model, not my Q6. Keep that in mind for what follows.</p>
+<h3>The numbers</h3>
+<p>With all three variables, it ran. Against SYCL, same file, same flags, same week:</p>
+<table>
+<thead>
+<tr>
+<th>Sharp-MiniCPM5</th>
+<th>SYCL</th>
+<th>OpenVINO GPU (4-bit)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prefill, 0 Context</td>
+<td>800 t/s</td>
+<td><strong>2,263 t/s</strong></td>
+</tr>
+<tr>
+<td>Decode, 0 Context</td>
+<td>27.4 t/s</td>
+<td><strong>29.6 t/s</strong></td>
+</tr>
+<tr>
+<td>Prefill @ 8K</td>
+<td>503 t/s</td>
+<td>529 ± 162 t/s</td>
+</tr>
+<tr>
+<td>Decode @ 8K</td>
+<td>20.4 t/s</td>
+<td><strong>23.7 t/s</strong></td>
+</tr>
+<tr>
+<td>Prefill @ 16K</td>
+<td><strong>410 t/s</strong></td>
+<td>289 ± 92 t/s</td>
+</tr>
+<tr>
+<td>Decode @ 16K</td>
+<td>18.1 t/s</td>
+<td><strong>19.6 t/s</strong></td>
+</tr>
+<tr>
+<td>Prefill @ 32K</td>
+<td><strong>241 t/s</strong></td>
+<td>152 ± 59 t/s</td>
+</tr>
+<tr>
+<td>Decode @ 32K</td>
+<td><strong>15.4 t/s</strong></td>
+<td>14.4 t/s</td>
+</tr>
+</tbody>
+</table>
+<p>Nearly three times the prefill on an empty context is impressive, but:</p>
+<ul>
+<li>The prefill advantage is gone very quickly (at 8k), is pretty inconsistent with a huge spread between runs (±162 t/s), and OpenVINO is clearly behind at 16k and 32k (where I'd like to run my models, not crazy big context tho).</li>
+<li>The decode advantage is small, shrinks with depth, and flips at 32k.</li>
+<li>And it's a 4-bit model racing a 6-bit one. I picked Q6 precisely because 2B models get dumb quickly at 4 bits, so I didn't bother testing a native Q4 file either: on this model, a faster wrong answer isn't a win.</li>
+</ul>
+<p>A coding agent spends its life beyond 8k tokens, so this is great to impress in a quick benchmark, but not really better than SYCL in real-life use.</p>
+<h3>The NPU, for fun</h3>
+<p>The <a href="https://en.wikipedia.org/wiki/Neural_processing_unit">NPU</a> (Neural Processing Unit, called <em>“AI Boost”</em> on Intel chips) is a third processor sitting next to the CPU and the GPU, built only for AI maths. It isn't designed to be fast; it's designed to be frugal: it runs things like background blur on video calls or noise cancelling all day while barely touching the battery.</p>
+<p>Same three variables, with <code>GGML_OPENVINO_DEVICE=NPU</code>:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>NPU</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prefill, 0 Context</td>
+<td>234 t/s</td>
+</tr>
+<tr>
+<td>Decode, 0 Context</td>
+<td>10.8 t/s</td>
+</tr>
+<tr>
+<td>Prefill @ 8K</td>
+<td>36.6 t/s</td>
+</tr>
+<tr>
+<td>Decode @ 8K</td>
+<td><code>^C</code></td>
+</tr>
+</tbody>
+</table>
+<p>I killed it there. Sorry you won't see more of that table.</p>
+<p>It works, which is already something, but its decode on empty context (so where it's the fastest) is slower than on CPU, and performance drops super fast (roughly six times slower for 8k context, I need to use this machine and I don't want to know how long 32k is at sub 1t/s). Whether it uses less power is another question, and I didn't measure it.</p>
+<blockquote>
+<p>[!NOTE]
+What about CPU, GPU and NPU together? OpenVINO itself has modes for that (<code>AUTO</code>, <code>HETERO</code>, multi-device), but llama.cpp's backend runs on the one device you pick. So no, I couldn't combine them for one request (what I hoped to do). And splitting one token's work across devices that share the same RAM probably wouldn't help much anyway.</p>
+</blockquote>
+<h2>Door 2: <em>OpenVINO GenAI</em>, aka the manual way</h2>
+<p>If llama.cpp's backend is a wrapper, maybe Intel's own runtime does better. <a href="https://docs.openvino.ai/">OpenVINO GenAI</a> is Intel's Python library for running LLMs, and its 2026.4 release (the latest at the moment of my testing) lists MiniCPM5-2B as an early-supported model on CPU and GPU.</p>
+<p>It doesn't read GGUF files for this model, so the path is: install it in a Python virtual environment, export the original model from Hugging Face to OpenVINO's own format (<em>IR</em>), then run it.</p>
+<pre><code class="language-bash"># Isolated environment for OpenVINO GenAI
+python -m venv ./venvs
+source ./venvs/bin/activate
+pip install openvino-genai
+pip install &quot;transformers&gt;=5.6&quot; &quot;optimum-intel[openvino] @ git+https://github.com/huggingface/optimum-intel.git&quot;
+
+# Export MiniCPM5-2B to OpenVINO IR, in FP16 (no 4-bit compression)
+optimum-cli export openvino --model openbmb/MiniCPM5-2B --weight-format fp16 ~/models/ov-minicpm5-2b-fp16
+</code></pre>
+<p>OpenVINO 2026.4 saw all three devices (<code>['CPU', 'GPU', 'NPU']</code>), the export downloaded about 5 GB and went through, and I ran a small coding prompt on the GPU with <code>ov_genai.LLMPipeline(model_dir, &quot;GPU&quot;)</code>. The library's own metrics:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>OpenVINO GenAI, GPU, FP16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Input tokens</td>
+<td>42</td>
+</tr>
+<tr>
+<td>Time to first token</td>
+<td>~320-336 ms</td>
+</tr>
+<tr>
+<td>Time per output token</td>
+<td>~151 ms</td>
+</tr>
+<tr>
+<td>Decode</td>
+<td><strong>6.6 t/s</strong></td>
+</tr>
+</tbody>
+</table>
+<p>That's about four times slower than SYCL. In fairness to OpenVINO, this isn't an apple-to-apple test either:</p>
+<ul>
+<li>FP16 weights are about 5 GB, against 2 GB for my Q6 GGUF. On an iGPU where speed mostly depends on how much data moves around, being slower is expected. An INT8 or INT4 export would probably be faster.</li>
+<li>It's the original MiniCPM5, not the Sharp fine-tune (even though, for the inference engine, that's no different).</li>
+<li>MiniCPM5 support is marked early.</li>
+</ul>
+<p>And the output wasn't usable. My first run, streaming tokens as they came, printed every word twice[^double]. The second one spent its whole 256-token budget thinking, even with thinking turned off in the chat template, and never got to an answer.</p>
+<p>Even if it had worked, GenAI is a Python library, not a server. To plug it into a coding agent like <a href="https://pi.dev/">Pi</a> or <a href="https://opencode.ai/">OpenCode</a>, I'd need OpenVINO Model Server on top. That's a lot of plumbing for a model that's four times slower, so I stopped there.</p>
+<h2>Where it landed</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>SYCL</th>
+<th>llama.cpp OpenVINO</th>
+<th>OpenVINO GenAI</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runs my Q6 model as-is</td>
+<td>Yes</td>
+<td>Only requantized to 4-bit</td>
+<td>No (needs an IR export)</td>
+</tr>
+<tr>
+<td>Runs a MoE</td>
+<td>Yes</td>
+<td>Crashed</td>
+<td>Not tried (probably not)</td>
+</tr>
+<tr>
+<td>Decode, d0</td>
+<td>27.4 t/s</td>
+<td>29.6 t/s</td>
+<td>6.6 t/s (FP16)</td>
+</tr>
+<tr>
+<td>Prefill @ 32k</td>
+<td>241 t/s</td>
+<td>152 t/s</td>
+<td>Not measured</td>
+</tr>
+<tr>
+<td>Plugs into my agent (easily)</td>
+<td>Yes (llama-server)</td>
+<td>Yes (llama-server)</td>
+<td>Needs a model server</td>
+</tr>
+</tbody>
+</table>
+<p>OpenVINO isn't bad, and that 2,263 t/s prefill shows there's real speed in there. But on my laptop and my model, every path came with a catch: the wrong device by default, a crash on my quant, a forced 4-bit quantization compatibility, a big performance spread (especially on prefill), no MoE support, and a GenAI path that's slow and not plug-and-play. I'll check again in a few releases, the backend is moving fast.</p>
+<p><em>Bref</em>, I wanted to find something faster and newer than SYCL that I could plug into my agent. OpenVINO is newer, was faster on an empty context only, and only by running a slimmer version of my model. So SYCL stays for now. 🤷</p>
+<!-- --- -->
+<p>[^1]: Using the fine-tuned version or the original doesn't have any impact on the rest of the testing. They are pretty much identical models (or, at least, they are for OpenVINO engine).</p>
+<p>[^2]: Even though it's not ideal to aggressively quantize a small LLM, MiniCPM5 is recommended to run at Q4, so it's not a crazy bad thing. A little sad, but not crazy bad.</p>
+<p>[^ling]: I didn't retry Ling on the newer build, so the MoE crash is from build 11406. If you get a MoE running on this backend, I'd love to hear how.</p>
+<p>[^double]: Most likely my test script's fault rather than OpenVINO's: the non-streaming run printed clean (if useless) text.</p>
 ]]></content>
 	</entry>
 	<entry>
