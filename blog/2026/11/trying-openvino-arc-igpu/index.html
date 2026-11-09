@@ -160,6 +160,10 @@ I’m not a professional, I probably did a lot of things wrong and I just want t
 
 <table><thead><tr><th>Component</th><th></th></tr></thead><tbody><tr><td>Laptop</td><td>ThinkPad E16 Gen 3</td></tr><tr><td>CPU</td><td>Intel Core Ultra 7 255H (Arrow Lake-H)</td></tr><tr><td>GPU</td><td>Intel Arc 140T (integrated)</td></tr><tr><td>NPU</td><td>Intel AI Boost (NPU 3720)</td></tr><tr><td>RAM</td><td>48 GiB DDR5 (5200 MT/s)</td></tr><tr><td>OS</td><td>EndeavourOS, kernel 7.2.11, <code>xe</code> GPU driver</td></tr></tbody></table>
 <p>The model is the one I use daily: <a href="https://huggingface.co/peculiar-ragdoll/Sharp-MiniCPM5-2B-GGUF" target="_blank" rel="noopener noreferrer nofollow">Sharp-MiniCPM5-2B</a> at Q6_K_XL, a 2B <em>dense</em> model (every parameter works for every token). My reference is llama.cpp with its <a href="https://en.wikipedia.org/wiki/SYCL" target="_blank" rel="noopener noreferrer nofollow"><em>SYCL</em></a> backend, Intel’s general (and older) way to run compute code on its GPUs. Every llama-bench run below uses the same flags as in the main post: <code>-ngl 99 -fa on -t 6 -b 1024 -ub 256</code>, three repetitions, laptop on AC.</p>
+<figure>
+    <img src="/images/2026/11/openvino-arc-igpu-llama-cpp-sharp_minicpm_banner.webp" alt="Sharp-MiniCPM5-2B banner">
+    <figcaption>Sharp MiniCPM5 2B banner</figcaption>
+</figure>
 <p>What I want is simple: something faster than SYCL that still leaves me a usable laptop, and that I can plug into a coding agent. Using an Arch-based distro, I also want to test the latest technologies (especially with the hope of exploiting my NPU).</p>
 <div class="callout" data-callout="note">
 <ul>

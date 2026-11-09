@@ -598,6 +598,10 @@ I'm not a professional, I probably did a lot of things wrong and I just want to 
 </tbody>
 </table>
 <p>The model is the one I use daily: <a href="https://huggingface.co/peculiar-ragdoll/Sharp-MiniCPM5-2B-GGUF">Sharp-MiniCPM5-2B</a> at Q6_K_XL, a 2B <em>dense</em> model (every parameter works for every token). My reference is llama.cpp with its <a href="https://en.wikipedia.org/wiki/SYCL"><em>SYCL</em></a> backend, Intel's general (and older) way to run compute code on its GPUs. Every llama-bench run below uses the same flags as in the main post: <code>-ngl 99 -fa on -t 6 -b 1024 -ub 256</code>, three repetitions, laptop on AC.</p>
+<figure>
+    <img src="https://arthurbrugiere.fr/images/2026/11/openvino-arc-igpu-llama-cpp-sharp_minicpm_banner.webp" alt="Sharp-MiniCPM5-2B banner" />
+    <figcaption>Sharp MiniCPM5 2B banner</figcaption>
+</figure>
 <p>What I want is simple: something faster than SYCL that still leaves me a usable laptop, and that I can plug into a coding agent. Using an Arch-based distro, I also want to test the latest technologies (especially with the hope of exploiting my NPU).</p>
 <blockquote>
 <p>[!NOTE]</p>
