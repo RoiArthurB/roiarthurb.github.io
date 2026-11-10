@@ -9,7 +9,7 @@
 	<author><name>Arthur Brugière</name></author>
 	<entry>
 		<id>https://arthurbrugiere.fr/blog/2026/11/small-coding-model-arc-igpu/</id>
-		<title>Tuning small LLM on my ThinkPad iGPU: from backend, to fast(-ish) long context</title>
+		<title>Tuning small LLM on my ThinkPad&apos;s Arch iGPU: from backend, to fast(-ish) long context</title>
 		<link rel="alternate" type="text/html" href="https://arthurbrugiere.fr/blog/2026/11/small-coding-model-arc-igpu/" />
 		<published>2026-11-09T00:00:00.000Z</published>
 		<updated>2026-11-09T00:00:00.000Z</updated>
