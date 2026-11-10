@@ -1,5 +1,5 @@
 ---
-title: 'Tuning small LLM on my ThinkPad iGPU: from backend, to fast(-ish) long context'
+title: "Tuning small LLM on my ThinkPad's Arch iGPU: from backend, to fast(-ish) long context"
 description: "The xe driver, dense vs MoE, and speculative decoding at depth. What I measured running small models on an Arc 140T with llama.cpp SYCL."
 #startDate: '2026-10-05'
 pubDate: '2026-11-09'
