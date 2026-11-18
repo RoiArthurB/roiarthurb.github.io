@@ -8,6 +8,15 @@ import bibFileRaw from '../data/publications.bib?raw';
 import { type Author, formatAuthor, parsePublications } from '../utils/bibtex';
 
 const publications = parsePublications(bibFileRaw);
+
+// Already sorted newest first; entries without a numeric year sort last.
+const yearGroups: { year: string; entries: typeof publications }[] = [];
+for (const entry of publications) {
+	const year = entry.fields.year?.trim() || 'Undated';
+	const current = yearGroups.at(-1);
+	if (current?.year === year) current.entries.push(entry);
+	else yearGroups.push({ year, entries: [entry] });
+}
 ---
 
 <!doctype html>
@@ -22,7 +31,10 @@ const publications = parsePublications(bibFileRaw);
 			<p>Selected peer-reviewed publications.</p>
 			
 			<div class="publication-list">
-				{publications.map((entry) => (
+				{yearGroups.map(({ year, entries }) => (
+				<section class="pub-year-group">
+				<h2 class="pub-year">{year}</h2>
+				{entries.map((entry) => (
 					<article class="publication-item">
 						<span class="pub-title">
                             {entry.fields.title.replace(/[{}]/g, '')}
@@ -75,6 +87,8 @@ const publications = parsePublications(bibFileRaw);
                             </details>
 						</div>
 					</article>
+				))}
+				</section>
 				))}
 
                 {publications.length === 0 && (

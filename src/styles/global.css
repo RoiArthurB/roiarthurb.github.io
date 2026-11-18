@@ -319,10 +319,38 @@ a:hover {
 }
 
 /* Publication List */
+.pub-year {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	font-family: var(--font-serif-fancy);
+	font-size: 1.5rem;
+	color: var(--color-text-muted);
+	border-bottom: none;
+	padding-bottom: 0;
+	margin: 2rem 0 1rem;
+}
+
+.pub-year-group:first-child .pub-year {
+	margin-top: 0;
+}
+
+.pub-year::after {
+	content: "";
+	flex: 1;
+	border-top: 1px solid currentColor;
+	opacity: 0.5;
+}
+
 .publication-item {
 	margin-bottom: 1.5rem;
 	padding-bottom: 1.5rem;
 	border-bottom: 1px solid var(--color-border);
+}
+
+.pub-year-group .publication-item:last-child {
+	border-bottom: none;
+	padding-bottom: 0;
 }
 
 .pub-title {
