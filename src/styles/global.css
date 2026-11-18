@@ -339,13 +339,11 @@ a:hover {
 	content: "";
 	flex: 1;
 	border-top: 1px solid currentColor;
-	opacity: 0.5;
+	opacity: 0.15;
 }
 
 .publication-item {
 	margin-bottom: 1.5rem;
-	padding-bottom: 1.5rem;
-	border-bottom: 1px solid var(--color-border);
 }
 
 .pub-year-group .publication-item:last-child {
